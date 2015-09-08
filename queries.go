@@ -111,6 +111,35 @@ var FETCH_DECK_QUERY = (func() PipeInput {
     )
 }())
 
+// decks closure queries
+
+// params:
+// ?1 := parent
+// ?2 := child
+var ASSOCIATE_DECK_AS_CHILD_QUERY = (func() PipeInput {
+    const __ASSOCIATE_DECK_AS_CHILD_QUERY string = `
+    INSERT OR IGNORE INTO DecksClosure(ancestor, descendent, depth)
+
+    /* for every ancestor of parent, make it an ancestor of child */
+    SELECT t.ancestor, :child, t.depth+1
+    FROM DecksClosure AS t
+    WHERE t.descendent = :parent
+
+    UNION ALL
+
+    /* child is an ancestor of itself with a depth of 0 */
+    SELECT :child, :child, 0;
+    `
+
+    var requiredInputCols []string = []string{"parent", "child"}
+
+    return composePipes(
+        MakeCtxMaker(__ASSOCIATE_DECK_AS_CHILD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 /* helpers */
 
 func JSON2Map(rawJSON []byte) (*StringMap, error) {

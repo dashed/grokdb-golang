@@ -41,3 +41,10 @@ func bindDB(db *sqlx.DB) func(handler func(*sqlx.DB, *gin.Context)) func(ctx *gi
         }
     }
 }
+
+func MergeResponse(dest *gin.H, src *gin.H) *gin.H {
+    for k, v := range *src {
+        (*dest)[k] = v
+    }
+    return dest
+}

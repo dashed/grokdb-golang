@@ -14,6 +14,8 @@ import (
 )
 
 /* variables */
+
+// errors
 var ErrDeckNoSuchDeck = errors.New("decks: no such deck of given id")
 
 /* types */
@@ -94,13 +96,13 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
         }
     }
 
-    ctx.JSON(http.StatusOK, gin.H{
+    ctx.JSON(http.StatusOK, DeckResponse(&gin.H{
         "id":   fetchedDeckRow.ID,
         "name": fetchedDeckRow.Name,
         // "children":  children,
         // "parent":    parent,
         // "hasParent": hasParent,
-    })
+    }))
 
 }
 
@@ -129,13 +131,78 @@ func DeckPOST(db *sqlx.DB, ctx *gin.Context) {
     }
 
     // fetch parent
+    var parentDeckRow *DeckRow
+    parentDeckRow, err = GetDeck(db, jsonRequest.Parent)
+    switch {
+    case err == ErrDeckNoSuchDeck:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given parent id is invalid",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve parent deck",
+        })
+        ctx.Error(err)
+        return
+    }
 
-    ctx.JSON(http.StatusOK, gin.H{
-        "response": "omg response",
+    // create deck
+    var newDeckRow *DeckRow
+
+    newDeckRow, err = CreateDeck(db, &DeckProps{
+        Name: jsonRequest.Name,
     })
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to create new deck",
+        })
+        ctx.Error(err)
+    }
+
+    // set new deck to be a child of parent
+    err = CreateDeckRelationship(db, parentDeckRow.ID, newDeckRow.ID)
+
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to create new deck as a child",
+        })
+        ctx.Error(err)
+
+        // TODO: transaction rollback
+    }
+
+    ctx.JSON(http.StatusOK, DeckResponse(&gin.H{
+        "id":   newDeckRow.ID,
+        "name": newDeckRow.Name,
+        // "children":  children,
+        // "parent":    parent,
+        // "hasParent": hasParent,
+    }))
 }
 
 /* helpers */
+
+func DeckResponse(overrides *gin.H) *gin.H {
+    defaultResponse := &gin.H{
+        "name":      "",
+        "id":        0,
+        "children":  []uint{},
+        "parent":    0,
+        "hasParent": false,
+    }
+
+    return MergeResponse(defaultResponse, overrides)
+}
 
 func GetDeck(db *sqlx.DB, deckID uint) (*DeckRow, error) {
 
@@ -166,7 +233,7 @@ func GetDeck(db *sqlx.DB, deckID uint) (*DeckRow, error) {
 
 func CreateDeck(db *sqlx.DB, props *DeckProps) (*DeckRow, error) {
 
-    // TODO: validation
+    // TODO: validation on props
 
     var (
         err   error
@@ -269,4 +336,25 @@ func GetRootDeck(db *sqlx.DB) (*DeckRow, error) {
     default:
         return rootDeckRow, nil
     }
+}
+
+func CreateDeckRelationship(db *sqlx.DB, parent uint, child uint) error {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(ASSOCIATE_DECK_AS_CHILD_QUERY, &StringMap{"parent": parent, "child": child})
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
