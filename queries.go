@@ -159,6 +159,60 @@ var ASSOCIATE_DECK_AS_CHILD_QUERY = (func() PipeInput {
     )
 }())
 
+// let :child be the subtree being moved
+// let :parent be the new parent for :child
+//
+// moving a deck subtree consists of two procedures:
+// 1. delete the subtree connections
+var SPLICE_DECK_SUBTREE_DELETE_QUERY = (func() PipeInput {
+    const __SPLICE_DECK_SUBTREE_DELETE_QUERY string = `
+    DELETE FROM DecksClosure
+
+    /* select all descendents of child */
+    WHERE descendent IN (
+        SELECT descendent
+        FROM DecksClosure
+        WHERE ancestor = :child
+    )
+    AND
+
+    /* select all ancestors of child but not child itself */
+    ancestor IN (
+        SELECT ancestor
+        FROM DecksClosure
+        WHERE descendent = :child
+        AND ancestor != descendent
+    );
+    `
+
+    var requiredInputCols []string = []string{"child"}
+
+    return composePipes(
+        MakeCtxMaker(__SPLICE_DECK_SUBTREE_DELETE_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var SPLICE_DECK_SUBTREE_ADD_QUERY = (func() PipeInput {
+    const __SPLICE_DECK_SUBTREE_ADD_QUERY string = `
+    INSERT OR IGNORE INTO DecksClosure(ancestor, descendent, depth)
+    SELECT p.ancestor, c.descendent, p.depth+c.depth+1
+    FROM DecksClosure AS p, DecksClosure AS c
+    WHERE
+    p.descendent = :parent
+    AND c.ancestor = :child;
+    `
+
+    var requiredInputCols []string = []string{"child", "parent"}
+
+    return composePipes(
+        MakeCtxMaker(__SPLICE_DECK_SUBTREE_ADD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 // fetch direct children
 var DECK_CHILDREN_QUERY = (func() PipeInput {
     const __DECK_CHILDREN_QUERY string = `
@@ -173,6 +227,25 @@ var DECK_CHILDREN_QUERY = (func() PipeInput {
 
     return composePipes(
         MakeCtxMaker(__DECK_CHILDREN_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+// fetch direct parent (if any)
+var DECK_PARENT_QUERY = (func() PipeInput {
+    const __DECK_PARENT_QUERY string = `
+    SELECT ancestor, descendent, depth
+    FROM DecksClosure
+    WHERE
+    descendent = :child
+    AND depth = 1;
+    `
+
+    var requiredInputCols []string = []string{"child"}
+
+    return composePipes(
+        MakeCtxMaker(__DECK_PARENT_QUERY),
         EnsureInputColsPipe(requiredInputCols),
         BuildQueryPipe,
     )
