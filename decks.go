@@ -17,6 +17,7 @@ import (
 
 // errors
 var ErrDeckNoSuchDeck = errors.New("decks: no such deck of given id")
+var ErrDeckNoChildren = errors.New("decks: deck has no children")
 
 /* types */
 
@@ -27,6 +28,12 @@ type DeckProps struct {
 type DeckRow struct {
     ID   uint `db:"deck_id"`
     Name string
+}
+
+type DeckRelationship struct {
+    Ancestor   uint
+    Descendent uint
+    Depth      uint
 }
 
 type DeckPOSTRequest struct {
@@ -96,10 +103,28 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
         }
     }
 
+    // fetch children
+    var children []uint
+    children, err = GetDeckChildren(db, fetchedDeckRow.ID)
+    switch {
+    case err == ErrDeckNoChildren:
+        children = []uint{}
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck children",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // fetch parent
+
     ctx.JSON(http.StatusOK, DeckResponse(&gin.H{
-        "id":   fetchedDeckRow.ID,
-        "name": fetchedDeckRow.Name,
-        // "children":  children,
+        "id":       fetchedDeckRow.ID,
+        "name":     fetchedDeckRow.Name,
+        "children": children,
         // "parent":    parent,
         // "hasParent": hasParent,
     }))
@@ -182,11 +207,10 @@ func DeckPOST(db *sqlx.DB, ctx *gin.Context) {
     }
 
     ctx.JSON(http.StatusOK, DeckResponse(&gin.H{
-        "id":   newDeckRow.ID,
-        "name": newDeckRow.Name,
-        // "children":  children,
-        // "parent":    parent,
-        // "hasParent": hasParent,
+        "id":        newDeckRow.ID,
+        "name":      newDeckRow.Name,
+        "parent":    parentDeckRow.ID,
+        "hasParent": true,
     }))
 }
 
@@ -357,4 +381,38 @@ func CreateDeckRelationship(db *sqlx.DB, parent uint, child uint) error {
     }
 
     return nil
+}
+
+func GetDeckChildren(db *sqlx.DB, parentID uint) ([]uint, error) {
+
+    var (
+        err      error
+        query    string
+        rows     *sqlx.Rows
+        args     []interface{}
+        dr       DeckRelationship = DeckRelationship{}
+        children []uint           = []uint{}
+    )
+
+    query, args, err = QueryApply(DECK_CHILDREN_QUERY, &StringMap{"parent": parentID})
+    if err != nil {
+        return nil, err
+    }
+
+    rows, err = db.Queryx(query, args...)
+    for rows.Next() {
+        err := rows.StructScan(&dr)
+        if err != nil {
+            return nil, err
+        }
+
+        children = append(children, dr.Descendent)
+    }
+
+    if len(children) <= 0 {
+        return nil, ErrDeckNoChildren
+    }
+
+    return children, nil
+
 }

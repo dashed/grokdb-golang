@@ -140,6 +140,25 @@ var ASSOCIATE_DECK_AS_CHILD_QUERY = (func() PipeInput {
     )
 }())
 
+// fetch direct children
+var DECK_CHILDREN_QUERY = (func() PipeInput {
+    const __DECK_CHILDREN_QUERY string = `
+    SELECT ancestor, descendent, depth
+    FROM DecksClosure
+    WHERE
+    ancestor = :parent
+    AND depth = 1;
+    `
+
+    var requiredInputCols []string = []string{"parent"}
+
+    return composePipes(
+        MakeCtxMaker(__DECK_CHILDREN_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 /* helpers */
 
 func JSON2Map(rawJSON []byte) (*StringMap, error) {
