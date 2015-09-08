@@ -73,8 +73,8 @@ CREATE TABLE IF NOT EXISTS DecksClosure (
     descendent INTEGER NOT NULL,
     depth INTEGER NOT NULL,
     PRIMARY KEY(ancestor, descendent),
-    FOREIGN KEY (ancestor) REFERENCES Decks(deck_id),
-    FOREIGN KEY (descendent) REFERENCES Decks(deck_id)
+    FOREIGN KEY (ancestor) REFERENCES Decks(deck_id) ON DELETE CASCADE,
+    FOREIGN KEY (descendent) REFERENCES Decks(deck_id) ON DELETE CASCADE
 );
 
 CREATE TRIGGER IF NOT EXISTS decks_closure_new_deck AFTER INSERT
