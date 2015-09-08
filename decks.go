@@ -224,7 +224,7 @@ func DeckPOST(db *sqlx.DB, ctx *gin.Context) {
         // TODO: transaction rollback
     }
 
-    ctx.JSON(http.StatusOK, DeckResponse(&gin.H{
+    ctx.JSON(http.StatusCreated, DeckResponse(&gin.H{
         "id":        newDeckRow.ID,
         "name":      newDeckRow.Name,
         "parent":    parentDeckRow.ID,
