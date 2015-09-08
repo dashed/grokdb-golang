@@ -27,6 +27,8 @@ func bootAPI(db *Database) {
         decksAPI.POST("/", injectDB(DeckPOST))
 
         decksAPI.GET("/:id", injectDB(DeckGET))
+
+        decksAPI.PATCH("/:id", injectDB(DeckPATCH))
     }
 
     api.Run(":3030")
@@ -34,8 +36,8 @@ func bootAPI(db *Database) {
 
 /* helpers */
 
-func bindDB(db *sqlx.DB) func(handler func(*sqlx.DB, *gin.Context)) func(ctx *gin.Context) {
-    return func(handler func(*sqlx.DB, *gin.Context)) func(ctx *gin.Context) {
+func bindDB(db *sqlx.DB) func(func(*sqlx.DB, *gin.Context)) func(*gin.Context) {
+    return func(handler func(*sqlx.DB, *gin.Context)) func(*gin.Context) {
         return func(ctx *gin.Context) {
             handler(db, ctx)
         }

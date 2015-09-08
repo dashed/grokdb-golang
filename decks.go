@@ -128,7 +128,6 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
         // "parent":    parent,
         // "hasParent": hasParent,
     }))
-
 }
 
 // POST /decks
@@ -139,11 +138,12 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
 func DeckPOST(db *sqlx.DB, ctx *gin.Context) {
 
     // parse request
-    var err error
+    var (
+        err         error
+        jsonRequest DeckPOSTRequest
+    )
 
-    var jsonRequest DeckPOSTRequest
     err = ctx.BindJSON(&jsonRequest)
-
     if err != nil {
 
         ctx.JSON(http.StatusBadRequest, gin.H{
@@ -211,6 +211,114 @@ func DeckPOST(db *sqlx.DB, ctx *gin.Context) {
         "name":      newDeckRow.Name,
         "parent":    parentDeckRow.ID,
         "hasParent": true,
+    }))
+}
+
+// PATCH /decks/:id
+//
+// Input:
+// name: non-empty string that shall be the name of the new deck
+func DeckPATCH(db *sqlx.DB, ctx *gin.Context) {
+
+    var (
+        err error
+    )
+
+    // parse id
+    var deckIDString string = strings.ToLower(ctx.Param("id"))
+    _deckID, err := strconv.ParseUint(deckIDString, 10, 32)
+    var deckID uint = uint(_deckID)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // parse request body
+    var dataDump *StringMap = &StringMap{}
+    err = ctx.BindJSON(dataDump)
+    if err != nil {
+
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "bad JSON input",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // patch deck
+    err = PatchDeck(db, deckID, dataDump)
+    switch {
+    case err == ErrDeckNoSuchDeck:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to update deck",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // fetch patched deck
+    var fetchedDeckRow *DeckRow
+    fetchedDeckRow, err = GetDeck(db, deckID)
+    switch {
+    case err == ErrDeckNoSuchDeck:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // fetch children
+    var children []uint
+    children, err = GetDeckChildren(db, fetchedDeckRow.ID)
+    switch {
+    case err == ErrDeckNoChildren:
+        children = []uint{}
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck children",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // TODO: fetch parent
+
+    ctx.JSON(http.StatusOK, DeckResponse(&gin.H{
+        "id":       fetchedDeckRow.ID,
+        "name":     fetchedDeckRow.Name,
+        "children": children,
+        // "parent":    parent,
+        // "hasParent": hasParent,
     }))
 }
 
@@ -360,6 +468,36 @@ func GetRootDeck(db *sqlx.DB) (*DeckRow, error) {
     default:
         return rootDeckRow, nil
     }
+}
+
+func PatchDeck(db *sqlx.DB, deckID uint, patch *StringMap) error {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+        res   sql.Result
+    )
+
+    query, args, err = QueryApply(UPDATE_DECK_QUERY, &StringMap{"deck_id": deckID}, patch)
+    if err != nil {
+        return err
+    }
+
+    res, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    num, err := res.RowsAffected()
+    if err != nil {
+        return err
+    }
+    if num <= 0 {
+        return ErrDeckNoSuchDeck
+    }
+
+    return nil
 }
 
 func CreateDeckRelationship(db *sqlx.DB, parent uint, child uint) error {

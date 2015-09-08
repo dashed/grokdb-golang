@@ -111,6 +111,25 @@ var FETCH_DECK_QUERY = (func() PipeInput {
     )
 }())
 
+var UPDATE_DECK_QUERY = (func() PipeInput {
+    const __UPDATE_DECK_QUERY string = `
+    UPDATE Decks
+    SET
+    %s
+    WHERE deck_id = :deck_id
+    `
+
+    var requiredInputCols []string = []string{"deck_id"}
+    var whiteListCols []string = []string{"name"}
+
+    return composePipes(
+        MakeCtxMaker(__UPDATE_DECK_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        PatchFilterPipe(whiteListCols),
+        BuildQueryPipe,
+    )
+}())
+
 // decks closure queries
 
 // params:
