@@ -29,6 +29,8 @@ func bootAPI(db *Database) {
         decksAPI.GET("/:id", injectDB(DeckGET))
 
         decksAPI.PATCH("/:id", injectDB(DeckPATCH))
+
+        decksAPI.DELETE("/:id", injectDB(DeckDELETE))
     }
 
     api.Run(":3030")

@@ -130,6 +130,20 @@ var UPDATE_DECK_QUERY = (func() PipeInput {
     )
 }())
 
+var DELETE_DECK_QUERY = (func() PipeInput {
+    const __DELETE_DECK_QUERY string = `
+    DELETE FROM Decks WHERE deck_id = :deck_id;
+    `
+
+    var requiredInputCols []string = []string{"deck_id"}
+
+    return composePipes(
+        MakeCtxMaker(__DELETE_DECK_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 // decks closure queries
 
 // params:

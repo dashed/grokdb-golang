@@ -232,6 +232,90 @@ func DeckPOST(db *sqlx.DB, ctx *gin.Context) {
     }))
 }
 
+// DELETE /decks/:id
+//
+// Delete deck by id
+//
+// Params:
+// id: a unique, positive integer that is the identifier of the assocoated deck
+func DeckDELETE(db *sqlx.DB, ctx *gin.Context) {
+
+    var err error
+
+    // parse id param
+    var deckIDString string = strings.ToLower(ctx.Param("id"))
+
+    _deckID, err := strconv.ParseUint(deckIDString, 10, 32)
+    var deckID uint = uint(_deckID)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // ensure deck exists
+
+    _, err = GetDeck(db, uint(_deckID))
+    switch {
+    case err == ErrDeckNoSuchDeck:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // delete deck
+    err = DeleteDeck(db, deckID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to delete deck",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // ensure deck is deleted
+
+    _, err = GetDeck(db, uint(_deckID))
+    switch {
+    case err == ErrDeckNoSuchDeck:
+        // success
+        ctx.Writer.WriteHeader(http.StatusNoContent)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to check if deck is deleted",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    ctx.JSON(http.StatusInternalServerError, gin.H{
+        "status":           http.StatusInternalServerError,
+        "developerMessage": err.Error(),
+        "userMessage":      "unable to delete deck",
+    })
+}
+
 // PATCH /decks/:id
 //
 // Input:
@@ -659,6 +743,37 @@ func GetRootDeck(db *sqlx.DB) (*DeckRow, error) {
     }
 }
 
+func DeleteDeck(db *sqlx.DB, deckID uint) error {
+
+    var (
+        err      error
+        query    string
+        args     []interface{}
+        children []uint
+    )
+
+    // delete children first
+    children, err = GetDeckChildren(db, deckID)
+    for _, childID := range children {
+        err = DeleteDeck(db, childID)
+        if err != nil {
+            return err
+        }
+    }
+
+    query, args, err = QueryApply(DELETE_DECK_QUERY, &StringMap{"deck_id": deckID})
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
 func GetDeckChildren(db *sqlx.DB, parentID uint) ([]uint, error) {
 
     var (
@@ -747,6 +862,9 @@ func MoveDeck(db *sqlx.DB, child uint, newParent uint) error {
         query string
         args  []interface{}
     )
+
+    // TODO: run these queries in a transaction
+    // db.Beginx()
 
     // delete subtree connections
 
