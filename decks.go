@@ -87,10 +87,10 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
         fetchedDeckRow, err = GetDeck(db, uint(_deckID))
         switch {
         case err == ErrDeckNoSuchDeck:
-            ctx.JSON(http.StatusBadRequest, gin.H{
-                "status":           http.StatusBadRequest,
+            ctx.JSON(http.StatusNotFound, gin.H{
+                "status":           http.StatusNotFound,
                 "developerMessage": err.Error(),
-                "userMessage":      "given id is invalid",
+                "userMessage":      "cannot find deck by id",
             })
             ctx.Error(err)
             return
@@ -178,10 +178,10 @@ func DeckPOST(db *sqlx.DB, ctx *gin.Context) {
     parentDeckRow, err = GetDeck(db, jsonRequest.Parent)
     switch {
     case err == ErrDeckNoSuchDeck:
-        ctx.JSON(http.StatusBadRequest, gin.H{
-            "status":           http.StatusBadRequest,
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
             "developerMessage": err.Error(),
-            "userMessage":      "given parent id is invalid",
+            "userMessage":      "canot find deck with given parent id",
         })
         ctx.Error(err)
         return
@@ -262,10 +262,10 @@ func DeckDELETE(db *sqlx.DB, ctx *gin.Context) {
     _, err = GetDeck(db, uint(_deckID))
     switch {
     case err == ErrDeckNoSuchDeck:
-        ctx.JSON(http.StatusBadRequest, gin.H{
-            "status":           http.StatusBadRequest,
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
             "developerMessage": err.Error(),
-            "userMessage":      "given id is invalid",
+            "userMessage":      "cannot find deck with given id",
         })
         ctx.Error(err)
         return
@@ -373,10 +373,10 @@ func DeckPATCH(db *sqlx.DB, ctx *gin.Context) {
     fetchedDeckRow, err = GetDeck(db, deckID)
     switch {
     case err == ErrDeckNoSuchDeck:
-        ctx.JSON(http.StatusBadRequest, gin.H{
-            "status":           http.StatusBadRequest,
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
             "developerMessage": err.Error(),
-            "userMessage":      "given id is invalid",
+            "userMessage":      "unable to find deck with given id",
         })
         ctx.Error(err)
         return
