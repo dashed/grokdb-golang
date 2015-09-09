@@ -597,7 +597,7 @@ func DeckPATCH(db *sqlx.DB, ctx *gin.Context) {
 
 /* helpers */
 
-func DeckResponse(overrides *gin.H) *gin.H {
+func DeckResponse(overrides *gin.H) gin.H {
     defaultResponse := &gin.H{
         "name":      "",
         "id":        0,

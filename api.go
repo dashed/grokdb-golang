@@ -33,6 +33,13 @@ func bootAPI(db *Database) {
         decksAPI.DELETE("/:id", injectDB(DeckDELETE))
     }
 
+    configsAPI := api.Group("/configs")
+    {
+        configsAPI.GET("/:setting", injectDB(ConfigGET))
+
+        configsAPI.POST("/:setting", injectDB(ConfigPOST))
+    }
+
     api.Run(":3030")
 }
 
@@ -46,9 +53,9 @@ func bindDB(db *sqlx.DB) func(func(*sqlx.DB, *gin.Context)) func(*gin.Context) {
     }
 }
 
-func MergeResponse(dest *gin.H, src *gin.H) *gin.H {
+func MergeResponse(dest *gin.H, src *gin.H) gin.H {
     for k, v := range *src {
         (*dest)[k] = v
     }
-    return dest
+    return *dest
 }
