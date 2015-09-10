@@ -2,6 +2,7 @@ package main
 
 import (
     // 3rd-party
+    "github.com/gin-gonic/contrib/static"
     "github.com/gin-gonic/gin"
     "github.com/jmoiron/sqlx"
 )
@@ -19,6 +20,8 @@ func bootAPI(db *Database) {
     injectDB := bindDB(db.instance)
 
     api := gin.Default()
+
+    api.Use(static.Serve("/", static.LocalFile("./assets/", true)))
 
     // decks group
     decksAPI := api.Group("/decks")
