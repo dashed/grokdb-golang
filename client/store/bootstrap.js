@@ -143,7 +143,7 @@ const bootDecks = co.wrap(function* (rootCursor) {
         const result = yield promises;
 
         rootCursor.cursor(constants.paths.currentChildren).update(function() {
-            return Immutable.List(result)
+            return Immutable.List(result);
         });
 
     }));

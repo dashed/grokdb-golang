@@ -9,7 +9,7 @@
     "rules": {
         "strict": 0,
         "semi": [2, "always"],
-        "no-unused-vars": [2, {vars: local}],
+        "no-unused-vars": [2, {"vars": "all", "args": "after-used"}],
         "no-undef": 2,
         "quotes": [1, "single", "avoid-escape"],
         "indent": [2, 4],

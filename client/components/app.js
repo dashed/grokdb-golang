@@ -1,16 +1,34 @@
 const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
-// TODO: remove
+// TODO: remove/replace
 // const Spinner = require('./spinner');
 
 const constants = require('store/constants');
 const {NOT_LOADED} = constants;
 const {route: routePath, root: rootDeckPath} = constants.paths;
 
+// route handler components
+const DecksDashboard = require('./decksdashboard');
+
 const App = React.createClass({
     render() {
-        return (<div>hello</div>);
+        return (
+            <div>
+                <div className="row">
+                    <div className="col-sm-12">
+                        <header>
+                            <h1 className="display-4 m-y">butterfoo.app</h1>
+                        </header>
+                    </div>
+                </div>
+                <div className="row">
+                    <div className="col-sm-12">
+                        <DecksDashboard />
+                    </div>
+                </div>
+            </div>
+        );
     }
 });
 
@@ -64,6 +82,7 @@ const OrwellWrapped = orwell(Occlusion, {
     }
 });
 
+// container for everything
 const AppContainer = React.createClass({
     render() {
         return (
