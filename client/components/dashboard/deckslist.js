@@ -46,11 +46,21 @@ const DecksList = React.createClass({
             );
         }())
 
+        // components for when editing
+        const editingHeader = (function() {
+            if (!editingDeck) {
+                return null;
+            }
+            return (
+                <div className="card-header">
+                    {"Editing Name & Description"}
+                </div>
+            );
+        }());
+
         return (
             <div className="card">
-                <div className="card-header">
-                    Editing Name & Description
-                </div>
+                {editingHeader}
                 <div className="card-block">
                     <h4 className="card-title">{deck.get('name')}</h4>
                     <p className="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
