@@ -2,33 +2,62 @@ const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
 
+const {setCurrentDeck} = require('store/decks');
+
 const DeckChild = React.createClass({
 
     propTypes: {
-        deck: React.PropTypes.instanceOf(Immutable.Map).isRequired
+        deck: React.PropTypes.instanceOf(Immutable.Map).isRequired,
+        store: React.PropTypes.object.isRequired
     },
 
+
+    onClick(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const {store, deck} = this.props;
+
+        store.dispatch(setCurrentDeck, deck);
+    },
 
     render() {
 
         const {deck} = this.props;
 
+        const name = deck.get('name');
+        const id = deck.get('id');
+
+        const href = `#${id}/${name}`;
+
         return (
-            <a href="#">{deck.get('name')}</a>
+            // TODO: change href to something more meaningful
+            <a href={href} onClick={this.onClick}>{name}</a>
         );
     }
 });
 
 module.exports = orwell(DeckChild, {
-    watchCursors(props) {
+    watchCursors(props, manual) {
 
-        return [
-            props.childCursor
-        ];
+        manual(function(update) {
+            const unsubscribe = props.childCursor.observe(function(newValue, oldValue) {
+                if(newValue && oldValue && newValue.id === oldValue.id) {
+                    return update();
+                }
+            });
+
+            return unsubscribe;
+        });
     },
-    assignNewProps(props) {
+    assignNewProps(props, context) {
         return {
-            deck: props.childCursor.deref()
+            deck: props.childCursor.deref(),
+            store: context.store
         };
+    }
+}).inject({
+    contextTypes: {
+        store: React.PropTypes.object.isRequired
     }
 });

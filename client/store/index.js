@@ -30,7 +30,7 @@ Store.prototype.state = function() {
 };
 
 Store.prototype.dispatch = function(transformer, ...args) {
-    transformer.bind(null, this.state).apply(null, args);
+    transformer.bind(null, this._state).apply(null, args);
 };
 
 module.exports = bootstrap(new Store());

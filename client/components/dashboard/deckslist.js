@@ -87,5 +87,4 @@ module.exports = orwell(DecksListOcclusion, {
     contextTypes: {
         store: React.PropTypes.object.isRequired
     }
-}).debug(true);
-
+});
