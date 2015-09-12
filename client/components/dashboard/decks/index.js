@@ -8,11 +8,11 @@ const {NOT_LOADED, paths} = require('store/constants');
 
 // components
 const Spinner = require('components/spinner');
-const DeckChild = require('./deckchild');
-const DecksListControls = require('./deckslistcontrols');
-const DeckSettings = require('./decksettings');
+const DeckChild = require('./child');
+const DecksListControls = require('./listcontrols');
+const DeckSettings = require('./settings');
 
-const DecksList = React.createClass({
+const DecksDashboard = React.createClass({
 
     propTypes: {
         deck: React.PropTypes.instanceOf(Immutable.Map).isRequired,
@@ -75,7 +75,7 @@ const DecksList = React.createClass({
 });
 
 // show Spinner until all data dependencies are satisfied
-const DecksListOcclusion = either(DecksList, Spinner, function(props) {
+const DecksListOcclusion = either(DecksDashboard, Spinner, function(props) {
 
     if(NOT_LOADED === props.deck) {
         return false;

@@ -6,7 +6,7 @@ const orwell = require('orwell');
 // components
 const Breadcrumb = require('./breadcrumb');
 const SubNav = require('./subnav');
-const DecksList = require('./deckslist');
+const DecksDashboard = require('./decks');
 
 const Dashboard = React.createClass({
     render() {
@@ -25,7 +25,7 @@ const Dashboard = React.createClass({
                 </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        <DecksList />
+                        <DecksDashboard />
                     </div>
                 </div>
             </div>

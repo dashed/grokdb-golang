@@ -1,7 +1,6 @@
 const React = require('react');
 const orwell = require('orwell');
 const {paths, keypress} = require('store/constants');
-// const Immutable = require('immutable');
 
 const {createNewDeck} = require('store/decks');
 const {setEditingDeck, setNewDeck} = require('store/dashboard');
