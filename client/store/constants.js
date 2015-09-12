@@ -21,5 +21,10 @@ module.exports = {
         route: 'route',
         currentDeck: 'currentDeck',
         breadcrumb: 'breadcrumb'
+    },
+
+    // magic constants
+    keypress: {
+        enter: 13
     }
 };

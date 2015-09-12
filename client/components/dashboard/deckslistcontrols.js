@@ -1,6 +1,6 @@
 const React = require('react');
 const orwell = require('orwell');
-const {paths} = require('store/constants');
+const {paths, keypress} = require('store/constants');
 // const Immutable = require('immutable');
 
 const {createNewDeck} = require('store/decks');
@@ -44,9 +44,7 @@ const DecksListControls = React.createClass({
         store.dispatch(setEditingDeck, !editingDeck);
     },
 
-    addNewDeck(event) {
-        event.preventDefault();
-        event.stopPropagation();
+    addNewDeck() {
 
         const {newDeckName} = this.state;
 
@@ -61,6 +59,22 @@ const DecksListControls = React.createClass({
         this.setState({
             newDeckName: ''
         });
+    },
+
+    onClickAddNewDeck(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        this.addNewDeck();
+    },
+
+    keypressNewDeck(event) {
+
+        if(event.which !== keypress.enter) {
+            return;
+        }
+
+        this.addNewDeck();
     },
 
     componentDidUpdate() {
@@ -94,9 +108,9 @@ const DecksListControls = React.createClass({
             return (
                 <div className="input-group input-group-sm">
                     <span className="input-group-btn">
-                        <button className="btn btn-success" type="button" onClick={this.addNewDeck}>Add</button>
+                        <button className="btn btn-success" type="button" onClick={this.onClickAddNewDeck}>Add</button>
                     </span>
-                    <input type="text" ref="newdeck" className="form-control" placeholder="Deck Name" onChange={this.onChangeNewDeck} value={this.state.newDeckName} />
+                    <input type="text" ref="newdeck" className="form-control" placeholder="Deck Name" onChange={this.onChangeNewDeck} value={this.state.newDeckName} onKeyDown={this.keypressNewDeck} />
                     <span className="input-group-btn">
                         <button className="btn btn-danger" type="button" onClick={this.onClickNewDeck}>Cancel</button>
                     </span>
