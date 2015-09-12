@@ -9,7 +9,7 @@ const {NOT_LOADED} = constants;
 const {route: routePath, root: rootDeckPath} = constants.paths;
 
 // route handler components
-const DecksDashboard = require('./decksdashboard');
+const Dashboard = require('./dashboard');
 
 const App = React.createClass({
     render() {
@@ -24,7 +24,7 @@ const App = React.createClass({
                 </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        <DecksDashboard />
+                        <Dashboard />
                     </div>
                 </div>
             </div>
@@ -54,7 +54,7 @@ const AppLoading = React.createClass({
 });
 
 // show Spinner until all data dependencies are satisfied
-const Occlusion = either(App, AppLoading, function(props) {
+const AppOcclusion = either(App, AppLoading, function(props) {
 
     if(NOT_LOADED === props.route) {
         return false;
@@ -67,7 +67,7 @@ const Occlusion = either(App, AppLoading, function(props) {
     return true;
 });
 
-const OrwellWrapped = orwell(Occlusion, {
+const OrwellWrapped = orwell(AppOcclusion, {
     watchCursors(props) {
         return [
             props.rootCursor.cursor(routePath),

@@ -4,4 +4,10 @@ require('babel-runtime/core-js/promise').default = require('bluebird');
 // see: https://github.com/petkaantonov/bluebird/blob/master/API.md#promiselongstacktraces---void
 require('bluebird').longStackTraces();
 
+const shallowEqual = require('shallowequal');
+
+require('orwell').shouldComponentUpdate(function __shouldComponentUpdateShallow(nextProps, nextState) {
+    return !shallowEqual(this.state.currentProps, nextState.currentProps);
+});
+
 require('./index.js');

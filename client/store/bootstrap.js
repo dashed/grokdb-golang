@@ -102,11 +102,6 @@ const bootDecks = co.wrap(function* (rootCursor) {
 
     /* currently viewed deck's children */
 
-    // TODO: implement
-    // observe currently viewed deck and load children
-
-    /* currently viewed deck */
-
     // implicitly observe and load current deck's children
     rootCursor.cursor(constants.paths.currentDeck).cursor('children').observe(co.wrap(function*(updated) {
 
@@ -147,6 +142,8 @@ const bootDecks = co.wrap(function* (rootCursor) {
         });
 
     }));
+
+    /* currently viewed deck */
 
     const currentDeck = yield co(function*() {
 

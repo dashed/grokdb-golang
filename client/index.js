@@ -11,7 +11,9 @@ co(function*() {
 
     const store = yield maybeStore;
 
-    console.log(String(store.state()));
+    setTimeout(function() {
+        console.log(String(store.state()));
+    }, 250);
 
     // NOTE: As of react v0.13, contexts are an undocumented feature
     // NOTE: As of react v0.13, React.withContext() is deprecated.

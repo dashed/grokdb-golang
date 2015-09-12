@@ -13,7 +13,8 @@ const SCHEMA = {
     // currently viewed deck
     currentDeck: {
         self: NOT_LOADED,
-        children: NOT_LOADED
+        children: NOT_LOADED,
+        breadcrumb: NOT_LOADED
     }
 };
 
