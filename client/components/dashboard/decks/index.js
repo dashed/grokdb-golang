@@ -2,13 +2,12 @@ const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
 const Immutable = require('immutable');
-const {Probe} = require('minitrue');
 
 const {NOT_LOADED, paths} = require('store/constants');
 
 // components
 const Spinner = require('components/spinner');
-const DeckChild = require('./child');
+const DeckChildren = require('./children');
 const DecksListControls = require('./listcontrols');
 const DeckSettings = require('./settings');
 
@@ -16,36 +15,12 @@ const DecksDashboard = React.createClass({
 
     propTypes: {
         deck: React.PropTypes.instanceOf(Immutable.Map).isRequired,
-        currentChildrenCursor: React.PropTypes.instanceOf(Probe).isRequired,
         editingDeck: React.PropTypes.bool.isRequired
     },
 
     render() {
 
-        const {deck, currentChildrenCursor, editingDeck} = this.props;
-
-        const childrenList = (function() {
-
-            if (editingDeck) {
-                return null;
-            }
-
-            const currentChildrenRendered = currentChildrenCursor.reduce(function(accumulator, childCursor, indexKey) {
-                accumulator.push(
-                    <li className="list-group-item" key={indexKey}>
-                        <DeckChild childCursor={childCursor} />
-                    </li>
-                );
-
-                return accumulator;
-            }, []);
-
-            return (
-                <ul className="list-group list-group-flush">
-                    {currentChildrenRendered}
-                </ul>
-            );
-        }());
+        const {deck, editingDeck} = this.props;
 
         // components for when editing
         const editingHeader = (function() {
@@ -67,7 +42,7 @@ const DecksDashboard = React.createClass({
                     <p className="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
                     <DecksListControls />
                 </div>
-                {childrenList}
+                <DeckChildren />
                 <DeckSettings />
             </div>
         );

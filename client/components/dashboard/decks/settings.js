@@ -3,7 +3,6 @@ const orwell = require('orwell');
 const either = require('react-either');
 
 const {paths} = require('store/constants');
-// const {navigateChildDeck} = require('store/decks');
 
 const DeckSettings = React.createClass({
 
@@ -26,7 +25,6 @@ const DeckSettings = React.createClass({
 
 });
 
-// show Spinner until all data dependencies are satisfied
 const DeckSettingsOcclusion = either(DeckSettings, null, function(props) {
     return props.editingDeck;
 });
