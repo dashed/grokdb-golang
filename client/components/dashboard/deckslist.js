@@ -10,6 +10,7 @@ const {NOT_LOADED, paths} = require('store/constants');
 const Spinner = require('components/spinner');
 const DeckChild = require('./deckchild');
 const DecksListControls = require('./deckslistcontrols');
+const DeckSettings = require('./decksettings');
 
 const DecksList = React.createClass({
 
@@ -44,7 +45,7 @@ const DecksList = React.createClass({
                     {currentChildrenRendered}
                 </ul>
             );
-        }())
+        }());
 
         // components for when editing
         const editingHeader = (function() {
@@ -67,16 +68,7 @@ const DecksList = React.createClass({
                     <DecksListControls />
                 </div>
                 {childrenList}
-                <div className="card-header">
-                    Settings
-                </div>
-                <div className="card-block">
-                    <strong>Delete this deck</strong>
-                    <p className="card-text">
-                        Once you delete a deck, there is no going back. Please be certain.
-                        <button type="button" className="btn btn-danger btn-sm pull-right">Delete this deck</button>
-                    </p>
-                </div>
+                <DeckSettings />
             </div>
         );
     }

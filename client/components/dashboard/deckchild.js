@@ -11,7 +11,6 @@ const DeckChild = React.createClass({
         store: React.PropTypes.object.isRequired
     },
 
-
     onClick(event) {
         event.preventDefault();
         event.stopPropagation();
