@@ -1,7 +1,8 @@
 const React = require('react');
 const orwell = require('orwell');
-const {paths, keypress} = require('store/constants');
+const _ = require('lodash');
 
+const {paths, keypress} = require('store/constants');
 const {createNewDeck} = require('store/decks');
 const {setEditingDeck, setNewDeck} = require('store/dashboard');
 
@@ -47,7 +48,7 @@ const DecksListControls = React.createClass({
 
         const {newDeckName} = this.state;
 
-        if(!newDeckName || newDeckName.length <= 0) {
+        if(!newDeckName || !_.isString(newDeckName) || newDeckName.trim().length <= 0) {
             return;
         }
 
