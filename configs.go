@@ -166,7 +166,18 @@ func SetConfig(db *sqlx.DB, setting string, value string) error {
         err   error
     )
 
-    query, args, err = QueryApply(SET_CONFIG_SETTING_QUERY, &StringMap{"setting": setting, "value": value})
+    var _QUERY PipeInput = UPDATE_CONFIG_SETTING_QUERY
+
+    // ensure config exists
+    _, err = GetConfig(db, setting)
+    switch {
+    case err == ErrConfigNoSuchSetting:
+        _QUERY = INSERT_CONFIG_SETTING_QUERY
+    case err != nil:
+        return err
+    }
+
+    query, args, err = QueryApply(_QUERY, &StringMap{"setting": setting, "value": value})
     if err != nil {
         return err
     }

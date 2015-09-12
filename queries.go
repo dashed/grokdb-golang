@@ -44,7 +44,7 @@ var FETCH_CONFIG_SETTING_QUERY = (func() PipeInput {
 }())
 
 // input: setting, value
-var SET_CONFIG_SETTING_QUERY = (func() PipeInput {
+var INSERT_CONFIG_SETTING_QUERY = (func() PipeInput {
     const __INSERT_CONFIG_SETTING_QUERY string = `
     INSERT OR REPLACE INTO Config(setting, value) VALUES (:setting, :value);
     `
@@ -53,6 +53,23 @@ var SET_CONFIG_SETTING_QUERY = (func() PipeInput {
 
     return composePipes(
         MakeCtxMaker(__INSERT_CONFIG_SETTING_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+// input: setting, value
+var UPDATE_CONFIG_SETTING_QUERY = (func() PipeInput {
+    const __UPDATE_CONFIG_SETTING_QUERY string = `
+    UPDATE Config
+    SET value = :value
+    WHERE setting = :setting;
+    `
+
+    var requiredInputCols []string = []string{"setting", "value"}
+
+    return composePipes(
+        MakeCtxMaker(__UPDATE_CONFIG_SETTING_QUERY),
         EnsureInputColsPipe(requiredInputCols),
         BuildQueryPipe,
     )
