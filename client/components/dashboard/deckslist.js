@@ -9,6 +9,7 @@ const {NOT_LOADED, paths} = require('store/constants');
 // components
 const Spinner = require('components/spinner');
 const DeckChild = require('./deckchild');
+const DecksListControls = require('./deckslistcontrols');
 
 const DecksList = React.createClass({
 
@@ -36,11 +37,7 @@ const DecksList = React.createClass({
                 <div className="card-block">
                     <h4 className="card-title">{deck.get('name')}</h4>
                     <p className="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                    <p className="card-text text-right"><a href="#">Edit</a></p>
-                    <div className="btn-group btn-group-sm" role="group" aria-label="Basic example">
-                        <button type="button" className="btn btn-success">New Deck</button>
-                        <button type="button" className="btn btn-secondary">Edit Description</button>
-                    </div>
+                    <DecksListControls />
                 </div>
                 <ul className="list-group list-group-flush">
                     {currentChildrenRendered}

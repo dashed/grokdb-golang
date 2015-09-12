@@ -270,7 +270,21 @@ const bootDecks = co.wrap(function* (rootCursor) {
         return breadcrumb;
     });
 
-    // TODO: watch self and update tail of breadcrumb
+    // watch self (i.e. currentDeck) and update tail of breadcrumb
+    rootCursor.cursor(constants.paths.currentDeck).observe(function(updatedCurrentDeck) {
+        rootCursor.cursor(constants.paths.breadcrumb).update(function(lst) {
+
+            if(lst.size <= 0) {
+                return lst;
+            }
+
+            if(lst.last().get('id') == updatedCurrentDeck.get('id')) {
+                return lst.set(-1, updatedCurrentDeck);
+            }
+
+            return lst;
+        });
+    });
 });
 
 

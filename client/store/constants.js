@@ -11,7 +11,9 @@ module.exports = {
         root: ['root'],
         currentDeck: ['currentDeck', 'self'],
         currentChildren: ['currentDeck', 'children'],
-        breadcrumb: ['currentDeck', 'breadcrumb']
+        breadcrumb: ['currentDeck', 'breadcrumb'],
+        editingDeck: ['editingDeck'],
+        creatingNewDeck: ['creatingNewDeck']
     },
 
     // config settings used to get/post on REST API

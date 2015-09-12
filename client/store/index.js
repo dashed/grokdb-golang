@@ -15,7 +15,11 @@ const SCHEMA = {
         self: NOT_LOADED,
         children: NOT_LOADED,
         breadcrumb: NOT_LOADED
-    }
+    },
+
+    // flags
+    editingDeck: false,
+    creatingNewDeck: false
 };
 
 

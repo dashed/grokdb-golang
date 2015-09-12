@@ -30,9 +30,7 @@ const Breadcrumb = React.createClass({
 
         return (
             <ol className="breadcrumb">
-                <li><a href="#">{""}</a></li>
                 {breadCrumbRendered}
-                <li>{" "}</li>
             </ol>
         );
     }
