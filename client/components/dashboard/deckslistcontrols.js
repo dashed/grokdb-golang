@@ -98,7 +98,7 @@ const DecksListControls = React.createClass({
                         <button type="button" className="btn btn-success btn-sm" onClick={this.onClickNewDeck}>New Deck</button>
                     </div>
                     <div className="btn-group pull-right" role="group" aria-label="Edit Deck">
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={this.onClickEditingDeck}>Edit Name / Description</button>
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={this.onClickEditingDeck}>Edit</button>
                     </div>
                 </div>
             );

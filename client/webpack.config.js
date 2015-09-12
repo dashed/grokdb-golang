@@ -41,6 +41,7 @@ module.exports = {
             'superagent/lib/client',
             'classnames',
             'shallowequal',
+            'slug',
             // 'intl',
             // 'between2',
             // 'pouchdb',

@@ -4,6 +4,7 @@ const Immutable = require('immutable');
 const _ = require('lodash');
 
 const constants = require('store/constants');
+const {NOT_LOADED} = constants;
 const superhot = require('./superhot');
 
 const bootRouter = co.wrap(function* (rootCursor) {
@@ -105,7 +106,7 @@ const bootDecks = co.wrap(function* (rootCursor) {
     /* currently viewed deck's children */
 
     // implicitly observe and load current deck's children
-    rootCursor.cursor(constants.paths.currentDeck).cursor('children').observe(co.wrap(function*(updated) {
+    rootCursor.cursor(constants.paths.currentDeck).cursor('children').observe(co.wrap(function*() {
 
         // invariant: updated is Immutable.List
         // TODO: verify above invariant
@@ -122,25 +123,34 @@ const bootDecks = co.wrap(function* (rootCursor) {
         //     });
         // });
 
-        const promises = updated.reduce(function(promiseList, deckID) {
-            const waiting = new Promise(function(resolve) {
-                superhot
-                    .get(`/decks/${deckID}`)
-                    .end(function(err2, res2){
-                        // TODO: error handling
-                        resolve(Immutable.fromJS(res2.body));
-                    });
-            });
+        const deckID = rootCursor.cursor(constants.paths.currentDeck).cursor('id').deref();
 
-            promiseList.push(waiting);
+        // reset
+        rootCursor.cursor(constants.paths.currentChildren).update(function() {
+            return NOT_LOADED;
+        });
 
-            return promiseList;
-        }, []);
+        const children = yield new Promise(function(resolve, reject) {
+            superhot
+                .get(`/decks/${deckID}/children`)
+                .end(function(err, res){
 
-        const result = yield promises;
+                    // no children
+                    if (res.status === 404) {
+                        return resolve(Immutable.List());
+                    }
+
+                    if (res.status === 200) {
+                        resolve(Immutable.fromJS(res.body));
+                    }
+
+                    // TODO: error handling
+                    reject(err);
+                });
+        });
 
         rootCursor.cursor(constants.paths.currentChildren).update(function() {
-            return Immutable.List(result);
+            return children;
         });
 
     }));
@@ -192,6 +202,20 @@ const bootDecks = co.wrap(function* (rootCursor) {
         // TODO: error handling here
 
         return decksResponse.body;
+    });
+
+    // inject currently viewed deck from app state into REST API
+    rootCursor.cursor(constants.paths.currentDeck).observe(function(deck) {
+        // set current deck config
+
+        const deckID = deck.get('id');
+
+        superhot
+            .post(`/configs/${constants.configs.currentDeck}`)
+            .type('json')
+            // set root deck to be the currently viewed deck
+            .send({ value: `${deckID}` })
+            .end();
     });
 
     // inject currently viewed deck from REST API into app state
@@ -268,6 +292,23 @@ const bootDecks = co.wrap(function* (rootCursor) {
 
     rootCursor.cursor(constants.paths.breadcrumb).update(function() {
         return breadcrumb;
+    });
+
+    // breadcrumb to REST API
+    rootCursor.cursor(constants.paths.breadcrumb).observe(function(lst) {
+
+        lst = lst.reduce(function(reduction, deck) {
+            reduction.push(deck.get('id'));
+            return reduction;
+        }, []);
+
+        // set current breadcrumb config
+        superhot
+            .post(`/configs/${constants.configs.breadcrumb}`)
+            .type('json')
+            .send({ value: `${JSON.stringify(lst)}` })
+            // TODO: error handling
+            .end();
     });
 
     // watch self (i.e. currentDeck) and update tail of breadcrumb

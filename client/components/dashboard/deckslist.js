@@ -15,33 +15,58 @@ const DecksList = React.createClass({
 
     propTypes: {
         deck: React.PropTypes.instanceOf(Immutable.Map).isRequired,
-        currentChildrenCursor: React.PropTypes.instanceOf(Probe).isRequired
+        currentChildrenCursor: React.PropTypes.instanceOf(Probe).isRequired,
+        editingDeck: React.PropTypes.bool.isRequired
     },
 
     render() {
 
-        const {deck, currentChildrenCursor} = this.props;
+        const {deck, currentChildrenCursor, editingDeck} = this.props;
 
-        const currentChildrenRendered = currentChildrenCursor.reduce(function(accumulator, childCursor, indexKey) {
-            accumulator.push(
-                <li className="list-group-item" key={indexKey}>
-                    <DeckChild childCursor={childCursor} />
-                </li>
+        const childrenList = (function() {
+
+            if (editingDeck) {
+                return null;
+            }
+
+            const currentChildrenRendered = currentChildrenCursor.reduce(function(accumulator, childCursor, indexKey) {
+                accumulator.push(
+                    <li className="list-group-item" key={indexKey}>
+                        <DeckChild childCursor={childCursor} />
+                    </li>
+                );
+
+                return accumulator;
+            }, []);
+
+            return (
+                <ul className="list-group list-group-flush">
+                    {currentChildrenRendered}
+                </ul>
             );
-
-            return accumulator;
-        }, []);
+        }())
 
         return (
             <div className="card">
+                <div className="card-header">
+                    Editing Name & Description
+                </div>
                 <div className="card-block">
                     <h4 className="card-title">{deck.get('name')}</h4>
                     <p className="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
                     <DecksListControls />
                 </div>
-                <ul className="list-group list-group-flush">
-                    {currentChildrenRendered}
-                </ul>
+                {childrenList}
+                <div className="card-header">
+                    Settings
+                </div>
+                <div className="card-block">
+                    <strong>Delete this deck</strong>
+                    <p className="card-text">
+                        Once you delete a deck, there is no going back. Please be certain.
+                        <button type="button" className="btn btn-danger btn-sm pull-right">Delete this deck</button>
+                    </p>
+                </div>
             </div>
         );
     }
@@ -68,7 +93,8 @@ module.exports = orwell(DecksListOcclusion, {
 
         return [
             state.cursor(paths.currentChildren),
-            state.cursor(paths.currentDeck)
+            state.cursor(paths.currentDeck),
+            state.cursor(paths.editingDeck)
         ];
     },
     assignNewProps(props, context) {
@@ -77,7 +103,8 @@ module.exports = orwell(DecksListOcclusion, {
 
         return {
             deck: state.cursor(paths.currentDeck).deref(),
-            currentChildrenCursor: state.cursor(paths.currentChildren)
+            currentChildrenCursor: state.cursor(paths.currentChildren),
+            editingDeck: state.cursor(paths.editingDeck).deref()
         };
     }
 }).inject({
