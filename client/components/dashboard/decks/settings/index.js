@@ -3,22 +3,27 @@ const orwell = require('orwell');
 const either = require('react-either');
 
 const {paths} = require('store/constants');
+const DeleteDeck = require('./delete');
 
 const DeckSettings = React.createClass({
 
     render() {
+
         return (
             <div>
                 <div className="card-header">
-                    {"Settings"}
+                    {""}
+                </div>
+                <div className="card-header">
+                    <strong>{"Settings"}</strong>
                 </div>
                 <div className="card-block">
-                    <strong>Delete this deck</strong>
+                    <strong className="text-muted">{"Move this deck"}</strong>
                     <p className="card-text">
-                        {"Once you delete a deck, there is no going back. Please be certain."}
-                        <button type="button" className="btn btn-danger btn-sm pull-right">{"Delete this deck"}</button>
+                        {"description TBA"}
                     </p>
                 </div>
+                <DeleteDeck />
             </div>
         );
     }

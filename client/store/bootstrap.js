@@ -1,4 +1,5 @@
 const co = require('co');
+const slugify = require('slug');
 const page = require('page');
 const Immutable = require('immutable');
 const _ = require('lodash');
@@ -9,16 +10,53 @@ const superhot = require('./superhot');
 
 const bootRouter = co.wrap(function* (rootCursor) {
     /* router setup */
-    page('/', function(ctx) {
-        rootCursor.cursor(constants.paths.route).update(function() {
-            return ctx.pathname;
-        });
+    page('/', function(/*ctx*/) {
+
+        const cursor = rootCursor.cursor(constants.paths.currentDeck);
+
+        if(cursor.deref(NOT_LOADED) === NOT_LOADED) {
+
+            cursor.once('any', function() {
+                const deck = cursor.deref();
+                page(`/deck/${deck.get('id')}/${deck.get('name')}`);
+            });
+
+            return;
+        }
+
+        const deck = cursor.deref();
+        const slugged = slugify(deck.get('name')).trim();
+        page(`/deck/${deck.get('id')}/${slugged}`);
     });
 
-    page('/decks/:id/:slug', function(ctx) {
-        rootCursor.cursor(constants.paths.route).update(function() {
-            return ctx.pathname;
-        });
+    page('/deck/:id/:slug', function(ctx) {
+
+        const cursor = rootCursor.cursor(constants.paths.currentDeck);
+
+        const handler = function() {
+            const deck = cursor.deref();
+            const id = ctx.params.id;
+
+            // correct id as necessary
+            if(id != deck.get('id')) {
+                const slugged = slugify(deck.get('name')).trim();
+                page(`/deck/${deck.get('id')}/${slugged}`);
+                return;
+            }
+
+            rootCursor.cursor(constants.paths.route).update(function() {
+                return ctx.pathname;
+            });
+        }
+
+        if(cursor.deref(NOT_LOADED) === NOT_LOADED) {
+            cursor.once('any', function() {
+                handler();
+            });
+            return;
+        }
+
+        handler();
     });
 
     page('/archive', function(ctx) {
@@ -65,12 +103,7 @@ const bootRouter = co.wrap(function* (rootCursor) {
 
     // TODO: error handling. note: 4xx are errors
 
-    // inject route value from REST API into app state
-    rootCursor.cursor(constants.paths.route).update(function() {
-        return response.body.value;
-    });
-
-    // begin router execution
+    // inject route value from REST API into app state and begin router execution
     page(response.body.value);
 
     // submit route value from app state to REST API
@@ -205,10 +238,16 @@ const bootDecks = co.wrap(function* (rootCursor) {
     });
 
     // inject currently viewed deck from app state into REST API
-    rootCursor.cursor(constants.paths.currentDeck).observe(function(deck) {
+    rootCursor.cursor(constants.paths.currentDeck).observe(function(deck, oldDeck) {
         // set current deck config
 
         const deckID = deck.get('id');
+
+        // set route
+        if(Immutable.Map.isMap(deck) && Immutable.Map.isMap(oldDeck)) {
+            const slugged = slugify(deck.get('name')).trim();
+            page(`/deck/${deck.get('id')}/${slugged}`);
+        }
 
         superhot
             .post(`/configs/${constants.configs.currentDeck}`)
