@@ -20,6 +20,7 @@ var ErrDeckNoSuchDeck = errors.New("decks: no such deck of given id")
 var ErrDeckNoChildren = errors.New("decks: deck has no children")
 var ErrQueryDeckNotPatched = errors.New("decks: deck not patched")
 var ErrDeckHasNoParent = errors.New("decks: deck has no parent")
+var ErrDeckNoAncestors = errors.New("decks: deck has no ancestors")
 
 /* types */
 
@@ -146,6 +147,77 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
         "parent":    parentID,
         "hasParent": hasParent,
     }))
+}
+
+// GET /ancestors/:id
+//
+// Params:
+// id: a unique, positive integer that is the identifier of the assocoated deck
+func DeckAncestorsGET(db *sqlx.DB, ctx *gin.Context) {
+
+    // parse id param
+    var deckIDString string = strings.ToLower(ctx.Param("id"))
+
+    // verify deck id exists
+    _deckID, err := strconv.ParseUint(deckIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var deckID uint = uint(_deckID)
+
+    _, err = GetDeck(db, deckID)
+
+    switch {
+    case err == ErrDeckNoSuchDeck:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find deck by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var ancestors []uint
+    ancestors, err = GetDeckAncestors(db, deckID)
+
+    switch {
+    case err == ErrDeckNoAncestors:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "deck has no ancestors",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck's ancestors",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    ctx.JSON(http.StatusOK, gin.H{
+        "id":        deckIDString,
+        "ancestors": ancestors,
+    })
 }
 
 // POST /decks
@@ -832,6 +904,39 @@ func GetDeckParent(db *sqlx.DB, childID uint) (uint, error) {
     default:
         return dr.Ancestor, nil
     }
+}
+
+func GetDeckAncestors(db *sqlx.DB, childID uint) ([]uint, error) {
+
+    var (
+        err       error
+        query     string
+        rows      *sqlx.Rows
+        args      []interface{}
+        dr        DeckRelationship = DeckRelationship{}
+        ancestors []uint           = []uint{}
+    )
+
+    query, args, err = QueryApply(DECK_ANCESTORS_QUERY, &StringMap{"child": childID})
+    if err != nil {
+        return nil, err
+    }
+
+    rows, err = db.Queryx(query, args...)
+    for rows.Next() {
+        err := rows.StructScan(&dr)
+        if err != nil {
+            return nil, err
+        }
+
+        ancestors = append(ancestors, dr.Ancestor)
+    }
+
+    if len(ancestors) <= 0 {
+        return nil, ErrDeckNoAncestors
+    }
+
+    return ancestors, nil
 }
 
 func CreateDeckRelationship(db *sqlx.DB, parent uint, child uint) error {
