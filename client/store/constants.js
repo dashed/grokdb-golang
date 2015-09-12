@@ -10,12 +10,14 @@ module.exports = {
         route: ['route'],
         root: ['root'],
         currentDeck: ['currentDeck', 'self'],
-        currentChildren: ['currentDeck', 'children']
+        currentChildren: ['currentDeck', 'children'],
+        breadcrumb: ['currentDeck', 'breadcrumb']
     },
 
     // config settings used to get/post on REST API
     configs: {
         route: 'route',
-        currentDeck: 'currentDeck'
+        currentDeck: 'currentDeck',
+        breadcrumb: 'breadcrumb'
     }
 };

@@ -5,5 +5,9 @@ module.exports = {
         state.cursor(paths.currentDeck).update(function() {
             return newCurrentDeck;
         });
+    },
+
+    pushOntoBreadcrumb(state, deck) {
+
     }
 };

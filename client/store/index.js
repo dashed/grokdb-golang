@@ -30,7 +30,12 @@ Store.prototype.state = function() {
 };
 
 Store.prototype.dispatch = function(transformer, ...args) {
-    transformer.bind(null, this._state).apply(null, args);
+
+    const ctx = {
+        store: this
+    };
+
+    transformer.bind(ctx, this._state).apply(null, args);
 };
 
 module.exports = bootstrap(new Store());

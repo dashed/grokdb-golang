@@ -757,7 +757,7 @@ func GetRootDeck(db *sqlx.DB) (*DeckRow, error) {
         // create a new root deck
         var rootDeck *DeckRow
         rootDeck, err = CreateDeck(db, &DeckProps{
-            Name: "root_deck",
+            Name: "Library",
         })
 
         if err != nil {

@@ -1,6 +1,7 @@
 const co = require('co');
 const page = require('page');
 const Immutable = require('immutable');
+const _ = require('lodash');
 
 const constants = require('store/constants');
 const superhot = require('./superhot');
@@ -83,6 +84,7 @@ const bootRouter = co.wrap(function* (rootCursor) {
 });
 
 const bootDecks = co.wrap(function* (rootCursor) {
+
     /* root deck setup */
 
     const {response} = yield new Promise(function(resolve) {
@@ -198,18 +200,97 @@ const bootDecks = co.wrap(function* (rootCursor) {
         // invariant: currentDeck is a plain object
         return Immutable.fromJS(currentDeck);
     });
+
+    /* breadcrumb setup */
+
+    const breadcrumb = yield co(function*() {
+
+        // fetch config
+        const {configResponse} = yield new Promise(function(resolve) {
+            superhot
+                .get(`/configs/${constants.configs.breadcrumb}`)
+                .end(function(err2, res2){
+                    resolve({configErr: err2, configResponse: res2});
+                });
+        });
+
+
+        let _breadcrumb;
+        if(configResponse.status === 404) {
+
+            // TODO: error handling
+            ({ancestors: _breadcrumb} = yield new Promise(function(resolve) {
+                superhot
+                    .get(`/decks/${currentDeck.id}/ancestors`)
+                    .end(function(err2, res2){
+
+                        if (res2.status === 404) {
+                            return resolve({err: null, ancestors: []});
+                        } else if(res2.status === 200) {
+                            return resolve({err: null, ancestors: res2.ancestors});
+                        }
+
+                        resolve({err: err2, ancestors: []});
+                    });
+            }));
+
+            _breadcrumb.push(currentDeck.id);
+
+            // set current breadcrumb config
+            superhot
+                .post(`/configs/${constants.configs.breadcrumb}`)
+                .type('json')
+                .send({ value: `${JSON.stringify(_breadcrumb)}` })
+                .end();
+
+        } else if(configResponse.status === 200) {
+
+            _breadcrumb = JSON.parse(configResponse.body.value);
+
+        } else {
+            throw Error(`couldn't catch the HTTP status codes we were looking for.`);
+        }
+
+        // resolve ancestors into decks
+        const ancestorsPromise = _.map(_breadcrumb, function(deckID) {
+            return new Promise(function(resolve) {
+                superhot
+                    .get(`/decks/${deckID}`)
+                    .end(function(err2, res2){
+                        // TODO: error handling
+                        resolve(Immutable.fromJS(res2.body));
+                    });
+            });
+        });
+
+        return Immutable.List(yield ancestorsPromise);
+    });
+
+    rootCursor.cursor(constants.paths.breadcrumb).update(function() {
+        return breadcrumb;
+    });
+
+    // TODO: watch self and update tail of breadcrumb
 });
 
 
-module.exports = co.wrap(function* (store) {
-    const rootCursor = store.state();
+module.exports = function(store) {
 
-    // connect to REST API
+    co(function* () {
+        const rootCursor = store.state();
 
-    yield [
-        bootRouter(rootCursor),
-        bootDecks(rootCursor)
-    ];
+        // connect to REST API
+
+        yield [
+            bootRouter(rootCursor),
+            bootDecks(rootCursor)
+        ];
+    }).catch(function(err) {
+        // TODO: proper error logging
+        console.error(err);
+        console.error(err.stack);
+    });
+
 
     return store;
-});
+};
