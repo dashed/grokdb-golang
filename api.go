@@ -31,6 +31,8 @@ func bootAPI(db *Database) {
 
         decksAPI.GET("/:id", injectDB(DeckGET))
 
+        decksAPI.GET("/:id/children", injectDB(DeckChildrenGET))
+
         decksAPI.GET("/:id/ancestors", injectDB(DeckAncestorsGET))
 
         decksAPI.PATCH("/:id", injectDB(DeckPATCH))

@@ -149,6 +149,109 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
     }))
 }
 
+// GET /children/:id
+//
+// shortcut to doing N GET /decks/:id requests
+//
+// Params:
+// id: a unique, positive integer that is the identifier of the assocoated deck
+func DeckChildrenGET(db *sqlx.DB, ctx *gin.Context) {
+
+    // parse id param
+    var deckIDString string = strings.ToLower(ctx.Param("id"))
+
+    // verify deck id exists
+    _deckID, err := strconv.ParseUint(deckIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var deckID uint = uint(_deckID)
+
+    _, err = GetDeck(db, deckID)
+
+    switch {
+    case err == ErrDeckNoSuchDeck:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find deck by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // fetch children
+    var childrenIDs []uint
+    childrenIDs, err = GetDeckChildren(db, deckID)
+    switch {
+    case err == ErrDeckNoChildren:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "deck has no children",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck children",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var children []gin.H = make([]gin.H, 0, len(childrenIDs))
+    for _, childDeckID := range childrenIDs {
+
+        var row *DeckRow
+        row, err = GetDeck(db, childDeckID)
+
+        // fetch children
+        var _childrenIDs []uint
+        _childrenIDs, err = GetDeckChildren(db, childDeckID)
+        switch {
+        case err == ErrDeckNoChildren:
+            _childrenIDs = []uint{}
+        case err != nil:
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to retrieve deck children",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        var response gin.H = DeckResponse(&gin.H{
+            "id":        childDeckID,
+            "name":      row.Name,
+            "children":  _childrenIDs,
+            "parent":    deckIDString,
+            "hasParent": true,
+        })
+
+        children = append(children, response)
+    }
+
+    ctx.JSON(http.StatusOK, children)
+}
+
 // GET /ancestors/:id
 //
 // Params:
