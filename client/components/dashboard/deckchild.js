@@ -2,7 +2,7 @@ const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
 
-const {setCurrentDeck} = require('store/decks');
+const {navigateChildDeck} = require('store/decks');
 
 const DeckChild = React.createClass({
 
@@ -18,7 +18,7 @@ const DeckChild = React.createClass({
 
         const {store, deck} = this.props;
 
-        store.dispatch(setCurrentDeck, deck);
+        store.dispatch(navigateChildDeck, deck);
     },
 
     render() {

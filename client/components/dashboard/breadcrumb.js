@@ -5,6 +5,8 @@ const Immutable = require('immutable');
 
 const {NOT_LOADED, paths} = require('store/constants');
 
+const BreadcrumbChild = require('./breadcrumbchild');
+
 const Breadcrumb = React.createClass({
 
     propTypes: {
@@ -15,13 +17,12 @@ const Breadcrumb = React.createClass({
 
         const {breadcrumb} = this.props;
 
-        const breadCrumbRendered = breadcrumb.reduce(function(accumulator, deck) {
+        const lastIdx = breadcrumb.size - 1;
+
+        const breadCrumbRendered = breadcrumb.reduce(function(accumulator, deck, index) {
 
             accumulator.push(
-                // TODO: href to be meaningful
-                <li key={deck.get('id')}>
-                    <a href="#">{deck.get('name')}</a>
-                </li>
+                <BreadcrumbChild key={deck.get('id')} deck={deck} active={index === lastIdx} />
             );
 
             return accumulator;

@@ -39,6 +39,8 @@ module.exports = {
             'lodash',
             'react-either',
             'superagent/lib/client',
+            'classnames',
+            'shallowequal',
             // 'intl',
             // 'between2',
             // 'pouchdb',
