@@ -3,7 +3,7 @@ const co = require('co');
 const _ = require('lodash');
 const Immutable = require('immutable');
 
-const {NOT_LOADED, paths} = require('store/constants');
+const {NOT_SET, paths} = require('store/constants');
 const {changeCurrentDeckByID} = require('store/decks');
 const superhot = require('store/superhot');
 
@@ -42,7 +42,7 @@ const bootRouter = co.wrap(function* (store) {
             page.redirect(`/deck/${rootID}`);
         };
 
-        if(cursor.deref(NOT_LOADED) === NOT_LOADED) {
+        if(cursor.deref(NOT_SET) === NOT_SET) {
             cursor.once('any', function(rootID) {
                 handler(rootID);
             });
@@ -78,6 +78,7 @@ const bootRouter = co.wrap(function* (store) {
         const deckID = rootCursor.cursor(paths.currentDeck).cursor('id').deref();
 
         if(deckID != maybeID) {
+            console.log('moo');
             store.dispatch(changeCurrentDeckByID, maybeID);
             return;
         }
@@ -101,23 +102,30 @@ const bootRouter = co.wrap(function* (store) {
 
         const deckID = cursor.deref();
 
+        const handler = function() {
+            rootCursor.cursor(paths.editingDeck).update(function() {
+                return true;
+            });
+            rootCursor.cursor(paths.routeHandler).update(function() {
+                return Dashboard;
+            });
+        };
+
         if(deckID != maybeID) {
 
-            rootCursor.cursor(paths.currentDeck).once('any', co.wrap(function*(currentDeck) {
-                const _deckID = currentDeck.get('id');
-                if(_deckID == maybeID) {
-                    page.redirect(`/decksetting/${maybeID}`);
-                }
-            }));
+            store.dispatch(changeCurrentDeckByID, maybeID, function(currentDeck) {
 
-            store.dispatch(changeCurrentDeckByID, maybeID);
+                const _deckID = currentDeck.get('id');
+
+                if(_deckID == maybeID) {
+                    handler.call(void 0);
+                }
+            });
 
             return;
         }
 
-        rootCursor.cursor(paths.editingDeck).update(function() {
-            return true;
-        });
+        handler.call(void 0);
 
     });
 
@@ -143,7 +151,7 @@ const bootDecks = co.wrap(function* (store) {
 
         // reset
         rootCursor.cursor(paths.currentChildren).update(function() {
-            return NOT_LOADED;
+            return NOT_SET;
         });
 
         const children = yield new Promise(function(resolve, reject) {

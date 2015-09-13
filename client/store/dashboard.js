@@ -1,11 +1,15 @@
 const page = require('page');
+const slugify = require('slug');
 
 const {paths} = require('store/constants');
 
 const transforms = {
     setEditingDeck(state, bool) {
 
-        const deckID = state.cursor(paths.currentDeck).cursor('id').deref();
+        const currentDeck = state.cursor(paths.currentDeck).deref();
+
+        const deckID = currentDeck.get('id');
+        const name = currentDeck.get('name');
 
         if(bool) {
             page(`/decksetting/${deckID}`);
@@ -16,7 +20,10 @@ const transforms = {
             return false;
         });
 
-        page(`/deck/${deckID}`);
+        let slugged = slugify(name.trim());
+        slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
+
+        page(`/deck/${deckID}/${slugged}`);
     },
 
     setNewDeck(state, bool) {

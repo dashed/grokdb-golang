@@ -1,7 +1,7 @@
 module.exports = {
 
     // sentinel value
-    NOT_LOADED: Symbol('NOT_LOADED'),
+    NOT_SET: Symbol('NOT_SET'),
 
     /* magic constants */
 
@@ -14,7 +14,9 @@ module.exports = {
         currentChildren: ['currentDeck', 'children'],
         breadcrumb: ['currentDeck', 'breadcrumb'],
         editingDeck: ['editingDeck'],
-        creatingNewDeck: ['creatingNewDeck']
+        creatingNewDeck: ['creatingNewDeck'],
+
+        editingDeckCallback: ['editingDeckCallback']
     },
 
     // config settings used to get/post on REST API

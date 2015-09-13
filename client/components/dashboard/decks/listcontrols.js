@@ -39,9 +39,18 @@ const DecksListControls = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        const {store, editingDeck} = this.props;
+        const {store} = this.props;
 
-        store.dispatch(setEditingDeck, !editingDeck);
+        store.dispatch(setEditingDeck, true);
+    },
+
+    onClickCancelEditingDeck(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const {store} = this.props;
+
+        store.dispatch(setEditingDeck, false);
     },
 
     addNewDeck() {
@@ -77,9 +86,22 @@ const DecksListControls = React.createClass({
         this.addNewDeck();
     },
 
+    onClickSaveDeck(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const callback = this.props.store.state().cursor(paths.editingDeckCallback).deref();
+
+        if(!_.isFunction(callback)) {
+            return;
+        }
+
+        callback.call(void 0);
+    },
+
     componentDidUpdate() {
 
-        const {creatingNewDeck, editingDeck} = this.props;
+        const {creatingNewDeck} = this.props;
 
         if(creatingNewDeck) {
             React.findDOMNode(this.refs.newdeck).focus();
@@ -90,6 +112,8 @@ const DecksListControls = React.createClass({
     render() {
 
         const {creatingNewDeck, editingDeck} = this.props;
+
+        console.log('DecksListControls');
 
         if(!creatingNewDeck && !editingDeck) {
             return (
@@ -122,10 +146,10 @@ const DecksListControls = React.createClass({
             return (
                 <div className="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
                     <div className="btn-group" role="group" aria-label="New Deck">
-                        <button type="button" className="btn btn-success btn-sm" onClick={this.onClickEditingDeck}>Save</button>
+                        <button type="button" className="btn btn-success btn-sm" onClick={this.onClickSaveDeck}>Save</button>
                     </div>
                     <div className="btn-group pull-right" role="group" aria-label="Edit Deck">
-                        <button type="button" className="btn btn-danger btn-sm" onClick={this.onClickEditingDeck}>Cancel</button>
+                        <button type="button" className="btn btn-danger btn-sm" onClick={this.onClickCancelEditingDeck}>Cancel</button>
                     </div>
                 </div>
             );

@@ -1,26 +1,25 @@
 const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
-const Immutable = require('immutable');
 
-const {NOT_LOADED, paths} = require('store/constants');
+const {NOT_SET, paths} = require('store/constants');
 
 // components
 const Spinner = require('components/spinner');
 const DeckChildren = require('./children');
 const DecksListControls = require('./listcontrols');
 const DeckSettings = require('./settings');
+const DeckInfo = require('./deckinfo');
 
 const DecksDashboard = React.createClass({
 
     propTypes: {
-        deck: React.PropTypes.instanceOf(Immutable.Map).isRequired,
         editingDeck: React.PropTypes.bool.isRequired
     },
 
     render() {
 
-        const {deck, editingDeck} = this.props;
+        const {editingDeck} = this.props;
 
         // components for when editing
         const editingHeader = (function() {
@@ -29,7 +28,7 @@ const DecksDashboard = React.createClass({
             }
             return (
                 <div className="card-header">
-                    {"Editing Name & Description"}
+                    <strong>{"Editing Name & Description"}</strong>
                 </div>
             );
         }());
@@ -38,8 +37,7 @@ const DecksDashboard = React.createClass({
             <div className="card">
                 {editingHeader}
                 <div className="card-block">
-                    <h4 className="card-title">{deck.get('name')}</h4>
-                    <p className="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                    <DeckInfo />
                     <DecksListControls />
                 </div>
                 <DeckChildren />
@@ -52,11 +50,11 @@ const DecksDashboard = React.createClass({
 // show Spinner until all data dependencies are satisfied
 const DecksListOcclusion = either(DecksDashboard, Spinner, function(props) {
 
-    if(NOT_LOADED === props.deck) {
+    if(NOT_SET === props.deck) {
         return false;
     }
 
-    if(NOT_LOADED === props.currentChildrenCursor.deref()) {
+    if(NOT_SET === props.currentChildrenCursor.deref()) {
         return false;
     }
 

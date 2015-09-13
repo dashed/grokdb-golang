@@ -3,7 +3,7 @@ const orwell = require('orwell');
 const either = require('react-either');
 const Immutable = require('immutable');
 
-const {NOT_LOADED, paths} = require('store/constants');
+const {NOT_SET, paths} = require('store/constants');
 
 const BreadcrumbChild = require('./breadcrumbchild');
 
@@ -39,7 +39,7 @@ const Breadcrumb = React.createClass({
 // don't show until all data dependencies are satisfied
 const BreadcrumbOcclusion = either(Breadcrumb, null, function(props) {
 
-    if(NOT_LOADED === props.breadcrumb) {
+    if(NOT_SET === props.breadcrumb) {
         return false;
     }
 

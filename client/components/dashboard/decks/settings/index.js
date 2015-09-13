@@ -11,7 +11,7 @@ const DeckSettings = React.createClass({
 
         return (
             <div>
-                <div className="card-header">
+                <div className="card-header p-y-0">
                     {""}
                 </div>
                 <div className="card-header">

@@ -5,7 +5,7 @@ const either = require('react-either');
 // const Spinner = require('./spinner');
 
 const constants = require('store/constants');
-const {NOT_LOADED, paths} = constants;
+const {NOT_SET, paths} = constants;
 
 const App = React.createClass({
 
@@ -60,11 +60,11 @@ const AppLoading = React.createClass({
 // show Spinner until all data dependencies are satisfied
 const AppOcclusion = either(App, AppLoading, function(props) {
 
-    if(NOT_LOADED === props.RouteHandler) {
+    if(NOT_SET === props.RouteHandler) {
         return false;
     }
 
-    if(NOT_LOADED === props.rootDeckID) {
+    if(NOT_SET === props.rootDeckID) {
         return false;
     }
 

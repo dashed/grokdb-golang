@@ -3,7 +3,7 @@ const Immutable = require('immutable');
 const co = require('co');
 const slugify = require('slug');
 
-const {NOT_LOADED, paths} = require('store/constants');
+const {NOT_SET, paths} = require('store/constants');
 const superhot = require('store/superhot');
 
 const {setNewDeck} = require('./dashboard');
@@ -65,7 +65,7 @@ const transforms = {
         });
     },
 
-    changeCurrentDeckByID: co.wrap(function* (state, deckID) {
+    changeCurrentDeckByID: co.wrap(function* (state, deckID, callback = void 0) {
 
         const currentDeck = yield co(function*() {
 
@@ -79,7 +79,7 @@ const transforms = {
             });
 
             if(decksResponse.status != 200) {
-                return NOT_LOADED;
+                return NOT_SET;
             }
 
             // TODO: error handling here
@@ -87,17 +87,24 @@ const transforms = {
             return decksResponse.body;
         });
 
-        if(currentDeck === NOT_LOADED) {
+        if(currentDeck === NOT_SET) {
             page.redirect(`/`);
             return;
         }
+
+        const ImmCurrentDeck = Immutable.fromJS(currentDeck);
 
         // inject currently viewed deck from REST API into app state
         state.cursor(paths.currentDeck).update(function() {
 
             // invariant: currentDeck is a plain object
-            return Immutable.fromJS(currentDeck);
+            return ImmCurrentDeck;
         });
+
+        if(callback) {
+            callback.call(null, ImmCurrentDeck);
+            return;
+        }
 
         let slugged = slugify(currentDeck.name.trim());
         slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
@@ -145,6 +152,10 @@ const transforms = {
             });
 
         setNewDeck(state, false);
+    },
+
+    saveDeck(state, newDeck) {
+
     }
 };
 

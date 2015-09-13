@@ -1,26 +1,29 @@
 const minitrue = require('minitrue');
 const bootstrap = require('./bootstrap');
-const {NOT_LOADED} = require('./constants');
+const {NOT_SET} = require('./constants');
 
 const SCHEMA = {
 
     // ideally, react-router should be awesome at this
-    // route: NOT_LOADED,
-    routeHandler: NOT_LOADED,
+    // route: NOT_SET,
+    routeHandler: NOT_SET,
 
     // deck id for root
-    root: NOT_LOADED,
+    root: NOT_SET,
 
     // currently viewed deck
     currentDeck: {
-        self: NOT_LOADED,
-        children: NOT_LOADED,
-        breadcrumb: NOT_LOADED
+        self: NOT_SET,
+        children: NOT_SET,
+        breadcrumb: NOT_SET
     },
 
     // flags
     editingDeck: false,
-    creatingNewDeck: false
+    creatingNewDeck: false,
+
+    // callbacks
+    editingDeckCallback: NOT_SET
 };
 
 
