@@ -139,21 +139,6 @@ const bootDecks = co.wrap(function* (store) {
     // implicitly observe and load current deck's children
     rootCursor.cursor(paths.currentDeck).cursor('children').observe(co.wrap(function*() {
 
-        // invariant: updated is Immutable.List
-        // TODO: verify above invariant
-
-        // cannot yield an iterable in co
-        // const promises = updated.map(function(deckID) {
-        //     return new Promise(function(resolve) {
-        //         superhot
-        //             .get(`/decks/${deckID}`)
-        //             .end(function(err2, res2){
-        //                 // TODO: error handling
-        //                 resolve(res2.body);
-        //             });
-        //     });
-        // });
-
         const deckID = rootCursor.cursor(paths.currentDeck).cursor('id').deref();
 
         // reset
@@ -188,7 +173,7 @@ const bootDecks = co.wrap(function* (store) {
 
     /* breadcrumb setup */
 
-    rootCursor.cursor(paths.currentDeck).once('any', co.wrap(function*(currentDeck) {
+    rootCursor.cursor(paths.currentDeck).on('any', co.wrap(function*(currentDeck) {
 
         const currentDeckID = currentDeck.get('id');
         let breadcrumb;
