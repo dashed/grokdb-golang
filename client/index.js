@@ -6,9 +6,9 @@ const store = require('store');
 const App = require('components/app');
 
 // render app
-setTimeout(function() {
-    console.log(String(store.state()));
-}, 1000);
+// setTimeout(function() {
+//     console.log(String(store.state()));
+// }, 1000);
 
 // NOTE: As of react v0.13, contexts are an undocumented feature
 // NOTE: As of react v0.13, React.withContext() is deprecated.

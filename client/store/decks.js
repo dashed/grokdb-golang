@@ -21,7 +21,7 @@ const transforms = {
         let slugged = slugify(childDeck.get('name').trim());
         slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
 
-        page.redirect(`/deck/${deckID}/${slugged}`);
+        page(`/deck/${deckID}/${slugged}`);
     },
 
     navigateParentDeck(state, parentDeck) {
@@ -36,7 +36,7 @@ const transforms = {
         let slugged = slugify(parentDeck.get('name').trim());
         slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
 
-        page.redirect(`/deck/${deckID}/${slugged}`);
+        page(`/deck/${deckID}/${slugged}`);
 
     },
 

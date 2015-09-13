@@ -23,6 +23,17 @@ const bootRouter = co.wrap(function* (store) {
 
     /* router setup */
 
+    page('*', function(ctx, next) {
+
+        // reset state
+        rootCursor.cursor(paths.editingDeck).update(function() {
+            return false;
+        });
+
+
+        return next();
+    });
+
     // go to root deck by default
     page('/', function(/*ctx*/) {
         const cursor = rootCursor.cursor(paths.root);
@@ -64,7 +75,7 @@ const bootRouter = co.wrap(function* (store) {
             return;
         }
 
-        const deckID = rootCursor.cursor(paths.currentDeck).cursor('id');
+        const deckID = rootCursor.cursor(paths.currentDeck).cursor('id').deref();
 
         if(deckID != maybeID) {
             store.dispatch(changeCurrentDeckByID, maybeID);
@@ -74,6 +85,40 @@ const bootRouter = co.wrap(function* (store) {
         rootCursor.cursor(paths.routeHandler).update(function() {
             return Dashboard;
         });
+    });
+
+    page('/decksetting/:id', function(ctx) {
+
+        const maybeID = filterInt(ctx.params.id);
+
+        // ensure :id is valid
+        if(_.isNaN(maybeID) || !Number.isInteger(maybeID) || maybeID <= 0) {
+            page.redirect('/');
+            return;
+        }
+
+        const cursor = rootCursor.cursor(paths.currentDeck).cursor('id');
+
+        const deckID = cursor.deref();
+
+        if(deckID != maybeID) {
+
+            rootCursor.cursor(paths.currentDeck).once('any', co.wrap(function*(currentDeck) {
+                const _deckID = currentDeck.get('id');
+                if(_deckID == maybeID) {
+                    page.redirect(`/decksetting/${maybeID}`);
+                }
+            }));
+
+            store.dispatch(changeCurrentDeckByID, maybeID);
+
+            return;
+        }
+
+        rootCursor.cursor(paths.editingDeck).update(function() {
+            return true;
+        });
+
     });
 
     page.start({

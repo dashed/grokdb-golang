@@ -5,14 +5,18 @@ const either = require('react-either');
 // const Spinner = require('./spinner');
 
 const constants = require('store/constants');
-const {NOT_LOADED} = constants;
-const {route: routePath, root: rootDeckPath} = constants.paths;
-
-// route handler components
-const Dashboard = require('./dashboard');
+const {NOT_LOADED, paths} = constants;
 
 const App = React.createClass({
+
+    propTypes: {
+        RouteHandler: React.PropTypes.oneOfType([ React.PropTypes.func, React.PropTypes.string ])
+    },
+
     render() {
+
+        const {RouteHandler} = this.props;
+
         return (
             <div>
                 <div className="row">
@@ -24,7 +28,7 @@ const App = React.createClass({
                 </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        <Dashboard />
+                        <RouteHandler />
                     </div>
                 </div>
             </div>
@@ -45,7 +49,7 @@ const AppLoading = React.createClass({
                 </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        <p>Loading...</p>
+                        <p>Loading app...</p>
                     </div>
                 </div>
             </div>
@@ -56,11 +60,11 @@ const AppLoading = React.createClass({
 // show Spinner until all data dependencies are satisfied
 const AppOcclusion = either(App, AppLoading, function(props) {
 
-    if(NOT_LOADED === props.route) {
+    if(NOT_LOADED === props.RouteHandler) {
         return false;
     }
 
-    if(NOT_LOADED === props.rootDeck) {
+    if(NOT_LOADED === props.rootDeckID) {
         return false;
     }
 
@@ -70,14 +74,14 @@ const AppOcclusion = either(App, AppLoading, function(props) {
 const OrwellWrapped = orwell(AppOcclusion, {
     watchCursors(props) {
         return [
-            props.rootCursor.cursor(routePath),
-            props.rootCursor.cursor(rootDeckPath)
+            props.rootCursor.cursor(paths.routeHandler),
+            props.rootCursor.cursor(paths.root)
         ];
     },
     assignNewProps(props) {
         return {
-            route: props.rootCursor.cursor(routePath).deref(),
-            rootDeck: props.rootCursor.cursor(rootDeckPath).deref()
+            RouteHandler: props.rootCursor.cursor(paths.routeHandler).deref(),
+            rootDeckID: props.rootCursor.cursor(paths.root).deref()
         };
     }
 });
