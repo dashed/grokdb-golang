@@ -3,8 +3,13 @@ const orwell = require('orwell');
 const either = require('react-either');
 
 const {paths} = require('store/constants');
+const {deleteDeck} = require('store/decks');
 
 const DeleteDeck = React.createClass({
+
+    propTypes: {
+        store: React.PropTypes.object.isRequired
+    },
 
     getInitialState() {
         return {
@@ -30,6 +35,14 @@ const DeleteDeck = React.createClass({
         });
     },
 
+    reallyDelete(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const {store} = this.props;
+        store.dispatch(deleteDeck, true);
+    },
+
     render() {
 
         const deleteComponent = (function() {
@@ -40,7 +53,7 @@ const DeleteDeck = React.createClass({
                         <strong>{"Are you sure you want to delete this deck?"}</strong>
                         {" "}
                         <div className="btn-group btn-group-sm" role="group" aria-label="Basic example">
-                            <button type="button" className="btn btn-danger">Yes</button>
+                            <button type="button" className="btn btn-danger" onClick={this.reallyDelete}>Yes</button>
                             <button type="button" className="btn btn-secondary" onClick={this.cancelDelete}>No</button>
                         </div>
                     </div>
@@ -55,7 +68,7 @@ const DeleteDeck = React.createClass({
 
         return (
             <div className="card-block">
-                <strong>{"Delete this deck"}</strong>
+                <strong className="text-muted">{"Delete this deck"}</strong>
                 <p className="card-text">
                     {"Once you delete a deck, there is no going back."}
                     {deleteComponent}
@@ -70,14 +83,6 @@ const DeleteDeckOcclusion = either(DeleteDeck, null, function(props) {
 });
 
 module.exports = orwell(DeleteDeckOcclusion, {
-    watchCursors() {
-
-        // const state = context.store.state();
-
-        // return [
-        //     state.cursor(paths.editingDeck)
-        // ];
-    },
     assignNewProps(props, context) {
 
         const state = context.store.state();

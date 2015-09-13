@@ -1,6 +1,7 @@
 const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
+const _ = require('lodash');
 
 const {paths, NOT_SET} = require('store/constants');
 const {saveDeck} = require('store/decks');

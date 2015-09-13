@@ -194,6 +194,34 @@ const transforms = {
 
         // get out of editing mode
         setEditingDeck(state, false);
+    }),
+
+    deleteDeck: co.wrap(function*(state, bool) {
+        if(!bool) {
+            return;
+        }
+
+        const deck = state.cursor(paths.currentDeck).deref();
+
+        // fetch parent
+        if(!deck.get('hasParent', false)) {
+            return;
+        }
+
+        const deckID = deck.get('id');
+        const parentID = deck.get('parent');
+
+
+        yield new Promise(function(resolve) {
+            superhot
+                .del(`/decks/${deckID}`)
+                .end(function() {
+                    resolve();
+                });
+        });
+
+        // go to parent
+        page(`/deck/${parentID}`);
     })
 };
 
