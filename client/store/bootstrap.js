@@ -78,7 +78,6 @@ const bootRouter = co.wrap(function* (store) {
         const deckID = rootCursor.cursor(paths.currentDeck).cursor('id').deref();
 
         if(deckID != maybeID) {
-            console.log('moo');
             store.dispatch(changeCurrentDeckByID, maybeID);
             return;
         }
