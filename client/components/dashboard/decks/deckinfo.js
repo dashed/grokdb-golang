@@ -21,8 +21,8 @@ const DeckInfo = React.createClass({
         return {
             callback: this.saveDeck,
 
-            name: deck.get('name'),
-            description: deck.get('description')
+            name: NOT_SET,
+            description: NOT_SET
         };
     },
 
@@ -51,19 +51,15 @@ const DeckInfo = React.createClass({
             return;
         }
 
-        const callback = () => {
-            this.setState({
-                name: NOT_SET,
-                description: NOT_SET
-            });
-        };
-
         store.dispatch(saveDeck, {
             name: this.state.name,
             description: this.state.description
-        }, callback);
+        });
 
-
+        this.setState({
+            name: NOT_SET,
+            description: NOT_SET
+        });
     },
 
     setUpHandler(props) {
@@ -76,17 +72,22 @@ const DeckInfo = React.createClass({
 
         const {deck} = props;
 
-        if(this.state.name === NOT_SET) {
+        if(this.props.editingDeck && !props.editingDeck) {
             this.setState({
-                name: deck.get('name'),
+                name: NOT_SET,
+                description: NOT_SET
             });
+            return;
         }
 
-        if(this.state.description === NOT_SET) {
+        if(!this.props.editingDeck && props.editingDeck) {
             this.setState({
-                description: deck.get('description'),
+                name: deck.get('name'),
+                description: deck.get('description')
             });
+            return;
         }
+
     },
 
     componentWillMount() {

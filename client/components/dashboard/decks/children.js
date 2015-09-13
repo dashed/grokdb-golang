@@ -46,6 +46,7 @@ module.exports = orwell(DeckChildrenOcclusion, {
         const state = context.store.state();
 
         return [
+            state.cursor(paths.currentChildren),
             state.cursor(paths.editingDeck)
         ];
     },

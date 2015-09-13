@@ -149,11 +149,6 @@ const bootDecks = co.wrap(function* (store) {
 
         const deckID = rootCursor.cursor(paths.currentDeck).cursor('id').deref();
 
-        // reset
-        rootCursor.cursor(paths.currentChildren).update(function() {
-            return NOT_SET;
-        });
-
         const children = yield new Promise(function(resolve, reject) {
             superhot
                 .get(`/decks/${deckID}/children`)
