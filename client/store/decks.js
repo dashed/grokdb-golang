@@ -1,6 +1,9 @@
+const page = require('page');
 const Immutable = require('immutable');
+const co = require('co');
+const slugify = require('slug');
 
-const {paths} = require('store/constants');
+const {NOT_LOADED, paths} = require('store/constants');
 const superhot = require('store/superhot');
 
 const {setNewDeck} = require('./dashboard');
@@ -12,6 +15,13 @@ const transforms = {
         });
 
         transforms.pushOntoBreadcrumb(state, childDeck);
+
+        const deckID = childDeck.get('id');
+
+        let slugged = slugify(childDeck.get('name').trim());
+        slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
+
+        page.redirect(`/deck/${deckID}/${slugged}`);
     },
 
     navigateParentDeck(state, parentDeck) {
@@ -20,6 +30,14 @@ const transforms = {
         });
 
         transforms.popFromBreadcrumb(state, parentDeck);
+
+        const deckID = parentDeck.get('id');
+
+        let slugged = slugify(parentDeck.get('name').trim());
+        slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
+
+        page.redirect(`/deck/${deckID}/${slugged}`);
+
     },
 
     pushOntoBreadcrumb(state, deck) {
@@ -46,6 +64,46 @@ const transforms = {
             return lst;
         });
     },
+
+    changeCurrentDeckByID: co.wrap(function* (state, deckID) {
+
+        const currentDeck = yield co(function*() {
+
+            // fetch deck
+            const {decksResponse} = yield new Promise(function(resolve) {
+                superhot
+                    .get(`/decks/${deckID}`)
+                    .end(function(err, res){
+                        resolve({decksErr: err, decksResponse: res});
+                    });
+            });
+
+            if(decksResponse.status != 200) {
+                return NOT_LOADED;
+            }
+
+            // TODO: error handling here
+
+            return decksResponse.body;
+        });
+
+        if(currentDeck === NOT_LOADED) {
+            page.redirect(`/`);
+            return;
+        }
+
+        // inject currently viewed deck from REST API into app state
+        state.cursor(paths.currentDeck).update(function() {
+
+            // invariant: currentDeck is a plain object
+            return Immutable.fromJS(currentDeck);
+        });
+
+        let slugged = slugify(currentDeck.name.trim());
+        slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
+
+        page.redirect(`/deck/${deckID}/${slugged}`);
+    }),
 
     createNewDeck(state, name) {
 

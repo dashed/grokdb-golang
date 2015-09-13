@@ -5,7 +5,8 @@ const {NOT_LOADED} = require('./constants');
 const SCHEMA = {
 
     // ideally, react-router should be awesome at this
-    route: NOT_LOADED,
+    // route: NOT_LOADED,
+    routeHandler: NOT_LOADED,
 
     // deck id for root
     root: NOT_LOADED,

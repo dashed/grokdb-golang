@@ -7,7 +7,8 @@ module.exports = {
 
     // paths on the app state
     paths: {
-        route: ['route'],
+        // route: ['route'],
+        routeHandler: ['routeHandler'],
         root: ['root'],
         currentDeck: ['currentDeck', 'self'],
         currentChildren: ['currentDeck', 'children'],
