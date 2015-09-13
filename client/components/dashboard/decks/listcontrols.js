@@ -113,11 +113,9 @@ const DecksListControls = React.createClass({
 
         const {creatingNewDeck, editingDeck} = this.props;
 
-        console.log('DecksListControls');
-
         if(!creatingNewDeck && !editingDeck) {
             return (
-                <div className="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
+                <div key="foo" className="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
                     <div className="btn-group" role="group" aria-label="New Deck">
                         <button type="button" className="btn btn-success btn-sm" onClick={this.onClickNewDeck}>New Deck</button>
                     </div>
@@ -130,7 +128,7 @@ const DecksListControls = React.createClass({
 
         if(creatingNewDeck) {
             return (
-                <div className="input-group input-group-sm">
+                <div key="bar" className="input-group input-group-sm">
                     <span className="input-group-btn">
                         <button className="btn btn-success" type="button" onClick={this.onClickAddNewDeck}>Add</button>
                     </span>
@@ -144,7 +142,7 @@ const DecksListControls = React.createClass({
 
         if(editingDeck) {
             return (
-                <div className="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
+                <div key="baz" className="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
                     <div className="btn-group" role="group" aria-label="New Deck">
                         <button type="button" className="btn btn-success btn-sm" onClick={this.onClickSaveDeck}>Save</button>
                     </div>

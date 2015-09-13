@@ -2,9 +2,11 @@ const page = require('page');
 const Immutable = require('immutable');
 const co = require('co');
 const slugify = require('slug');
+const _ = require('lodash');
 
 const {NOT_SET, paths} = require('store/constants');
 const superhot = require('store/superhot');
+const {setEditingDeck} = require('store/dashboard');
 
 const {setNewDeck} = require('./dashboard');
 
@@ -154,9 +156,45 @@ const transforms = {
         setNewDeck(state, false);
     },
 
-    saveDeck(state, newDeck) {
+    saveDeck: co.wrap(function*(state, patchDeck) {
 
-    }
+        if(!_.isPlainObject(patchDeck)) {
+            // TODO: error here
+            return;
+        }
+
+        const deckID = state.cursor(paths.currentDeck).deref().get('id');
+
+        // fetch deck
+        const {response} = yield new Promise(function(resolve) {
+            superhot
+                .patch(`/decks/${deckID}`)
+                .send(patchDeck)
+                .end(function(err_, res_){
+                    resolve({err: err_, response: res_});
+                });
+        });
+
+        // TODO: error handling here
+        if(response.status != 200) {
+            console.error('omg error');
+        }
+
+        state.cursor(paths.currentDeck).update(function(deck) {
+            if(_.has(patchDeck, 'name')) {
+                deck = deck.set('name', patchDeck.name);
+            }
+
+            if(_.has(patchDeck, 'description')) {
+                deck = deck.set('description', patchDeck.description);
+            }
+
+            return deck;
+        });
+
+        // get out of editing mode
+        setEditingDeck(state, false);
+    })
 };
 
 module.exports = transforms;

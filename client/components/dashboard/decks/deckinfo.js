@@ -3,6 +3,7 @@ const orwell = require('orwell');
 const Immutable = require('immutable');
 
 const {paths, NOT_SET} = require('store/constants');
+const {saveDeck} = require('store/decks');
 
 const DeckInfo = React.createClass({
 
@@ -31,7 +32,27 @@ const DeckInfo = React.createClass({
     },
 
     saveDeck() {
-        console.log('save the world');
+
+        const {store, editingDeck} = this.props;
+
+        if(!editingDeck) {
+            return;
+        }
+
+        // TODO: need to validate deck here
+        if(!_.isString(this.state.name) || this.state.name.trim().length <= 0) {
+            return;
+        }
+
+        store.dispatch(saveDeck, {
+            name: this.state.name,
+            description: this.state.description
+        });
+
+        this.setState({
+            name: NOT_SET,
+            description: NOT_SET
+        });
     },
 
     setUpHandler(props) {
@@ -41,6 +62,14 @@ const DeckInfo = React.createClass({
         this.props.store.state().cursor(paths.editingDeckCallback).update(() => {
             return editingDeck ? this.state.callback : NOT_SET;
         });
+
+        const {deck} = props;
+
+        if(this.state.name === NOT_SET) {
+            this.setState({
+                name: deck.get('name'),
+            });
+        }
     },
 
     componentWillMount() {
