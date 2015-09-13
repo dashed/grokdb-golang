@@ -29,8 +29,9 @@ type DeckProps struct {
 }
 
 type DeckRow struct {
-    ID   uint `db:"deck_id"`
-    Name string
+    ID          uint `db:"deck_id"`
+    Name        string
+    Description string
 }
 
 type DeckRelationship struct {
@@ -141,11 +142,12 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
     }
 
     ctx.JSON(http.StatusOK, DeckResponse(&gin.H{
-        "id":        fetchedDeckRow.ID,
-        "name":      fetchedDeckRow.Name,
-        "children":  children,
-        "parent":    parentID,
-        "hasParent": hasParent,
+        "id":          fetchedDeckRow.ID,
+        "name":        fetchedDeckRow.Name,
+        "description": fetchedDeckRow.Description,
+        "children":    children,
+        "parent":      parentID,
+        "hasParent":   hasParent,
     }))
 }
 
@@ -239,11 +241,12 @@ func DeckChildrenGET(db *sqlx.DB, ctx *gin.Context) {
         }
 
         var response gin.H = DeckResponse(&gin.H{
-            "id":        childDeckID,
-            "name":      row.Name,
-            "children":  _childrenIDs,
-            "parent":    deckIDString,
-            "hasParent": true,
+            "id":          childDeckID,
+            "name":        row.Name,
+            "description": row.Description,
+            "children":    _childrenIDs,
+            "parent":      deckIDString,
+            "hasParent":   true,
         })
 
         children = append(children, response)
@@ -400,10 +403,11 @@ func DeckPOST(db *sqlx.DB, ctx *gin.Context) {
     }
 
     ctx.JSON(http.StatusCreated, DeckResponse(&gin.H{
-        "id":        newDeckRow.ID,
-        "name":      newDeckRow.Name,
-        "parent":    parentDeckRow.ID,
-        "hasParent": true,
+        "id":          newDeckRow.ID,
+        "name":        newDeckRow.Name,
+        "description": newDeckRow.Description,
+        "parent":      parentDeckRow.ID,
+        "hasParent":   true,
     }))
 }
 
@@ -692,6 +696,14 @@ func DeckPATCH(db *sqlx.DB, ctx *gin.Context) {
         patchResponse["name"] = fetchedDeckRow.Name
     }
 
+    // description
+    if _, has := (*patch)["description"]; has {
+        // TODO: no need to fetch requested deck
+        patchResponse["description"] = (*patch)["description"]
+    } else {
+        patchResponse["description"] = fetchedDeckRow.Description
+    }
+
     // parent
     patchResponse["parent"] = parentID
     patchResponse["hasParent"] = hasParent
@@ -774,11 +786,12 @@ func DeckPATCH(db *sqlx.DB, ctx *gin.Context) {
 
 func DeckResponse(overrides *gin.H) gin.H {
     defaultResponse := &gin.H{
-        "name":      "",
-        "id":        0,
-        "children":  []uint{},
-        "parent":    0,
-        "hasParent": false,
+        "name":        "",
+        "description": "",
+        "id":          0,
+        "children":    []uint{},
+        "parent":      0,
+        "hasParent":   false,
     }
 
     return MergeResponse(defaultResponse, overrides)

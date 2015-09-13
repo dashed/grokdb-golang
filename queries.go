@@ -80,6 +80,7 @@ const SETUP_DECKS_TABLE_QUERY string = `
 CREATE TABLE IF NOT EXISTS Decks (
     deck_id INTEGER PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
     CHECK (name <> '') /* ensure not empty */
 );
 
@@ -116,7 +117,7 @@ var CREATE_NEW_DECK_QUERY = (func() PipeInput {
 
 var FETCH_DECK_QUERY = (func() PipeInput {
     const __FETCH_DECK_QUERY string = `
-    SELECT deck_id, name FROM Decks WHERE deck_id = :deck_id;
+    SELECT deck_id, name, description FROM Decks WHERE deck_id = :deck_id;
     `
 
     var requiredInputCols []string = []string{"deck_id"}
@@ -137,7 +138,7 @@ var UPDATE_DECK_QUERY = (func() PipeInput {
     `
 
     var requiredInputCols []string = []string{"deck_id"}
-    var whiteListCols []string = []string{"name"}
+    var whiteListCols []string = []string{"name", "description"}
 
     return composePipes(
         MakeCtxMaker(__UPDATE_DECK_QUERY),
@@ -323,7 +324,10 @@ type QueryContext struct {
     args     []interface{}
 }
 
-func MakeCtxMaker(baseQuery string) func() *QueryContext {
+func MakeCtxMaker(_baseQuery string) func() *QueryContext {
+
+    var baseQuery string = "PRAGMA foreign_keys=ON; " + _baseQuery
+
     return func() *QueryContext {
         var ctx QueryContext
         ctx.query = baseQuery

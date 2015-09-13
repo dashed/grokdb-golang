@@ -156,7 +156,7 @@ const transforms = {
         setNewDeck(state, false);
     },
 
-    saveDeck: co.wrap(function*(state, patchDeck) {
+    saveDeck: co.wrap(function*(state, patchDeck, callback) {
 
         if(!_.isPlainObject(patchDeck)) {
             // TODO: error here
@@ -191,6 +191,10 @@ const transforms = {
 
             return deck;
         });
+
+        if(callback) {
+            callback.call(void 0);
+        }
 
         // get out of editing mode
         setEditingDeck(state, false);

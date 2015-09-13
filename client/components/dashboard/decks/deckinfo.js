@@ -32,6 +32,12 @@ const DeckInfo = React.createClass({
         });
     },
 
+    onChangeDescription(event) {
+        this.setState({
+            description: event.target.value
+        });
+    },
+
     saveDeck() {
 
         const {store, editingDeck} = this.props;
@@ -45,15 +51,19 @@ const DeckInfo = React.createClass({
             return;
         }
 
+        const callback = () => {
+            this.setState({
+                name: NOT_SET,
+                description: NOT_SET
+            });
+        };
+
         store.dispatch(saveDeck, {
             name: this.state.name,
             description: this.state.description
-        });
+        }, callback);
 
-        this.setState({
-            name: NOT_SET,
-            description: NOT_SET
-        });
+
     },
 
     setUpHandler(props) {
@@ -71,6 +81,12 @@ const DeckInfo = React.createClass({
                 name: deck.get('name'),
             });
         }
+
+        if(this.state.description === NOT_SET) {
+            this.setState({
+                description: deck.get('description'),
+            });
+        }
     },
 
     componentWillMount() {
@@ -85,14 +101,14 @@ const DeckInfo = React.createClass({
 
         const {editingDeck} = this.props;
 
-        if(editingDeck) {
+        if(editingDeck && this.state.name !== NOT_SET && this.state.description !== NOT_SET) {
             return (
                 <div>
                     <fieldset className="form-group">
                         <input type="text" className="form-control" id="deckName" placeholder="Deck Name" value={this.state.name} onChange={this.onChangeName} />
                     </fieldset>
                     <fieldset className="form-group">
-                        <textarea className="form-control" id="deckDescription" rows="3" placeholder="Deck Description"></textarea>
+                        <textarea className="form-control" id="deckDescription" rows="3" placeholder="Deck Description" onChange={this.onChangeDescription} value={this.state.description}></textarea>
                     </fieldset>
                 </div>
             );
@@ -103,7 +119,7 @@ const DeckInfo = React.createClass({
         return (
             <div className="m-b">
                 <h4 className="card-title">{deck.get('name')}</h4>
-                <p className="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                <p className="card-text">{deck.get('description')}</p>
             </div>
         );
     }
