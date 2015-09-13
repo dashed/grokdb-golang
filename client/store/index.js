@@ -18,6 +18,10 @@ const SCHEMA = {
         breadcrumb: NOT_SET
     },
 
+    dashboard: {
+        view: NOT_SET
+    },
+
     // flags
     editingDeck: false,
     creatingNewDeck: false,

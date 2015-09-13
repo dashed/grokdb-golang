@@ -20,7 +20,18 @@ module.exports = {
         editingDeck: ['editingDeck'],
         creatingNewDeck: ['creatingNewDeck'],
 
-        editingDeckCallback: ['editingDeckCallback']
+        editingDeckCallback: ['editingDeckCallback'],
+
+        dashboard: {
+            view: ['dashboard', 'view']
+        }
+    },
+
+    dashboard: {
+        view: {
+            decks: 'decks',
+            cards: 'cards'
+        }
     },
 
     // config settings used to get/post on REST API

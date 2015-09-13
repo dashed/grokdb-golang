@@ -88,11 +88,6 @@ const DeckInfo = React.createClass({
             name: this.state.name,
             description: this.state.description
         });
-
-        this.setState({
-            name: NOT_SET,
-            description: NOT_SET
-        });
     },
 
     setUpHandler(props) {

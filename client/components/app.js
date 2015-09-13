@@ -57,7 +57,7 @@ const AppLoading = React.createClass({
     }
 });
 
-// show Spinner until all data dependencies are satisfied
+
 const AppOcclusion = either(App, AppLoading, function(props) {
 
     if(NOT_SET === props.RouteHandler) {

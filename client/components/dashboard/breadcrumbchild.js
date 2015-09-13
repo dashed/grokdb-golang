@@ -5,10 +5,6 @@ const {navigateParentDeck} = require('store/decks');
 
 const BreadcrumbChild = React.createClass({
 
-    contextTypes: {
-        store: React.PropTypes.object.isRequired
-    },
-
     propTypes: {
         deck: React.PropTypes.instanceOf(Immutable.Map).isRequired,
         store: React.PropTypes.object.isRequired,

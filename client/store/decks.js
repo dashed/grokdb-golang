@@ -108,10 +108,12 @@ const transforms = {
             return;
         }
 
-        let slugged = slugify(currentDeck.name.trim());
-        slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
+        throw Error('do shit');
 
-        page.redirect(`/deck/${deckID}/${slugged}`);
+        // let slugged = slugify(currentDeck.name.trim());
+        // slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
+
+        // page.redirect(`/deck/${deckID}/${slugged}`);
     }),
 
     createNewDeck(state, name) {
@@ -165,6 +167,40 @@ const transforms = {
 
         const deckID = state.cursor(paths.currentDeck).deref().get('id');
 
+        let willChange = true;
+
+        // optimistic update
+        state.cursor(paths.currentDeck).update(function(deck) {
+
+            const oldDeck = deck;
+
+            if(_.has(patchDeck, 'name')) {
+                deck = deck.update('name', function() {
+                    return patchDeck.name;
+                });
+            }
+
+            if(_.has(patchDeck, 'description')) {
+                deck = deck.update('description', function() {
+                    return patchDeck.description;
+                });
+            }
+
+            willChange = oldDeck != deck;
+
+            return deck;
+        });
+
+        if(!willChange) {
+            if(callback) {
+                callback.call(void 0);
+            }
+
+            // get out of editing mode
+            setEditingDeck(state, false);
+            return;
+        }
+
         // fetch deck
         const {response} = yield new Promise(function(resolve) {
             superhot
@@ -178,19 +214,9 @@ const transforms = {
         // TODO: error handling here
         if(response.status != 200) {
             console.error('omg error');
+
+            // TODO: revert optimistic update
         }
-
-        state.cursor(paths.currentDeck).update(function(deck) {
-            if(_.has(patchDeck, 'name')) {
-                deck = deck.set('name', patchDeck.name);
-            }
-
-            if(_.has(patchDeck, 'description')) {
-                deck = deck.set('description', patchDeck.description);
-            }
-
-            return deck;
-        });
 
         if(callback) {
             callback.call(void 0);
