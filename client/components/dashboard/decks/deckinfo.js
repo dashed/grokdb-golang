@@ -37,8 +37,6 @@ const DeckInfo = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        console.log(this.state.preview);
-
         if(this.state.preview) {
             return;
         }

@@ -20,7 +20,6 @@ const DeckPreview = React.createClass({
     },
 
     componentDidUpdate() {
-
         MathJax.Hub.Queue(['Typeset', MathJax.Hub, React.findDOMNode(this.refs.output)]);
     },
 
@@ -36,9 +35,7 @@ const DeckPreview = React.createClass({
 
     render() {
         return (
-            <div>
-                <div ref="output" dangerouslySetInnerHTML={this.generateMarkdown(this.props.text)} />
-            </div>
+            <div ref="output" dangerouslySetInnerHTML={this.generateMarkdown(this.props.text)} />
         );
     }
 });
