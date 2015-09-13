@@ -2,9 +2,13 @@ const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
 const _ = require('lodash');
+const classNames = require('classnames');
+const TextareaAutosize = require('react-textarea-autosize');
 
 const {paths, NOT_SET} = require('store/constants');
 const {saveDeck} = require('store/decks');
+
+const Preview = require('./preview');
 
 const DeckInfo = React.createClass({
 
@@ -19,11 +23,42 @@ const DeckInfo = React.createClass({
         const {deck} = this.props;
 
         return {
-            callback: this.saveDeck,
+            preview: false,
 
-            name: NOT_SET,
-            description: NOT_SET
+            callback: this.saveDeck,
+            domy: null,
+
+            name: deck.get('name'),
+            description: deck.get('description')
         };
+    },
+
+    onClickPreview(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        console.log(this.state.preview);
+
+        if(this.state.preview) {
+            return;
+        }
+
+        this.setState({
+            preview: true
+        });
+    },
+
+    onClickWrite(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if(!this.state.preview) {
+            return;
+        }
+
+        this.setState({
+            preview: false
+        });
     },
 
     onChangeName(event) {
@@ -73,6 +108,7 @@ const DeckInfo = React.createClass({
         const {deck} = props;
 
         if(this.props.editingDeck && !props.editingDeck) {
+
             this.setState({
                 name: NOT_SET,
                 description: NOT_SET
@@ -81,10 +117,12 @@ const DeckInfo = React.createClass({
         }
 
         if(!this.props.editingDeck && props.editingDeck) {
+
             this.setState({
                 name: deck.get('name'),
                 description: deck.get('description')
             });
+
             return;
         }
 
@@ -103,13 +141,47 @@ const DeckInfo = React.createClass({
         const {editingDeck} = this.props;
 
         if(editingDeck && this.state.name !== NOT_SET && this.state.description !== NOT_SET) {
+
+            const descriptionComponent = (function() {
+                if(!this.state.preview) {
+                    return (
+                        <TextareaAutosize
+                            useCacheForDOMMeasurements
+                            minRows={6}
+                            maxRows={30}
+                            className="form-control"
+                            id="deckDescription"
+                            placeholder="Deck Description"
+                            onChange={this.onChangeDescription}
+                            value={this.state.description}
+                        />
+                    );
+                }
+
+                return (
+                    <Preview text={this.state.description} />
+                );
+            }.call(this));
+
             return (
-                <div>
+                <div key="editing">
                     <fieldset className="form-group">
                         <input type="text" className="form-control" id="deckName" placeholder="Deck Name" value={this.state.name} onChange={this.onChangeName} />
                     </fieldset>
+                    <ul className="nav nav-tabs m-b">
+                        <li className="nav-item">
+                            <a href={!this.state.preview ? '' : '#'}
+                            className={classNames('nav-link', {active: !this.state.preview})}
+                            onClick={this.onClickWrite}>{"Write"}</a>
+                        </li>
+                        <li className="nav-item">
+                            <a href={this.state.preview ? '' : '#'}
+                            className={classNames('nav-link', {active: this.state.preview})}
+                            onClick={this.onClickPreview}>{"Preview"}</a>
+                        </li>
+                    </ul>
                     <fieldset className="form-group">
-                        <textarea className="form-control" id="deckDescription" rows="3" placeholder="Deck Description" onChange={this.onChangeDescription} value={this.state.description}></textarea>
+                        {descriptionComponent}
                     </fieldset>
                 </div>
             );
@@ -118,9 +190,11 @@ const DeckInfo = React.createClass({
         const {deck} = this.props;
 
         return (
-            <div className="m-b">
+            <div key="not-editing" className="m-b">
                 <h4 className="card-title">{deck.get('name')}</h4>
-                <p className="card-text">{deck.get('description')}</p>
+                <p className="card-text">
+                    <Preview text={deck.get('description')} />
+                </p>
             </div>
         );
     }

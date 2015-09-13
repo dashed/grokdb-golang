@@ -42,6 +42,8 @@ module.exports = {
             'classnames',
             'shallowequal',
             'slug',
+            'markdown-it',
+            'react-textarea-autosize',
             // 'intl',
             // 'between2',
             // 'pouchdb',
@@ -59,11 +61,11 @@ module.exports = {
     },
     module: {
         loaders: [
-            // // needed for this https://github.com/pouchdb/pouchdb/issues/3319
-            // {
-            //     test: /\.json$/,
-            //     loader: "json-loader"
-            // },
+            // needed for markdown-it
+            {
+                test: /\.json$/,
+                loader: "json-loader"
+            },
             // {
             //     test:   /\.css$/,
             //     loader: "style-loader!css-loader!postcss-loader"

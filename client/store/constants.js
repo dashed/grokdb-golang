@@ -1,4 +1,8 @@
+const markdown = require('markdown-it')();
+
 module.exports = {
+
+    markdown: markdown,
 
     // sentinel value
     NOT_SET: Symbol('NOT_SET'),
