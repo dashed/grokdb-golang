@@ -151,9 +151,9 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
     }))
 }
 
-// GET /children/:id
+// GET /:id/children
 //
-// shortcut to doing N GET /decks/:id requests
+// shortcut to doing N GET /decks/:id requests for fetching children of a deck
 //
 // Params:
 // id: a unique, positive integer that is the identifier of the assocoated deck
@@ -255,7 +255,7 @@ func DeckChildrenGET(db *sqlx.DB, ctx *gin.Context) {
     ctx.JSON(http.StatusOK, children)
 }
 
-// GET /ancestors/:id
+// GET /:id/ancestors
 //
 // Params:
 // id: a unique, positive integer that is the identifier of the assocoated deck
@@ -541,6 +541,9 @@ func DeckPATCH(db *sqlx.DB, ctx *gin.Context) {
             "userMessage":      "no JSON input",
         })
     }
+
+    // TODO: validate patch
+    // TODO: ensure name, if given, is non-empty string
 
     var (
         patchResponse  gin.H    = gin.H{}
@@ -850,13 +853,7 @@ func CreateDeck(db *sqlx.DB, props *DeckProps) (*DeckRow, error) {
         return nil, err
     }
 
-    ret := &DeckRow{
-        ID:   uint(insertID),
-        Name: props.Name,
-    }
-
-    return ret, nil
-
+    return GetDeck(db, uint(insertID))
 }
 
 func GetRootDeck(db *sqlx.DB) (*DeckRow, error) {

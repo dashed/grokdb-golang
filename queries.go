@@ -463,8 +463,8 @@ func composePipes(makeCtx func() *QueryContext, pipes ...Pipe) PipeInput {
 
     if len(pipes) <= 0 {
         return func(args ...interface{}) (*QueryContext, PipeInput, error) {
-            return nil, nil, nil
             // noop
+            return nil, nil, nil
         }
     }
 
