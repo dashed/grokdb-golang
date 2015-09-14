@@ -52,6 +52,7 @@ func (db *Database) Init() error {
         BOOTSTRAP_QUERY,
         SETUP_CONFIG_TABLE_QUERY,
         SETUP_DECKS_TABLE_QUERY,
+        SETUP_CARDS_TABLE_QUERY,
     }
 
     var instance = db.instance

@@ -304,6 +304,122 @@ var DECK_ANCESTORS_QUERY = (func() PipeInput {
     )
 }())
 
+/* cards table */
+const SETUP_CARDS_TABLE_QUERY string = `
+CREATE TABLE IF NOT EXISTS Cards (
+    card_id INTEGER PRIMARY KEY NOT NULL,
+
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    sides TEXT NOT NULL,
+    keyorder TEXT NOT NULL,
+
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format */
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format. time when the card was modified. not when it was seen. */
+
+    deck INTEGER NOT NULL,
+
+    CHECK (title <> '' AND sides <> '' AND keyorder <> ''), /* ensure not empty */
+    FOREIGN KEY (deck) REFERENCES Decks(deck_id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER IF NOT EXISTS cards_updated_card AFTER UPDATE OF title, description, sides, keyorder, deck
+ON Cards
+BEGIN
+    UPDATE Cards SET updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE card_id = NEW.card_id;
+END;
+
+CREATE INDEX IF NOT EXISTS Cards_Index ON Cards (deck);
+
+CREATE TABLE IF NOT EXISTS CardsScore (
+    success INTEGER NOT NULL DEFAULT 0,
+    fail INTEGER NOT NULL DEFAULT 0,
+    score REAL NOT NULL DEFAULT 0,
+    active_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format. active_at denotes date of when this card becomes active */
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format */
+
+    card INTEGER NOT NULL,
+
+    FOREIGN KEY (card) REFERENCES Cards(card_id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER IF NOT EXISTS cardsscore_new_score AFTER INSERT
+ON Cards
+BEGIN
+    INSERT OR IGNORE INTO CardsScore(card) VALUES (NEW.card_id);
+END;
+
+CREATE TRIGGER IF NOT EXISTS cardsscore_updated_score AFTER UPDATE OF success, fail, score
+ON CardsScore
+BEGIN
+    UPDATE CardsScore SET updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE card = NEW.card;
+END;
+
+/* enforce 1-1 relationship */
+CREATE UNIQUE INDEX IF NOT EXISTS CardsScore_Index ON CardsScore (card);
+CREATE INDEX IF NOT EXISTS CardsScoreHistory_date_Index ON CardsScore (score DESC);
+
+CREATE TABLE IF NOT EXISTS CardsScoreHistory (
+    occured_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format */
+    action INTEGER NOT NULL, /* values: +1 => success; -1 => fail */
+
+    card INTEGER NOT NULL,
+
+    FOREIGN KEY (card) REFERENCES Cards(card_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS CardsScoreHistory_relation_Index ON CardsScoreHistory (card);
+CREATE INDEX IF NOT EXISTS CardsScoreHistory_date_Index ON CardsScoreHistory (occured_at DESC);
+`
+
+var CREATE_NEW_CARD_QUERY = (func() PipeInput {
+    const __CREATE_NEW_CARD_QUERY string = `
+    INSERT INTO Cards(title, description, sides, keyorder, deck)
+    VALUES (:title, :description, :sides, :keyorder, :deck);
+    `
+    var requiredInputCols []string = []string{"title", "description", "sides", "keyorder", "deck"}
+
+    return composePipes(
+        MakeCtxMaker(__CREATE_NEW_CARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var FETCH_CARD_QUERY = (func() PipeInput {
+    const __FETCH_CARD_QUERY string = `
+    SELECT card_id, title, description, sides, keyorder, deck, created_at, updated_at FROM Cards
+    WHERE card_id = :card_id;
+    `
+
+    var requiredInputCols []string = []string{"card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var UPDATE_CARD_QUERY = (func() PipeInput {
+    const __UPDATE_CARD_QUERY string = `
+    UPDATE Cards
+    SET
+    %s
+    WHERE card_id = :card_id
+    `
+
+    var requiredInputCols []string = []string{"card_id"}
+    var whiteListCols []string = []string{"title", "description", "sides", "keyorder"}
+
+    return composePipes(
+        MakeCtxMaker(__UPDATE_CARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        PatchFilterPipe(whiteListCols),
+        BuildQueryPipe,
+    )
+}())
+
 /* helpers */
 
 func JSON2Map(rawJSON []byte) (*StringMap, error) {

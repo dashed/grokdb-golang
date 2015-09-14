@@ -26,8 +26,10 @@ func bootAPI(db *Database) {
     // decks group
     decksAPI := api.Group("/decks")
     {
-        // create a new deck and attach it to an existing deck
         decksAPI.POST("/", injectDB(DeckPOST))
+
+        // TODO: implement
+        // decksAPI.GET("/", injectDB(DeckGETMany))
 
         decksAPI.GET("/:id", injectDB(DeckGET))
 
@@ -35,9 +37,28 @@ func bootAPI(db *Database) {
 
         decksAPI.GET("/:id/ancestors", injectDB(DeckAncestorsGET))
 
+        // TODO: fetch full card data; not their ids
+        // decksAPI.GET("/:id/cards", injectDB(DeckCardsGET))
+
         decksAPI.PATCH("/:id", injectDB(DeckPATCH))
 
         decksAPI.DELETE("/:id", injectDB(DeckDELETE))
+    }
+
+    cardsAPI := api.Group("/cards")
+    {
+
+        cardsAPI.POST("/", injectDB(CardPOST))
+
+        cardsAPI.GET("/:id", injectDB(CardGET))
+
+        // cardsAPI.PATCH("/:id", injectDB(CardPATCH))
+
+        // cardsAPI.DELETE("/:id", injectDB(CardDELETE))
+
+        // cardsAPI.POST("/:id/success", injectDB(CardDELETE))
+
+        // cardsAPI.POST("/:id/fail", injectDB(CardDELETE))
     }
 
     configsAPI := api.Group("/configs")
