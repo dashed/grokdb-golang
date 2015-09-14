@@ -88,7 +88,7 @@ module.exports = orwell(DeleteDeckOcclusion, {
         const state = context.store.state();
 
         const rootID = state.cursor(paths.root).deref();
-        const currentDeckID = state.cursor(paths.currentDeck).deref().get('id');
+        const currentDeckID = state.cursor(paths.deck.self).deref().get('id');
 
         return {
             store: context.store,

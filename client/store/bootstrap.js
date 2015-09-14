@@ -2,11 +2,11 @@ const page = require('page');
 const co = require('co');
 const _ = require('lodash');
 const Immutable = require('immutable');
-const slugify = require('slug');
 
 const {NOT_SET, paths, dashboard} = require('store/constants');
-const {changeCurrentDeckByID} = require('store/decks');
+const {redirectToDeck} = require('store/route');
 const superhot = require('store/superhot');
+const {generateSlug} = require('store/utils');
 
 // route handler components
 const Dashboard = require('components/dashboard');
@@ -26,11 +26,16 @@ const bootRouter = co.wrap(function* (store) {
 
     page('*', function(ctx, next) {
 
-        // reset state
-        rootCursor.cursor(paths.editingDeck).update(function() {
+        // reset dashboard state
+        rootCursor.cursor(paths.dashboard.decks.editing).update(function() {
             return false;
         });
-
+        rootCursor.cursor(paths.dashboard.decks.creatingNew).update(function() {
+            return false;
+        });
+        rootCursor.cursor(paths.dashboard.decks.finishEditing).update(function() {
+            return NOT_SET;
+        });
 
         return next();
     });
@@ -58,20 +63,35 @@ const bootRouter = co.wrap(function* (store) {
         const maybeID = filterInt(ctx.params.id);
 
         // ensure :id is valid
-        if(_.isNaN(maybeID) || !Number.isInteger(maybeID) || maybeID <= 0) {
+        if(notValidID(maybeID)) {
             page.redirect('/');
             return;
         }
 
-        store.dispatch(changeCurrentDeckByID, maybeID, function(currentDeck) {
-
-            const name = currentDeck.get('name');
-
-            let slugged = slugify(name.trim());
-            slugged = slugged.length <= 0 ? `deck-${maybeID}` : slugged;
-
-            page.redirect(`/deck/${maybeID}/${slugged}`);
+        rootCursor.cursor(paths.dashboard.view).update(function() {
+            return dashboard.view.decks;
         });
+
+        rootCursor.cursor(paths.route.handler).update(function() {
+            return Dashboard;
+        });
+
+        const deckCursor = rootCursor.cursor(paths.deck.self);
+        const deck = deckCursor.deref(NOT_SET);
+
+        if(deck === NOT_SET) {
+            deckCursor.once('any', function(_deck) {
+                store.dispatch(redirectToDeck, _deck);
+            });
+            rootCursor.cursor(paths.route.params.deck.id).update(function() {
+                return maybeID;
+            });
+        } else {
+
+            // deck already loaded in app state; redirect
+
+            store.dispatch(redirectToDeck, deck, maybeID);
+        }
     });
 
     page('/deck/:id/:slug', function(ctx) {
@@ -79,29 +99,47 @@ const bootRouter = co.wrap(function* (store) {
         const maybeID = filterInt(ctx.params.id);
 
         // ensure :id is valid
-        if(_.isNaN(maybeID) || !Number.isInteger(maybeID) || maybeID <= 0) {
+        if(notValidID(maybeID)) {
             page.redirect('/');
             return;
         }
 
-        const deckID = rootCursor.cursor(paths.currentDeck).cursor('id').deref();
+        rootCursor.cursor(paths.dashboard.view).update(function() {
+            return dashboard.view.decks;
+        });
 
-        const handler = function() {
-            rootCursor.cursor(paths.dashboard.view).update(function() {
-                return dashboard.view.decks;
-            });
+        rootCursor.cursor(paths.route.handler).update(function() {
+            return Dashboard;
+        });
 
-            rootCursor.cursor(paths.routeHandler).update(function() {
-                return Dashboard;
-            });
+        const deckCursor = rootCursor.cursor(paths.deck.self);
+        const deck = deckCursor.deref(NOT_SET);
+
+        const handler = function(_deck) {
+
+            const slugged = generateSlug(_deck.get('name'), maybeID);
+
+            if(ctx.params.slug == slugged) {
+                return;
+            }
+
+            page.redirect(`/deck/${maybeID}/${slugged}`);
         };
 
-        if(deckID != maybeID) {
-            store.dispatch(changeCurrentDeckByID, maybeID, handler);
-            return;
-        }
+        if(deck === NOT_SET) {
 
-        handler();
+            deckCursor.once('any', function(_deck) {
+                handler(_deck);
+            });
+
+            rootCursor.cursor(paths.route.params.deck.id).update(function() {
+                return maybeID;
+            });
+        } else {
+
+            // deck already loaded in app state; ensure proper slug
+            handler(deck);
+        }
     });
 
     page('/decksetting/:id', function(ctx) {
@@ -109,44 +147,35 @@ const bootRouter = co.wrap(function* (store) {
         const maybeID = filterInt(ctx.params.id);
 
         // ensure :id is valid
-        if(_.isNaN(maybeID) || !Number.isInteger(maybeID) || maybeID <= 0) {
+        if(notValidID(maybeID)) {
             page.redirect('/');
             return;
         }
 
-        const cursor = rootCursor.cursor(paths.currentDeck).cursor('id');
+        rootCursor.cursor(paths.dashboard.decks.editing).update(function() {
+            return true;
+        });
 
-        const deckID = cursor.deref();
+        rootCursor.cursor(paths.dashboard.view).update(function() {
+            return dashboard.view.decks;
+        });
 
-        const handler = function() {
-            rootCursor.cursor(paths.dashboard.view).update(function() {
-                return dashboard.view.decks;
+        rootCursor.cursor(paths.route.handler).update(function() {
+            return Dashboard;
+        });
+
+        const deckCursor = rootCursor.cursor(paths.deck.self);
+        const deck = deckCursor.deref(NOT_SET);
+
+        if(deck === NOT_SET) {
+            rootCursor.cursor(paths.route.params.deck.id).update(function() {
+                return maybeID;
             });
-
-            rootCursor.cursor(paths.editingDeck).update(function() {
-                return true;
-            });
-
-            rootCursor.cursor(paths.routeHandler).update(function() {
-                return Dashboard;
-            });
-        };
-
-        if(deckID != maybeID) {
-
-            store.dispatch(changeCurrentDeckByID, maybeID, function(currentDeck) {
-
-                const _deckID = currentDeck.get('id');
-
-                if(_deckID == maybeID) {
-                    handler.call(void 0);
-                }
-            });
-
-            return;
         }
 
-        handler.call(void 0);
+        if(deck.get('id') != maybeID) {
+            page.redirect('/');
+        }
 
     });
 
@@ -155,7 +184,7 @@ const bootRouter = co.wrap(function* (store) {
         const maybeID = filterInt(ctx.params.id);
 
         // ensure :id is valid
-        if(_.isNaN(maybeID) || !Number.isInteger(maybeID) || maybeID <= 0) {
+        if(notValidID(maybeID)) {
             page.redirect('/');
             return;
         }
@@ -164,44 +193,45 @@ const bootRouter = co.wrap(function* (store) {
             return dashboard.view.cards;
         });
 
-        rootCursor.cursor(paths.routeHandler).update(function() {
+        rootCursor.cursor(paths.route.handler).update(function() {
             return Dashboard;
         });
 
-        store.dispatch(changeCurrentDeckByID, maybeID, function(currentDeck) {
+        const deckCursor = rootCursor.cursor(paths.deck.self);
+        const deck = deckCursor.deref(NOT_SET);
 
-            const name = currentDeck.get('name');
+        if(deck === NOT_SET) {
+            rootCursor.cursor(paths.route.params.deck.id).update(function() {
+                return maybeID;
+            });
+        }
 
-            let slugged = slugify(name.trim());
-            slugged = slugged.length <= 0 ? `deck-${maybeID}` : slugged;
-
-            // page.redirect(`/deck/${maybeID}/${slugged}`);
-        });
     });
 
     page.start({
         hashbang: true,
-        click: false,
-        // dispatch: false
+        click: false
     });
-
-
-
 });
 
 const bootDecks = co.wrap(function* (store) {
     const rootCursor = store.state();
 
-    /* currently viewed deck's children */
+    // cursors
+    const deckCursor = rootCursor.cursor(paths.deck.self);
+    const deckIDCursor = rootCursor.cursor(paths.route.params.deck.id);
+    const deckID = deckIDCursor.deref(NOT_SET);
 
-    // implicitly observe and load current deck's children
-    rootCursor.cursor(paths.currentDeck).cursor('children').observe(co.wrap(function*() {
+    /* observers */
 
-        const deckID = rootCursor.cursor(paths.currentDeck).cursor('id').deref();
+    // watch deck and load children
+    deckCursor.cursor('children').observe(co.wrap(function*() {
+
+        const _deckID = deckCursor.cursor('id').deref();
 
         const children = yield new Promise(function(resolve, reject) {
             superhot
-                .get(`/decks/${deckID}/children`)
+                .get(`/decks/${_deckID}/children`)
                 .end(function(err, res){
 
                     // no children
@@ -218,55 +248,111 @@ const bootDecks = co.wrap(function* (store) {
                 });
         });
 
-        rootCursor.cursor(paths.currentChildren).update(function() {
+        rootCursor.cursor(paths.deck.children).update(function() {
             return children;
         });
 
     }));
 
-    /* breadcrumb setup */
+    // breadcrumb setup
 
-    rootCursor.cursor(paths.currentDeck).on('any', co.wrap(function*(currentDeck) {
+    const breadcrumbLoader = co.wrap(function*(currentDeck) {
 
-        const currentDeckID = currentDeck.get('id');
         let breadcrumb;
 
         // TODO: error handling
         ({ancestors: breadcrumb} = yield new Promise(function(resolve) {
             superhot
-                .get(`/decks/${currentDeckID}/ancestors`)
+                .get(`/decks/${currentDeck.get('id')}/ancestors`)
                 .end(function(err, res){
 
                     if (res.status === 404) {
                         return resolve({err: null, ancestors: []});
                     } else if(res.status === 200) {
-                        return resolve({err: null, ancestors: res.body.ancestors});
+                        return resolve({err: null, ancestors: res.body});
                     }
 
                     resolve({err: err, ancestors: []});
                 });
         }));
 
-        breadcrumb.push(currentDeckID);
+        breadcrumb.push(currentDeck);
 
-        // resolve ancestors into decks
-        const ancestorsPromise = _.map(breadcrumb, function(deckID) {
-            return new Promise(function(resolve) {
-                superhot
-                    .get(`/decks/${deckID}`)
-                    .end(function(err2, res2){
-                        // TODO: error handling
-                        resolve(Immutable.fromJS(res2.body));
-                    });
+        const breadcrumbCursor = rootCursor.cursor(paths.deck.breadcrumb);
+
+        // update tail as necessary
+        deckCursor.observe(function(updatedDeck) {
+            breadcrumbCursor.update(function(lst) {
+
+                if(lst.size <= 0) {
+                    return lst;
+                }
+
+                if(lst.last().get('id') == updatedDeck.get('id')) {
+                    return lst.set(-1, updatedDeck);
+                }
+                return lst;
             });
         });
 
-        breadcrumb = Immutable.List(yield ancestorsPromise);
-
-        rootCursor.cursor(paths.breadcrumb).update(function() {
-            return breadcrumb;
+        breadcrumbCursor.update(function() {
+            return Immutable.fromJS(breadcrumb);
         });
-    }));
+    });
+
+    const maybeDeck = deckCursor.deref(NOT_SET);
+    if(maybeDeck === NOT_SET) {
+        deckCursor.once('any', function(currentDeck) {
+            breadcrumbLoader(currentDeck);
+        });
+    } else {
+        breadcrumbLoader(maybeDeck);
+    }
+
+    // watch :id in route params and load deck
+
+    const deckLoader = co.wrap(function*(_deckID) {
+
+        const currentDeck = yield co(function*() {
+
+            // fetch deck
+            const {decksResponse} = yield new Promise(function(resolve) {
+                superhot
+                    .get(`/decks/${_deckID}`)
+                    .end(function(err, res){
+                        resolve({decksErr: err, decksResponse: res});
+                    });
+            });
+
+            if(decksResponse.status != 200) {
+                return NOT_SET;
+            }
+
+            // TODO: error handling here
+
+            return decksResponse.body;
+        });
+
+        if(currentDeck === NOT_SET) {
+            page.redirect(`/`);
+            return;
+        }
+
+        const ImmCurrentDeck = Immutable.fromJS(currentDeck);
+
+        // inject currently viewed deck from REST API into app state
+        deckCursor.update(function() {
+            return ImmCurrentDeck;
+        });
+    });
+
+    if(deckID === NOT_SET) {
+        deckIDCursor.observe(function(_deckID) {
+            deckLoader(_deckID);
+        });
+    } else {
+        deckLoader(deckID);
+    }
 
     /* root deck setup */
 
@@ -284,6 +370,7 @@ const bootDecks = co.wrap(function* (store) {
     rootCursor.cursor(paths.root).update(function() {
         return response.body.id;
     });
+
 });
 
 module.exports = function(store) {
@@ -304,4 +391,10 @@ module.exports = function(store) {
 
 
     return store;
+};
+
+/* helpers */
+
+const notValidID = function(id) {
+    return (_.isNaN(id) || !Number.isInteger(id) || id <= 0);
 };

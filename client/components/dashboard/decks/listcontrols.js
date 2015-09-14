@@ -90,7 +90,7 @@ const DecksListControls = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        const callback = this.props.store.state().cursor(paths.editingDeckCallback).deref();
+        const callback = this.props.store.state().cursor(paths.dashboard.decks.finishEditing).deref();
 
         if(!_.isFunction(callback)) {
             return;
@@ -160,8 +160,8 @@ module.exports = orwell(DecksListControls, {
         const state = context.store.state();
 
         return [
-            state.cursor(paths.creatingNewDeck),
-            state.cursor(paths.editingDeck)
+            state.cursor(paths.dashboard.decks.creatingNew),
+            state.cursor(paths.dashboard.decks.editing)
         ];
     },
     assignNewProps(props, context) {
@@ -171,8 +171,8 @@ module.exports = orwell(DecksListControls, {
 
         return {
             store: context.store,
-            creatingNewDeck: state.cursor(paths.creatingNewDeck).deref(),
-            editingDeck: state.cursor(paths.editingDeck).deref()
+            creatingNewDeck: state.cursor(paths.dashboard.decks.creatingNew).deref(),
+            editingDeck: state.cursor(paths.dashboard.decks.editing).deref()
         };
     }
 }).inject({

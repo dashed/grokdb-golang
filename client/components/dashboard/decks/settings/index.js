@@ -40,7 +40,7 @@ module.exports = orwell(DeckSettingsOcclusion, {
         const state = context.store.state();
 
         return [
-            state.cursor(paths.editingDeck)
+            state.cursor(paths.dashboard.decks.editing)
         ];
     },
     assignNewProps(props, context) {
@@ -49,7 +49,7 @@ module.exports = orwell(DeckSettingsOcclusion, {
 
         return {
             store: context.store,
-            editingDeck: state.cursor(paths.editingDeck).deref()
+            editingDeck: state.cursor(paths.dashboard.decks.editing).deref()
         };
     }
 }).inject({

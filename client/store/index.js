@@ -4,30 +4,45 @@ const {NOT_SET} = require('./constants');
 
 const SCHEMA = {
 
-    // ideally, react-router should be awesome at this
-    // route: NOT_SET,
-    routeHandler: NOT_SET,
+    route: {
+        // ideally, react-router should be awesome at this
+        handler: NOT_SET,
+
+        // input params extracted by router lib (i.e. page.js)
+        params: {
+            deck: {
+                id: NOT_SET
+            },
+            card: {
+                id: NOT_SET
+            }
+        }
+
+    },
+
+    // ui flags
+    dashboard: {
+        view: NOT_SET,
+
+        decks: {
+            editing: false,
+
+            // a callback function is set here, and will be called when exiting
+            // editing mode when saving
+            finishEditing: NOT_SET,
+
+            creatingNew: false
+        }
+    },
 
     // deck id for root
     root: NOT_SET,
 
-    // currently viewed deck
-    currentDeck: {
+    deck: {
         self: NOT_SET,
         children: NOT_SET,
         breadcrumb: NOT_SET
-    },
-
-    dashboard: {
-        view: NOT_SET
-    },
-
-    // flags
-    editingDeck: false,
-    creatingNewDeck: false,
-
-    // callbacks
-    editingDeckCallback: NOT_SET
+    }
 };
 
 

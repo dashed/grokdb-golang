@@ -6,7 +6,7 @@ const {paths, dashboard} = require('store/constants');
 const transforms = {
     setEditingDeck(state, bool) {
 
-        const currentDeck = state.cursor(paths.currentDeck).deref();
+        const currentDeck = state.cursor(paths.deck.self).deref();
 
         const deckID = currentDeck.get('id');
         const name = currentDeck.get('name');
@@ -16,7 +16,7 @@ const transforms = {
             return;
         }
 
-        state.cursor(paths.editingDeck).update(function() {
+        state.cursor(paths.dashboard.decks.editing).update(function() {
             return false;
         });
 
@@ -27,14 +27,14 @@ const transforms = {
     },
 
     setNewDeck(state, bool) {
-        state.cursor(paths.creatingNewDeck).update(function() {
+        state.cursor(paths.dashboard.decks.creatingNew).update(function() {
             return bool;
         });
     },
 
     switchView(state, view) {
 
-        const currentDeck = state.cursor(paths.currentDeck).deref();
+        const currentDeck = state.cursor(paths.deck.self).deref();
 
         const deckID = currentDeck.get('id');
 

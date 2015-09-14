@@ -94,7 +94,7 @@ const DeckInfo = React.createClass({
 
         const {editingDeck} = props;
 
-        this.props.store.state().cursor(paths.editingDeckCallback).update(() => {
+        this.props.store.state().cursor(paths.dashboard.decks.finishEditing).update(() => {
             return editingDeck ? this.state.callback : NOT_SET;
         });
 
@@ -199,8 +199,8 @@ module.exports = orwell(DeckInfo, {
         const state = context.store.state();
 
         return [
-            state.cursor(paths.editingDeck),
-            state.cursor(paths.currentDeck)
+            state.cursor(paths.dashboard.decks.editing),
+            state.cursor(paths.deck.self)
         ];
     },
     assignNewProps(props, context) {
@@ -210,8 +210,8 @@ module.exports = orwell(DeckInfo, {
 
         return {
             store: context.store,
-            deck: state.cursor(paths.currentDeck).deref(),
-            editingDeck: state.cursor(paths.editingDeck).deref()
+            deck: state.cursor(paths.deck.self).deref(),
+            editingDeck: state.cursor(paths.dashboard.decks.editing).deref()
         };
     }
 }).inject({

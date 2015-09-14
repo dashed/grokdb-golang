@@ -5,7 +5,7 @@ const either = require('react-either');
 const {NOT_SET, paths} = require('store/constants');
 
 // components
-const Spinner = require('components/spinner');
+// const Spinner = require('components/spinner'); // TODO: remove
 const DeckChildren = require('./children');
 const DecksListControls = require('./listcontrols');
 const DeckSettings = require('./settings');
@@ -48,7 +48,7 @@ const DecksDashboard = React.createClass({
 });
 
 // show Spinner until all data dependencies are satisfied
-const DecksListOcclusion = either(DecksDashboard, Spinner, function(props) {
+const DecksListOcclusion = either(DecksDashboard, null, function(props) {
 
     if(NOT_SET === props.deck) {
         return false;
@@ -67,9 +67,9 @@ module.exports = orwell(DecksListOcclusion, {
         const state = context.store.state();
 
         return [
-            state.cursor(paths.currentChildren),
-            state.cursor(paths.currentDeck),
-            state.cursor(paths.editingDeck)
+            state.cursor(paths.deck.children),
+            state.cursor(paths.deck.self),
+            state.cursor(paths.dashboard.decks.editing)
         ];
     },
     assignNewProps(props, context) {
@@ -77,9 +77,9 @@ module.exports = orwell(DecksListOcclusion, {
         const state = context.store.state();
 
         return {
-            deck: state.cursor(paths.currentDeck).deref(),
-            currentChildrenCursor: state.cursor(paths.currentChildren),
-            editingDeck: state.cursor(paths.editingDeck).deref()
+            deck: state.cursor(paths.deck.self).deref(),
+            currentChildrenCursor: state.cursor(paths.deck.children),
+            editingDeck: state.cursor(paths.dashboard.decks.editing).deref()
         };
     }
 }).inject({

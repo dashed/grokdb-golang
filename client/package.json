@@ -29,6 +29,7 @@
     "page": "^1.6.3",
     "probe": "^1.0.0",
     "react": "^0.13.3",
+    "react-dnd": "^1.1.5",
     "react-either": "^0.1.1",
     "react-textarea-autosize": "^2.5.1",
     "shallowequal": "^0.2.2",

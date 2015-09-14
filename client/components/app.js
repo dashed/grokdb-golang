@@ -49,7 +49,7 @@ const AppLoading = React.createClass({
                 </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        <p>Loading app...</p>
+                        <p>Loading app.js</p>
                     </div>
                 </div>
             </div>
@@ -74,13 +74,13 @@ const AppOcclusion = either(App, AppLoading, function(props) {
 const OrwellWrapped = orwell(AppOcclusion, {
     watchCursors(props) {
         return [
-            props.rootCursor.cursor(paths.routeHandler),
+            props.rootCursor.cursor(paths.route.handler),
             props.rootCursor.cursor(paths.root)
         ];
     },
     assignNewProps(props) {
         return {
-            RouteHandler: props.rootCursor.cursor(paths.routeHandler).deref(),
+            RouteHandler: props.rootCursor.cursor(paths.route.handler).deref(),
             rootDeckID: props.rootCursor.cursor(paths.root).deref()
         };
     }

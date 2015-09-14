@@ -2,28 +2,45 @@ const markdown = require('markdown-it')();
 
 module.exports = {
 
-    markdown: markdown,
-
     // sentinel value
     NOT_SET: Symbol('NOT_SET'),
+
+    markdown: markdown,
 
     /* magic constants */
 
     // paths on the app state
     paths: {
-        // route: ['route'],
-        routeHandler: ['routeHandler'],
+
+        route: {
+            handler: ['route', 'handler'],
+
+            params: {
+                deck: {
+                    id: ['route', 'params', 'deck', 'id']
+                },
+                card: {
+                    id: ['route', 'params', 'card', 'id']
+                }
+            }
+        },
+
         root: ['root'],
-        currentDeck: ['currentDeck', 'self'],
-        currentChildren: ['currentDeck', 'children'],
-        breadcrumb: ['currentDeck', 'breadcrumb'],
-        editingDeck: ['editingDeck'],
-        creatingNewDeck: ['creatingNewDeck'],
 
-        editingDeckCallback: ['editingDeckCallback'],
+        deck: {
+            self: ['deck', 'self'],
+            children: ['deck', 'children'],
+            breadcrumb: ['deck', 'breadcrumb']
+        },
 
+        // ui flags
         dashboard: {
-            view: ['dashboard', 'view']
+            view: ['dashboard', 'view'],
+            decks: {
+                editing: ['dashboard', 'decks', 'editing'],
+                finishEditing: ['dashboard', 'decks', 'finishEditing'],
+                creatingNew: ['dashboard', 'decks', 'creatingNew']
+            }
         }
     },
 

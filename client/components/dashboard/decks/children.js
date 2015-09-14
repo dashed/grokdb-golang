@@ -46,8 +46,8 @@ module.exports = orwell(DeckChildrenOcclusion, {
         const state = context.store.state();
 
         return [
-            state.cursor(paths.currentChildren),
-            state.cursor(paths.editingDeck)
+            state.cursor(paths.deck.children),
+            state.cursor(paths.dashboard.decks.editing)
         ];
     },
     assignNewProps(props, context) {
@@ -56,8 +56,8 @@ module.exports = orwell(DeckChildrenOcclusion, {
 
         return {
             store: context.store,
-            editingDeck: state.cursor(paths.editingDeck).deref(),
-            currentChildrenCursor: state.cursor(paths.currentChildren)
+            editingDeck: state.cursor(paths.dashboard.decks.editing).deref(),
+            currentChildrenCursor: state.cursor(paths.deck.children)
         };
     }
 }).inject({

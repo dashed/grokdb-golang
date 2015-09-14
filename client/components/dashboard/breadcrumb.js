@@ -52,7 +52,7 @@ module.exports = orwell(BreadcrumbOcclusion, {
         const state = context.store.state();
 
         return [
-            state.cursor(paths.breadcrumb)
+            state.cursor(paths.deck.breadcrumb)
         ];
     },
     assignNewProps(props, context) {
@@ -60,7 +60,7 @@ module.exports = orwell(BreadcrumbOcclusion, {
         const state = context.store.state();
 
         return {
-            breadcrumb: state.cursor(paths.breadcrumb).deref()
+            breadcrumb: state.cursor(paths.deck.breadcrumb).deref()
         };
     }
 }).inject({

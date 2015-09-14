@@ -2,7 +2,6 @@ const React = require('react');
 const {Probe} = require('minitrue');
 
 const store = require('store');
-// const superhot = require('superhot');
 const App = require('components/app');
 
 // render app

@@ -1,55 +1,43 @@
-const page = require('page');
 const Immutable = require('immutable');
 const co = require('co');
-const slugify = require('slug');
 const _ = require('lodash');
 
-const {NOT_SET, paths} = require('store/constants');
+const {paths} = require('store/constants');
 const superhot = require('store/superhot');
 const {setEditingDeck} = require('store/dashboard');
+const {toDeck, redirectToDeck} = require('store/route');
 
 const {setNewDeck} = require('./dashboard');
 
 const transforms = {
     navigateChildDeck(state, childDeck) {
-        state.cursor(paths.currentDeck).update(function() {
+        state.cursor(paths.deck.self).update(function() {
             return childDeck;
         });
 
         transforms.pushOntoBreadcrumb(state, childDeck);
 
-        const deckID = childDeck.get('id');
-
-        let slugged = slugify(childDeck.get('name').trim());
-        slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
-
-        page(`/deck/${deckID}/${slugged}`);
+        toDeck(state, childDeck);
     },
 
     navigateParentDeck(state, parentDeck) {
-        state.cursor(paths.currentDeck).update(function() {
+        state.cursor(paths.deck.self).update(function() {
             return parentDeck;
         });
 
         transforms.popFromBreadcrumb(state, parentDeck);
 
-        const deckID = parentDeck.get('id');
-
-        let slugged = slugify(parentDeck.get('name').trim());
-        slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
-
-        page(`/deck/${deckID}/${slugged}`);
-
+        toDeck(state, parentDeck);
     },
 
     pushOntoBreadcrumb(state, deck) {
-        state.cursor(paths.breadcrumb).update(function(lst) {
+        state.cursor(paths.deck.breadcrumb).update(function(lst) {
             return lst.push(deck);
         });
     },
 
     popFromBreadcrumb(state, deck) {
-        state.cursor(paths.breadcrumb).update(function(lst) {
+        state.cursor(paths.deck.breadcrumb).update(function(lst) {
 
             if(lst.size <= 0) {
                 return lst;
@@ -67,63 +55,14 @@ const transforms = {
         });
     },
 
-    changeCurrentDeckByID: co.wrap(function* (state, deckID, callback = void 0) {
-
-        const currentDeck = yield co(function*() {
-
-            // fetch deck
-            const {decksResponse} = yield new Promise(function(resolve) {
-                superhot
-                    .get(`/decks/${deckID}`)
-                    .end(function(err, res){
-                        resolve({decksErr: err, decksResponse: res});
-                    });
-            });
-
-            if(decksResponse.status != 200) {
-                return NOT_SET;
-            }
-
-            // TODO: error handling here
-
-            return decksResponse.body;
-        });
-
-        if(currentDeck === NOT_SET) {
-            page.redirect(`/`);
-            return;
-        }
-
-        const ImmCurrentDeck = Immutable.fromJS(currentDeck);
-
-        // inject currently viewed deck from REST API into app state
-        state.cursor(paths.currentDeck).update(function() {
-
-            // invariant: currentDeck is a plain object
-            return ImmCurrentDeck;
-        });
-
-        if(callback) {
-            callback.call(null, ImmCurrentDeck);
-            return;
-        }
-
-        throw Error('do shit');
-
-        // let slugged = slugify(currentDeck.name.trim());
-        // slugged = slugged.length <= 0 ? `deck-${deckID}` : slugged;
-
-        // page.redirect(`/deck/${deckID}/${slugged}`);
-    }),
-
     createNewDeck(state, name) {
 
         // fetch parent
-        const parentID = state.cursor(paths.currentDeck).deref().get('id');
+        const parentID = state.cursor(paths.deck.self).deref().get('id');
 
         // optimistic update
         let oldChildren;
-        state.cursor(paths.currentChildren).update(function(lst) {
+        state.cursor(paths.deck.children).update(function(lst) {
             oldChildren = lst;
             return lst.push(Immutable.fromJS({
                 name: name,
@@ -144,13 +83,13 @@ const transforms = {
                 if(res.status !== 201) {
 
                     // revert optimistic update
-                    state.cursor(paths.currentChildren).update(function() {
+                    state.cursor(paths.deck.children).update(function() {
                         return oldChildren;
                     });
                     return;
                 }
 
-                state.cursor(paths.currentDeck).cursor('children').update(function(lst) {
+                state.cursor(paths.deck.self).cursor('children').update(function(lst) {
                     return lst.push(res.body.id);
                 });
             });
@@ -165,12 +104,12 @@ const transforms = {
             return;
         }
 
-        const deckID = state.cursor(paths.currentDeck).deref().get('id');
+        const deckID = state.cursor(paths.deck.self).deref().get('id');
 
         let willChange = true;
 
         // optimistic update
-        state.cursor(paths.currentDeck).update(function(deck) {
+        state.cursor(paths.deck.self).update(function(deck) {
 
             const oldDeck = deck;
 
@@ -231,7 +170,7 @@ const transforms = {
             return;
         }
 
-        const deck = state.cursor(paths.currentDeck).deref();
+        const deck = state.cursor(paths.deck.self).deref();
 
         // fetch parent
         if(!deck.get('hasParent', false)) {
@@ -251,7 +190,12 @@ const transforms = {
         });
 
         // go to parent
-        page(`/deck/${parentID}`);
+        const breadcrumb = state.cursor(paths.deck.breadcrumb).deref();
+        const parentDeck = breadcrumb.get(-2);
+
+        transforms.popFromBreadcrumb(state, parentDeck);
+
+        redirectToDeck(state, parentDeck, parentID);
     })
 };
 
