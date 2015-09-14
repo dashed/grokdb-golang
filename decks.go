@@ -298,8 +298,8 @@ func DeckAncestorsGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    var ancestors []uint
-    ancestors, err = GetDeckAncestors(db, deckID)
+    var ancestorsIDs []uint
+    ancestorsIDs, err = GetDeckAncestors(db, deckID)
 
     switch {
     case err == ErrDeckNoAncestors:
@@ -320,10 +320,51 @@ func DeckAncestorsGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    ctx.JSON(http.StatusOK, gin.H{
-        "id":        deckIDString,
-        "ancestors": ancestors,
-    })
+    var ancestors []gin.H = make([]gin.H, 0, len(ancestorsIDs))
+    for idx, ancestorDeckID := range ancestorsIDs {
+
+        var row *DeckRow
+        row, err = GetDeck(db, ancestorDeckID)
+
+        // fetch children
+        var _childrenIDs []uint
+        _childrenIDs, err = GetDeckChildren(db, ancestorDeckID)
+        switch {
+        case err == ErrDeckNoChildren:
+            _childrenIDs = []uint{}
+        case err != nil:
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to retrieve deck children",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        var hasParent bool
+        var parent uint
+        if (idx - 1) >= 0 {
+            hasParent = true
+            parent = ancestorsIDs[idx-1]
+        } else {
+            hasParent = false
+            parent = 0
+        }
+
+        var response gin.H = DeckResponse(&gin.H{
+            "id":          ancestorDeckID,
+            "name":        row.Name,
+            "description": row.Description,
+            "children":    _childrenIDs,
+            "parent":      parent,
+            "hasParent":   hasParent,
+        })
+
+        ancestors = append(ancestors, response)
+    }
+
+    ctx.JSON(http.StatusOK, ancestors)
 }
 
 // POST /decks
@@ -1019,6 +1060,7 @@ func GetDeckParent(db *sqlx.DB, childID uint) (uint, error) {
     }
 }
 
+// fetch ancestors from farthest to nearest
 func GetDeckAncestors(db *sqlx.DB, childID uint) ([]uint, error) {
 
     var (

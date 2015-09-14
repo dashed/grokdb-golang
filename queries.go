@@ -285,6 +285,7 @@ var DECK_PARENT_QUERY = (func() PipeInput {
     )
 }())
 
+// ancestors from farthest to nearest
 var DECK_ANCESTORS_QUERY = (func() PipeInput {
     const __DECK_ANCESTORS_QUERY string = `
     SELECT ancestor, descendent, depth
