@@ -245,7 +245,7 @@ func DeckChildrenGET(db *sqlx.DB, ctx *gin.Context) {
             "name":        row.Name,
             "description": row.Description,
             "children":    _childrenIDs,
-            "parent":      deckIDString,
+            "parent":      deckID,
             "hasParent":   true,
         })
 
