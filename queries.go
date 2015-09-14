@@ -95,6 +95,8 @@ CREATE TABLE IF NOT EXISTS DecksClosure (
     FOREIGN KEY (descendent) REFERENCES Decks(deck_id) ON DELETE CASCADE
 );
 
+CREATE INDEX IF NOT EXISTS DecksClosure_Index ON DecksClosure (depth DESC);
+
 CREATE TRIGGER IF NOT EXISTS decks_closure_new_deck AFTER INSERT
 ON Decks
 BEGIN
