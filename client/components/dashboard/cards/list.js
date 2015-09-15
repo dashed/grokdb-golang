@@ -1,8 +1,8 @@
 const React = require('react');
 const orwell = require('orwell');
-// const either = require('react-either');
+const either = require('react-either');
 
-// const {NOT_SET, paths} = require('store/constants');
+const {NOT_SET, paths} = require('store/constants');
 const {toDeckCardsNew} = require('store/route');
 
 const CardsChildren = require('./children');
@@ -43,21 +43,32 @@ const CardsList = React.createClass({
     }
 });
 
-module.exports = orwell(CardsList, {
-    // watchCursors(props, manual, context) {
-    //     const state = context.store.state();
+// don't show until all data dependencies are satisfied
+const CardsListOcclusion = either(CardsList, null, function(props) {
 
-    //     return [
-    //         state.cursor(paths.dashboard.decks.creatingNew),
-    //         state.cursor(paths.dashboard.decks.editing)
-    //     ];
-    // },
+    if(NOT_SET === props.list) {
+        return false;
+    }
+
+    return true;
+});
+
+module.exports = orwell(CardsListOcclusion, {
+    watchCursors(props, manual, context) {
+        const state = context.store.state();
+
+        return [
+            state.cursor(paths.dashboard.cards.list)
+        ];
+    },
     assignNewProps(props, context) {
 
         const store = context.store;
+        const state = store.state();
 
         return {
-            store: store
+            store: store,
+            list: state.cursor(paths.dashboard.cards.list).deref()
         };
     }
 }).inject({

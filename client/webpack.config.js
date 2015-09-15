@@ -44,7 +44,7 @@ module.exports = {
             'slug',
             'markdown-it',
             'react-textarea-autosize',
-            'react-dnd'
+            'qs',
             // 'intl',
             // 'between2',
             // 'pouchdb',

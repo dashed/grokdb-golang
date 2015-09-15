@@ -17,9 +17,9 @@ const DeckChildren = React.createClass({
 
         const {currentChildrenCursor} = this.props;
 
-        const currentChildrenRendered = currentChildrenCursor.reduce(function(accumulator, childCursor, indexKey) {
+        const currentChildrenRendered = currentChildrenCursor.reduce(function(accumulator, childCursor) {
             accumulator.push(
-                <li className="list-group-item" key={indexKey}>
+                <li className="list-group-item" key={childCursor.deref().get('id')}>
                     <DeckChild childCursor={childCursor} />
                 </li>
             );

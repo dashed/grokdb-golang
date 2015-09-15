@@ -44,7 +44,9 @@ module.exports = {
             cards: {
                 editing: ['dashboard', 'cards', 'editing'],
                 finishEditing: ['dashboard', 'cards', 'finishEditing'],
-                creatingNew: ['dashboard', 'cards', 'creatingNew']
+                creatingNew: ['dashboard', 'cards', 'creatingNew'],
+                page: ['dashboard', 'cards', 'page'],
+                list: ['dashboard', 'cards', 'list']
             }
         }
     },

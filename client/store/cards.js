@@ -1,11 +1,14 @@
 const superhot = require('store/superhot');
 const {paths} = require('store/constants');
 
+const {toDeckCards} = require('store/route');
+
 const transforms = {
     createNewCard(state, cardProps) {
 
         // get deck id
         const deck = state.cursor(paths.deck.self).deref();
+        const deckID = deck.get('id');
 
         const marshalledSides = JSON.stringify(cardProps.sides);
 
@@ -18,11 +21,12 @@ const transforms = {
                 title: cardProps.title,
                 description: cardProps.description,
                 sides: marshalledSides,
-                deck: deck.get('id')
+                deck: deckID
             })
-            .end();
-
-        // go to card list
+            .end(function() {
+                // go to card list
+                toDeckCards(state, deck, deckID);
+            });
     }
 };
 

@@ -7,14 +7,19 @@ const {toDeckCards} = require('store/route');
 
 const CardsList = require('./list');
 const CreatingCard = require('./new');
+const CardsPagination = require('./pagination');
 
 const CardsDashboard = React.createClass({
 
     propTypes: {
+        creatingNew: React.PropTypes.bool.isRequired,
         store: React.PropTypes.object.isRequired
     },
 
     onClickBack(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
         this.props.store.dispatch(toDeckCards);
     },
 
@@ -43,7 +48,18 @@ const CardsDashboard = React.createClass({
         }
 
         return (
-            <CardsList />
+            <div>
+                <div className="row">
+                    <div className="col-sm-12">
+                        <CardsList />
+                    </div>
+                </div>
+                <div className="row">
+                    <div className="col-sm-12">
+                        <CardsPagination />
+                    </div>
+                </div>
+            </div>
         );
     }
 });

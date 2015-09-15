@@ -2,6 +2,7 @@ const page = require('page');
 const co = require('co');
 const _ = require('lodash');
 const Immutable = require('immutable');
+const qs = require('qs');
 
 const {NOT_SET, paths, dashboard} = require('store/constants');
 const {loadChildren} = require('store/decks');
@@ -29,9 +30,11 @@ const bootRouter = co.wrap(function* (store) {
         rootCursor.cursor(paths.dashboard.decks.finishEditing).update(function() {
             return NOT_SET;
         });
-
         rootCursor.cursor(paths.dashboard.cards.creatingNew).update(function() {
             return false;
+        });
+        rootCursor.cursor(paths.dashboard.cards.page).update(function() {
+            return 1;
         });
 
         return next();
@@ -43,6 +46,7 @@ const bootRouter = co.wrap(function* (store) {
     });
 
     const __ensureDeckRoute = _.bind(ensureDeckRoute, void 0, store);
+    const __ensureCardsRoute = _.bind(ensureCardsRoute, void 0, store);
 
     page('/deck/:id', __ensureDeckRoute, function() {
         // should not be here
@@ -66,7 +70,7 @@ const bootRouter = co.wrap(function* (store) {
         });
     });
 
-    page('/deck/:id/:slug/cards', __ensureDeckRoute, function() {
+    page('/deck/:id/:slug/cards', __ensureDeckRoute, __ensureCardsRoute, function(ctx) {
 
         rootCursor.cursor(paths.dashboard.view).update(function() {
             return dashboard.view.cards;
@@ -321,11 +325,73 @@ const ensureDeckRoute = co.wrap(function* (store, ctx, next) {
         return;
     }
 
-
-    // TODO: do this concurrently with below
     rootCursor.cursor(paths.route.handler).update(function() {
         return Dashboard;
     });
+
+    next();
+    return;
+});
+
+const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
+
+    const rootCursor = store.state();
+
+    const queries = qs.parse(ctx.querystring);
+
+    const pageNum = (function() {
+        if(_.has(queries, 'page')) {
+            const _pageNum = filterInt(queries.page);
+            return _pageNum <= 0 ? 1 : _pageNum;
+        }
+        return 1;
+    }());
+
+    // parse page
+    rootCursor.cursor(paths.dashboard.cards.page).update(function() {
+        return pageNum;
+    });
+
+    // fetch deck id
+    const deckCursor = rootCursor.cursor(paths.deck.self);
+    const deckID = deckCursor.deref().get('id');
+
+    // load cards
+    const fetchCards = co.wrap(function* (_pageNum) {
+        const {cardsResponse} = yield new Promise(function(resolve) {
+            superhot
+                .get(`/decks/${deckID}/cards`)
+                .query({ 'page': _pageNum })
+                .end(function(err, res){
+                    resolve({cardsErr: err, cardsResponse: res});
+                });
+        });
+        // TODO: error handling
+
+        switch(cardsResponse.status) {
+        case 400:
+            // page of out of bounds
+            yield fetchCards(1);
+            return;
+            break;
+        case 404:
+            rootCursor.cursor(paths.dashboard.cards.list).update(function() {
+                return Immutable.List();
+            });
+            return;
+            break;
+        case 200:
+            // good
+            rootCursor.cursor(paths.dashboard.cards.list).update(function() {
+                return Immutable.fromJS(cardsResponse.body);
+            });
+            break;
+        default:
+            throw Error('http code not found');
+            // TODO: error handling
+        }
+    });
+    yield fetchCards(pageNum);
 
     next();
     return;

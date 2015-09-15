@@ -17,7 +17,6 @@ const SCHEMA = {
                 id: NOT_SET
             }
         }
-
     },
 
     // ui flags
@@ -35,6 +34,11 @@ const SCHEMA = {
         },
 
         cards: {
+
+            // list
+            page: 1,
+            list: NOT_SET,
+
             creatingNew: false
         }
     },
