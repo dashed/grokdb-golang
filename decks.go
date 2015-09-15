@@ -398,12 +398,26 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
         ctx.JSON(http.StatusBadRequest, gin.H{
             "status":           http.StatusBadRequest,
             "developerMessage": err.Error(),
-            "userMessage":      "given page is invalid",
+            "userMessage":      "given page query param is invalid",
         })
         ctx.Error(err)
         return
     }
     var page uint = uint(_page)
+
+    // parse per_page query
+    var perpageQueryString string = ctx.DefaultQuery("per_page", "25")
+    _per_page, err := strconv.ParseUint(perpageQueryString, 10, 32)
+    if err != nil || _per_page <= 0 {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given per_page query param is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var per_page uint = uint(_per_page)
 
     // verify deck id exists
     _, err = GetDeck(db, deckID)
@@ -429,7 +443,7 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
 
     // fetch cards
     var cards *([]CardRow)
-    cards, err = CardsByDeck(db, deckID, page, 25)
+    cards, err = CardsByDeck(db, deckID, page, per_page)
 
     switch {
     case err == ErrCardNoCardsByDeck:
