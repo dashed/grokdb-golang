@@ -467,6 +467,67 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
     ctx.JSON(http.StatusOK, response)
 }
 
+// GET /:id/cards/count
+//
+// Path params:
+// id: a unique, positive integer that is the identifier of the assocoated deck
+func DeckCardsCountGET(db *sqlx.DB, ctx *gin.Context) {
+
+    // parse id param
+    var deckIDString string = strings.ToLower(ctx.Param("id"))
+
+    _deckID, err := strconv.ParseUint(deckIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var deckID uint = uint(_deckID)
+
+    // verify deck id exists
+    _, err = GetDeck(db, deckID)
+
+    switch {
+    case err == ErrDeckNoSuchDeck:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find deck by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // fetch card count
+    var count uint
+    count, err = CountCardsByDeck(db, deckID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve count of cards for given deck",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    ctx.JSON(http.StatusOK, gin.H{
+        "total": count,
+    })
+}
+
 // POST /decks
 //
 // Input:

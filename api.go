@@ -39,6 +39,10 @@ func bootAPI(db *Database) {
 
         decksAPI.GET("/:id/cards", injectDB(DeckCardsGET))
 
+        decksAPI.GET("/:id/cards/count", injectDB(DeckCardsCountGET))
+
+        // decksAPI.GET("/:id/cards/stats", injectDB(DeckCardsstatsGET))
+
         decksAPI.PATCH("/:id", injectDB(DeckPATCH))
 
         decksAPI.DELETE("/:id", injectDB(DeckDELETE))
