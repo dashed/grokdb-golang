@@ -24,10 +24,10 @@ func FetchDatabase(name string) (*Database, error) {
 }
 
 type Database struct {
-    name          string
-    filename      string
-    dbFilePointer *os.File
-    instance      *sqlx.DB
+    name     string
+    filename string
+    // dbFilePointer *os.File
+    instance *sqlx.DB
 }
 
 func (db *Database) Init() error {
@@ -41,10 +41,11 @@ func (db *Database) Init() error {
         return err
     }
 
-    db.dbFilePointer, err = os.Open(db.filename)
-    if err != nil {
-        return err
-    }
+    // TODO: remove if no longer needed
+    // db.dbFilePointer, err = os.Open(db.filename)
+    // if err != nil {
+    //     return err
+    // }
 
     // set up connection and create any necessary tables
 
@@ -79,36 +80,36 @@ func (db *Database) NormalizeFileName() {
 }
 
 func (db *Database) CleanUp() {
-    db.dbFilePointer.Close()
+    // db.dbFilePointer.Close()
     db.instance.Close()
 }
 
-func (db *Database) Counter() (uint32, error) {
+// func (db *Database) Counter() (uint32, error) {
 
-    // get file change counter for sqlite file.
-    // useful to get somthing akin to a 'checksum' of the db
-    // reference: http://www.sqlite.org/fileformat.html
+//     // get file change counter for sqlite file.
+//     // useful to get somthing akin to a 'checksum' of the db
+//     // reference: http://www.sqlite.org/fileformat.html
 
-    fptr := db.dbFilePointer
+//     fptr := db.dbFilePointer
 
-    // seek to byte offset of 24
-    _, err := fptr.Seek(24, 0)
-    if err != nil {
-        return 0, err
-    }
+//     // seek to byte offset of 24
+//     _, err := fptr.Seek(24, 0)
+//     if err != nil {
+//         return 0, err
+//     }
 
-    b2 := make([]byte, 4)
-    bytesRead, err := fptr.Read(b2)
-    if err != nil {
-        return 0, err
-    }
-    if bytesRead != 4 {
-        // TODO: display db's filename
-        return 0, errors.New("Unable to read database")
-    }
+//     b2 := make([]byte, 4)
+//     bytesRead, err := fptr.Read(b2)
+//     if err != nil {
+//         return 0, err
+//     }
+//     if bytesRead != 4 {
+//         // TODO: display db's filename
+//         return 0, errors.New("Unable to read database")
+//     }
 
-    // The file change counter is a 4-byte big-endian integer
-    counter := binary.BigEndian.Uint32(b2)
+//     // The file change counter is a 4-byte big-endian integer
+//     counter := binary.BigEndian.Uint32(b2)
 
-    return counter, nil
-}
+//     return counter, nil
+// }
