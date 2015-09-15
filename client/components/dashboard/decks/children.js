@@ -17,10 +17,15 @@ const DeckChildren = React.createClass({
 
         const {currentChildrenCursor} = this.props;
 
-        const currentChildrenRendered = currentChildrenCursor.reduce(function(accumulator, childCursor) {
+        const currentChildrenRendered = currentChildrenCursor.reduce(function(accumulator, childCursor, index) {
+
+            const key = childCursor.deref().get('id');
+            const cKey = `${key}-${index}-parent`;
+            const cKey2 = `${key}-${index}-deck`;
+
             accumulator.push(
-                <li className="list-group-item" key={childCursor.deref().get('id')}>
-                    <DeckChild childCursor={childCursor} />
+                <li className="list-group-item" key={cKey}>
+                    <DeckChild childCursor={childCursor} key={cKey2} />
                 </li>
             );
 
