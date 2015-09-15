@@ -84,6 +84,26 @@ const bootRouter = co.wrap(function* (store) {
         });
     });
 
+    page('/card/:id/edit', function() {
+
+        // TODO: implement
+    });
+
+    page('/card/:id', function() {
+
+        // TODO: implement
+    });
+
+    page('/review', function() {
+
+        // TODO: implement
+    });
+
+    page('/review/deck/:id', function() {
+
+        // TODO: implement
+    });
+
     page.start({
         hashbang: true,
         click: false
@@ -95,8 +115,6 @@ const bootDecks = co.wrap(function* (store) {
 
     // cursors
     const deckCursor = rootCursor.cursor(paths.deck.self);
-    const deckIDCursor = rootCursor.cursor(paths.route.params.deck.id);
-    const deckID = deckIDCursor.deref(NOT_SET);
 
     /* observers */
 

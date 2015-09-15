@@ -7,7 +7,7 @@ const _ = require('lodash');
 const {markdown} = require('store/constants');
 
 
-const DeckPreview = React.createClass({
+const MarkdownPreview = React.createClass({
 
     propTypes: {
         text: React.PropTypes.string.isRequired
@@ -40,4 +40,4 @@ const DeckPreview = React.createClass({
     }
 });
 
-module.exports = DeckPreview;
+module.exports = MarkdownPreview;

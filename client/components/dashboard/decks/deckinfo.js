@@ -8,7 +8,7 @@ const TextareaAutosize = require('react-textarea-autosize');
 const {paths, NOT_SET} = require('store/constants');
 const {saveDeck} = require('store/decks');
 
-const Preview = require('./preview');
+const Preview = require('components/markdownpreview');
 
 const DeckInfo = React.createClass({
 
@@ -163,9 +163,13 @@ const DeckInfo = React.createClass({
                     </fieldset>
                     <ul className="nav nav-tabs m-b">
                         <li className="nav-item">
-                            <a href={!this.state.preview ? '' : '#'}
-                            className={classNames('nav-link', {active: !this.state.preview})}
-                            onClick={this.onClickWrite}>{"Write"}</a>
+                            <a
+                                href={!this.state.preview ? '' : '#'}
+                                className={classNames('nav-link', {active: !this.state.preview})}
+                                onClick={this.onClickWrite}
+                            >
+                                {"Write"}
+                            </a>
                         </li>
                         <li className="nav-item">
                             <a href={this.state.preview ? '' : '#'}

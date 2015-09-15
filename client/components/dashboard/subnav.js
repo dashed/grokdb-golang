@@ -50,6 +50,9 @@ const SubNav = React.createClass({
                       <button type="button" className="btn btn-secondary">{"Labels"}</button>
                       <button type="button" className="btn btn-secondary">{"Settings"}</button>
                     </div>
+                    <div className="btn-group p-b m-r pull-right" role="group" aria-label="Basic example">
+                      <button type="button" className="btn btn-success">{"Review"}</button>
+                    </div>
                 </div>
             </div>
         );

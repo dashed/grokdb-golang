@@ -4,7 +4,6 @@ const _ = require('lodash');
 
 const {paths} = require('store/constants');
 const superhot = require('store/superhot');
-const {setEditingDeck} = require('store/dashboard');
 const {toDeck, redirectToDeck} = require('store/route');
 
 const {setNewDeck} = require('./dashboard');
@@ -165,7 +164,7 @@ const transforms = {
             }
 
             // get out of editing mode
-            setEditingDeck(state, false);
+            toDeck(state);
             return;
         }
 
@@ -191,7 +190,7 @@ const transforms = {
         }
 
         // get out of editing mode
-        setEditingDeck(state, false);
+        toDeck(state);
     }),
 
     deleteDeck: co.wrap(function*(state, bool) {
