@@ -37,6 +37,8 @@ const SCHEMA = {
 
             // list
             page: 1,
+            total: 0,
+            numOfPages: 0,
             list: NOT_SET,
 
             creatingNew: false

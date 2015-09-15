@@ -3,38 +3,15 @@ const orwell = require('orwell');
 const either = require('react-either');
 
 const {NOT_SET, paths} = require('store/constants');
-const {toDeckCardsNew} = require('store/route');
 
 const CardsChildren = require('./children');
 
 const CardsList = React.createClass({
-
-    propTypes: {
-        store: React.PropTypes.object.isRequired
-    },
-
-    onClickNewCard(event) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const {store} = this.props;
-
-        store.dispatch(toDeckCardsNew);
-    },
-
     render() {
         return (
             <div>
                 <div className="row">
-                    <div className="col-sm-12">
-                        <button
-                            type="button"
-                            className="btn btn-success btn-sm"
-                            onClick={this.onClickNewCard}>{"New Card"}</button>
-                    </div>
-                </div>
-                <div className="row">
-                    <div className="col-sm-12">
+                    <div className="col-sm-12 m-y">
                         <CardsChildren />
                     </div>
                 </div>
@@ -67,7 +44,6 @@ module.exports = orwell(CardsListOcclusion, {
         const state = store.state();
 
         return {
-            store: store,
             list: state.cursor(paths.dashboard.cards.list).deref()
         };
     }

@@ -20,11 +20,19 @@ const transforms = {
         page(`/deck/${deckID}/${slugged}/settings`);
     },
 
-    toDeckCards(state, deck = void 0, deckID = void 0) {
+    toDeckCards(state, options = {}) {
+
+        let {deck, deckID} = options;
+        const {page: _pageNum = void 0} = options;
 
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 
         const slugged = generateSlug(deck.get('name'), deckID);
+
+        if(_pageNum) {
+            page(`/deck/${deckID}/${slugged}/cards?page=${_pageNum}`);
+            return;
+        }
         page(`/deck/${deckID}/${slugged}/cards`);
     },
 

@@ -25,7 +25,7 @@ const transforms = {
             })
             .end(function() {
                 // go to card list
-                toDeckCards(state, deck, deckID);
+                toDeckCards(state, {deck, deckID});
             });
     }
 };

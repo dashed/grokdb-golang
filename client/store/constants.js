@@ -45,7 +45,11 @@ module.exports = {
                 editing: ['dashboard', 'cards', 'editing'],
                 finishEditing: ['dashboard', 'cards', 'finishEditing'],
                 creatingNew: ['dashboard', 'cards', 'creatingNew'],
-                page: ['dashboard', 'cards', 'page'],
+
+                // list
+                page: ['dashboard', 'cards', 'page'], // current page
+                total: ['dashboard', 'cards', 'total'],
+                numOfPages: ['dashboard', 'cards', 'numOfPages'],
                 list: ['dashboard', 'cards', 'list']
             }
         }

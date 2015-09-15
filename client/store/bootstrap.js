@@ -70,7 +70,7 @@ const bootRouter = co.wrap(function* (store) {
         });
     });
 
-    page('/deck/:id/:slug/cards', __ensureDeckRoute, __ensureCardsRoute, function(ctx) {
+    page('/deck/:id/:slug/cards', __ensureDeckRoute, __ensureCardsRoute, function() {
 
         rootCursor.cursor(paths.dashboard.view).update(function() {
             return dashboard.view.cards;
@@ -339,6 +339,7 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
 
     const queries = qs.parse(ctx.querystring);
 
+    // parse page query param
     const pageNum = (function() {
         if(_.has(queries, 'page')) {
             const _pageNum = filterInt(queries.page);
@@ -347,14 +348,48 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
         return 1;
     }());
 
-    // parse page
-    rootCursor.cursor(paths.dashboard.cards.page).update(function() {
-        return pageNum;
-    });
-
     // fetch deck id
     const deckCursor = rootCursor.cursor(paths.deck.self);
     const deckID = deckCursor.deref().get('id');
+
+    // get page count
+    const {cardsCount} = yield new Promise(function(resolve) {
+        superhot
+            .get(`/decks/${deckID}/cards/count`)
+            .query({ 'page': pageNum })
+            .end(function(err, res){
+                resolve({err: err, cardsCount: res.body && res.body.total || 0});
+            });
+    });
+
+    rootCursor.cursor(paths.dashboard.cards.total).update(function() {
+        return cardsCount;
+    });
+
+
+    if(cardsCount <= 0) {
+        rootCursor.cursor(paths.dashboard.cards.list).update(function() {
+            return Immutable.List();
+        });
+        rootCursor.cursor(paths.dashboard.cards.numOfPages).update(function() {
+            return 0;
+        });
+        rootCursor.cursor(paths.dashboard.cards.page).update(function() {
+            return 1;
+        });
+
+        next();
+        return;
+    }
+
+    const perPage = 25;
+    rootCursor.cursor(paths.dashboard.cards.page).update(function() {
+        return (pageNum-1)*perPage >= cardsCount ? 1 : pageNum;
+    });
+
+    rootCursor.cursor(paths.dashboard.cards.numOfPages).update(function() {
+        return Math.ceil(cardsCount / perPage);
+    });
 
     // load cards
     const fetchCards = co.wrap(function* (_pageNum) {
@@ -362,6 +397,7 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
             superhot
                 .get(`/decks/${deckID}/cards`)
                 .query({ 'page': _pageNum })
+                .query({ 'per_page': perPage })
                 .end(function(err, res){
                     resolve({cardsErr: err, cardsResponse: res});
                 });

@@ -27,7 +27,7 @@ const CardsChildren = React.createClass({
 
 
         return (
-            <div className="card m-t">
+            <div className="card m-y-0">
                 <div className="card-block">
                     {"card header here with some dropdowns"}
                 </div>

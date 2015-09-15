@@ -3,7 +3,7 @@ const orwell = require('orwell');
 const either = require('react-either');
 
 const {NOT_SET, paths} = require('store/constants');
-const {toDeckCards} = require('store/route');
+const {toDeckCards, toDeckCardsNew} = require('store/route');
 
 const CardsList = require('./list');
 const CreatingCard = require('./new');
@@ -21,6 +21,15 @@ const CardsDashboard = React.createClass({
         event.stopPropagation();
 
         this.props.store.dispatch(toDeckCards);
+    },
+
+    onClickNewCard(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const {store} = this.props;
+
+        store.dispatch(toDeckCardsNew);
     },
 
     render() {
@@ -49,6 +58,19 @@ const CardsDashboard = React.createClass({
 
         return (
             <div>
+                <div className="row">
+                    <div className="col-sm-12">
+                        <button
+                            type="button"
+                            className="btn btn-success btn-sm"
+                            onClick={this.onClickNewCard}>{"New Card"}</button>
+                    </div>
+                </div>
+                <div className="row">
+                    <div className="col-sm-12">
+                        <CardsPagination />
+                    </div>
+                </div>
                 <div className="row">
                     <div className="col-sm-12">
                         <CardsList />

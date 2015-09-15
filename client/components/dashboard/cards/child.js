@@ -21,18 +21,18 @@ const CardChild = React.createClass({
 });
 
 module.exports = orwell(CardChild, {
-    watchCursors(props, manual) {
+    // watchCursors(props, manual) {
 
-        manual(function(update) {
-            const unsubscribe = props.childCursor.observe(function(newValue, oldValue) {
-                if(newValue && oldValue && newValue.id === oldValue.id) {
-                    return update();
-                }
-            });
+    //     manual(function(update) {
+    //         const unsubscribe = props.childCursor.observe(function(newValue, oldValue) {
+    //             if(newValue && oldValue && newValue.id === oldValue.id) {
+    //                 return update();
+    //             }
+    //         });
 
-            return unsubscribe;
-        });
-    },
+    //         return unsubscribe;
+    //     });
+    // },
     assignNewProps(props, context) {
         return {
             card: props.childCursor.deref(),
