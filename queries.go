@@ -420,6 +420,45 @@ var UPDATE_CARD_QUERY = (func() PipeInput {
     )
 }())
 
+var COUNT_CARDS_BY_DECK_QUERY = (func() PipeInput {
+    const __COUNT_CARDS_BY_DECK_QUERY string = `
+        SELECT COUNT(1) FROM Cards
+        WHERE deck = :deck_id;
+    `
+
+    var requiredInputCols []string = []string{"deck_id"}
+
+    return composePipes(
+        MakeCtxMaker(__COUNT_CARDS_BY_DECK_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+// default sort by created_at from newest to oldest
+var FETCH_CARDS_BY_DECK_QUERY = (func() PipeInput {
+    const __FETCH_CARDS_BY_DECK_QUERY string = `
+        SELECT card_id, title, description, sides, deck, created_at, updated_at FROM Cards
+        WHERE oid NOT IN (
+            SELECT oid FROM Cards
+            ORDER BY created_at DESC LIMIT :offset
+        )
+        AND deck = :deck_id
+        ORDER BY created_at DESC LIMIT :per_page;
+    `
+
+    // SELECT card_id, title, description, sides, deck, created_at, updated_at FROM Cards
+    // WHERE deck = :deck_id;
+
+    var requiredInputCols []string = []string{"deck_id", "offset", "per_page"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARDS_BY_DECK_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 /* helpers */
 
 func JSON2Map(rawJSON []byte) (*StringMap, error) {

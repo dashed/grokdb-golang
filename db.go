@@ -1,9 +1,9 @@
 package main
 
 import (
-    "encoding/binary"
-    "errors"
-    "os"
+    // _ "encoding/binary"
+    // _ "errors"
+    // _ "os"
 
     // 3rd-party
     "github.com/jmoiron/sqlx" // replacement for "database/sql"

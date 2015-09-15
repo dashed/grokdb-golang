@@ -37,8 +37,7 @@ func bootAPI(db *Database) {
 
         decksAPI.GET("/:id/ancestors", injectDB(DeckAncestorsGET))
 
-        // TODO: fetch full card data; not their ids
-        // decksAPI.GET("/:id/cards", injectDB(DeckCardsGET))
+        decksAPI.GET("/:id/cards", injectDB(DeckCardsGET))
 
         decksAPI.PATCH("/:id", injectDB(DeckPATCH))
 
@@ -51,6 +50,11 @@ func bootAPI(db *Database) {
         cardsAPI.POST("/", injectDB(CardPOST))
 
         cardsAPI.GET("/:id", injectDB(CardGET))
+
+        // TODO: implement
+        // ?page=1 per_page=25
+        // prefer to use DeckCardsGET
+        // cardsAPI.GET("/", injectDB(CardGETMany))
 
         // cardsAPI.PATCH("/:id", injectDB(CardPATCH))
 

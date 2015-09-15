@@ -367,6 +367,106 @@ func DeckAncestorsGET(db *sqlx.DB, ctx *gin.Context) {
     ctx.JSON(http.StatusOK, ancestors)
 }
 
+// GET /:id/cards
+//
+// Path params:
+// id: a unique, positive integer that is the identifier of the assocoated deck
+//
+// Query params:
+// page: integer starting from 1 (default: 1)
+func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
+
+    // parse id param
+    var deckIDString string = strings.ToLower(ctx.Param("id"))
+
+    _deckID, err := strconv.ParseUint(deckIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var deckID uint = uint(_deckID)
+
+    // parse page query
+    var pageQueryString string = ctx.DefaultQuery("page", "1")
+    _page, err := strconv.ParseUint(pageQueryString, 10, 32)
+    if err != nil || _page <= 0 {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given page is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var page uint = uint(_page)
+
+    // verify deck id exists
+    _, err = GetDeck(db, deckID)
+
+    switch {
+    case err == ErrDeckNoSuchDeck:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find deck by id",
+        })
+        ctx.Error(err)
+        return
+    case err == ErrCardPageOutOfBounds:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "page is out of bound",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // fetch cards
+    var cards *([]CardRow)
+    cards, err = CardsByDeck(db, deckID, page, 25)
+
+    switch {
+    case err == ErrCardNoCardsByDeck:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "deck has no cards",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve deck",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var response []gin.H = make([]gin.H, 0, len(*cards))
+
+    for _, cr := range *cards {
+        response = append(response, CardRowToResponse(&cr))
+    }
+
+    ctx.JSON(http.StatusOK, response)
+}
+
 // POST /decks
 //
 // Input:

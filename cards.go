@@ -16,6 +16,8 @@ import (
 
 // errors
 var ErrCardNoSuchCard = errors.New("cards: no such card of given id")
+var ErrCardNoCardsByDeck = errors.New("cards: deck has no cards")
+var ErrCardPageOutOfBounds = errors.New("cards: page is out of bounds")
 
 /* types */
 
@@ -271,4 +273,69 @@ func CreateCard(db *sqlx.DB, props *CardProps) (*CardRow, error) {
     }
 
     return GetCard(db, uint(insertID))
+}
+
+func CountCardsByDeck(db *sqlx.DB, deckID uint) (uint, error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(COUNT_CARDS_BY_DECK_QUERY, &StringMap{
+        "deck_id": deckID,
+    })
+    if err != nil {
+        return 0, err
+    }
+
+    var count uint
+    err = db.QueryRowx(query, args...).Scan(&count)
+    if err != nil {
+        return 0, err
+    }
+
+    return count, nil
+}
+
+func CardsByDeck(db *sqlx.DB, deckID uint, page uint, per_page uint) (*([]CardRow), error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    // invariant: page >= 1
+
+    var offset uint = (page - 1) * per_page
+
+    var count uint
+    count, err = CountCardsByDeck(db, deckID)
+
+    if offset >= count {
+        return nil, ErrCardPageOutOfBounds
+    }
+
+    query, args, err = QueryApply(FETCH_CARDS_BY_DECK_QUERY, &StringMap{
+        "deck_id":  deckID,
+        "per_page": per_page,
+        "offset":   offset,
+    })
+    if err != nil {
+        return nil, err
+    }
+
+    var cards []CardRow = make([]CardRow, 0, per_page)
+    err = db.Select(&cards, query, args...)
+    if err != nil {
+        return nil, err
+    }
+
+    if len(cards) <= 0 {
+        return nil, ErrCardNoCardsByDeck
+    }
+
+    return &cards, nil
 }
