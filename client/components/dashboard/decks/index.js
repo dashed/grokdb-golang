@@ -47,8 +47,8 @@ const DecksDashboard = React.createClass({
     }
 });
 
-// show Spinner until all data dependencies are satisfied
-const DecksListOcclusion = either(DecksDashboard, null, function(props) {
+// don't show until all data dependencies are satisfied
+const DecksDashboardOcclusion = either(DecksDashboard, null, function(props) {
 
     if(NOT_SET === props.deck) {
         return false;
@@ -61,7 +61,7 @@ const DecksListOcclusion = either(DecksDashboard, null, function(props) {
     return true;
 });
 
-module.exports = orwell(DecksListOcclusion, {
+module.exports = orwell(DecksDashboardOcclusion, {
     watchCursors(props, manual, context) {
 
         const state = context.store.state();

@@ -32,6 +32,10 @@ const SCHEMA = {
             finishEditing: NOT_SET,
 
             creatingNew: false
+        },
+
+        cards: {
+            creatingNew: false
         }
     },
 

@@ -15,6 +15,8 @@ const transforms = {
             return childDeck;
         });
 
+        transforms.loadChildren(state, childDeck.get('id'));
+
         transforms.pushOntoBreadcrumb(state, childDeck);
 
         toDeck(state, childDeck);
@@ -24,6 +26,8 @@ const transforms = {
         state.cursor(paths.deck.self).update(function() {
             return parentDeck;
         });
+
+        transforms.loadChildren(state, parentDeck.get('id'));
 
         transforms.popFromBreadcrumb(state, parentDeck);
 
@@ -54,6 +58,31 @@ const transforms = {
             return lst;
         });
     },
+
+    loadChildren: co.wrap(function*(state, deckID) {
+        const children = yield new Promise(function(resolve, reject) {
+            superhot
+                .get(`/decks/${deckID}/children`)
+                .end(function(err, res){
+
+                    // no children
+                    if (res.status === 404) {
+                        return resolve(Immutable.List());
+                    }
+
+                    if (res.status === 200) {
+                        resolve(Immutable.fromJS(res.body));
+                    }
+
+                    // TODO: error handling
+                    reject(err);
+                });
+        });
+
+        state.cursor(paths.deck.children).update(function() {
+            return children;
+        });
+    }),
 
     createNewDeck(state, name) {
 

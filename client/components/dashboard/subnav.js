@@ -3,7 +3,7 @@ const orwell = require('orwell');
 const classNames = require('classnames');
 
 const {dashboard, paths} = require('store/constants');
-const {switchView} = require('store/dashboard');
+const {toDeckCards, toDeck} = require('store/route');
 
 const SubNav = React.createClass({
 
@@ -16,14 +16,14 @@ const SubNav = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.store.dispatch(switchView, dashboard.view.decks);
+        this.props.store.dispatch(toDeck);
     },
 
     onClickCards(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.store.dispatch(switchView, dashboard.view.cards);
+        this.props.store.dispatch(toDeckCards);
     },
 
     render() {

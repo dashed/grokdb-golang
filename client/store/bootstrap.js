@@ -4,20 +4,13 @@ const _ = require('lodash');
 const Immutable = require('immutable');
 
 const {NOT_SET, paths, dashboard} = require('store/constants');
+const {loadChildren} = require('store/decks');
 const {redirectToDeck} = require('store/route');
 const superhot = require('store/superhot');
 const {generateSlug} = require('store/utils');
 
 // route handler components
 const Dashboard = require('components/dashboard');
-
-// TODO: move this into module
-const filterInt = function (value) {
-    if(/^(\-|\+)?([0-9]+|Infinity)$/.test(value)) {
-        return Number(value);
-    }
-    return NaN;
-};
 
 const bootRouter = co.wrap(function* (store) {
     const rootCursor = store.state();
@@ -37,120 +30,32 @@ const bootRouter = co.wrap(function* (store) {
             return NOT_SET;
         });
 
+        rootCursor.cursor(paths.dashboard.cards.creatingNew).update(function() {
+            return false;
+        });
+
         return next();
     });
 
     // go to root deck by default
     page('/', function(/*ctx*/) {
-        const cursor = rootCursor.cursor(paths.root);
-
-        const handler = function(rootID) {
-            page.redirect(`/deck/${rootID}`);
-        };
-
-        if(cursor.deref(NOT_SET) === NOT_SET) {
-            cursor.once('any', function(rootID) {
-                handler(rootID);
-            });
-            return;
-        }
-
-        handler(cursor.deref());
+        defaultRoute(rootCursor);
     });
 
-    page('/deck/:id', function(ctx) {
+    const __ensureDeckRoute = _.bind(ensureDeckRoute, void 0, store);
 
-        const maybeID = filterInt(ctx.params.id);
+    page('/deck/:id', __ensureDeckRoute, function() {
+        // should not be here
+        defaultRoute(rootCursor);
+    });
 
-        // ensure :id is valid
-        if(notValidID(maybeID)) {
-            page.redirect('/');
-            return;
-        }
-
+    page('/deck/:id/:slug', __ensureDeckRoute, function() {
         rootCursor.cursor(paths.dashboard.view).update(function() {
             return dashboard.view.decks;
         });
-
-        rootCursor.cursor(paths.route.handler).update(function() {
-            return Dashboard;
-        });
-
-        const deckCursor = rootCursor.cursor(paths.deck.self);
-        const deck = deckCursor.deref(NOT_SET);
-
-        if(deck === NOT_SET) {
-            deckCursor.once('any', function(_deck) {
-                store.dispatch(redirectToDeck, _deck);
-            });
-            rootCursor.cursor(paths.route.params.deck.id).update(function() {
-                return maybeID;
-            });
-        } else {
-
-            // deck already loaded in app state; redirect
-
-            store.dispatch(redirectToDeck, deck, maybeID);
-        }
     });
 
-    page('/deck/:id/:slug', function(ctx) {
-
-        const maybeID = filterInt(ctx.params.id);
-
-        // ensure :id is valid
-        if(notValidID(maybeID)) {
-            page.redirect('/');
-            return;
-        }
-
-        rootCursor.cursor(paths.dashboard.view).update(function() {
-            return dashboard.view.decks;
-        });
-
-        rootCursor.cursor(paths.route.handler).update(function() {
-            return Dashboard;
-        });
-
-        const deckCursor = rootCursor.cursor(paths.deck.self);
-        const deck = deckCursor.deref(NOT_SET);
-
-        const handler = function(_deck) {
-
-            const slugged = generateSlug(_deck.get('name'), maybeID);
-
-            if(ctx.params.slug == slugged) {
-                return;
-            }
-
-            page.redirect(`/deck/${maybeID}/${slugged}`);
-        };
-
-        if(deck === NOT_SET) {
-
-            deckCursor.once('any', function(_deck) {
-                handler(_deck);
-            });
-
-            rootCursor.cursor(paths.route.params.deck.id).update(function() {
-                return maybeID;
-            });
-        } else {
-
-            // deck already loaded in app state; ensure proper slug
-            handler(deck);
-        }
-    });
-
-    page('/decksetting/:id', function(ctx) {
-
-        const maybeID = filterInt(ctx.params.id);
-
-        // ensure :id is valid
-        if(notValidID(maybeID)) {
-            page.redirect('/');
-            return;
-        }
+    page('/deck/:id/:slug/settings', __ensureDeckRoute, function() {
 
         rootCursor.cursor(paths.dashboard.decks.editing).update(function() {
             return true;
@@ -159,53 +64,24 @@ const bootRouter = co.wrap(function* (store) {
         rootCursor.cursor(paths.dashboard.view).update(function() {
             return dashboard.view.decks;
         });
-
-        rootCursor.cursor(paths.route.handler).update(function() {
-            return Dashboard;
-        });
-
-        const deckCursor = rootCursor.cursor(paths.deck.self);
-        const deck = deckCursor.deref(NOT_SET);
-
-        if(deck === NOT_SET) {
-            rootCursor.cursor(paths.route.params.deck.id).update(function() {
-                return maybeID;
-            });
-        }
-
-        if(deck.get('id') != maybeID) {
-            page.redirect('/');
-        }
-
     });
 
-    page('/cards/:id', function(ctx) {
-
-        const maybeID = filterInt(ctx.params.id);
-
-        // ensure :id is valid
-        if(notValidID(maybeID)) {
-            page.redirect('/');
-            return;
-        }
+    page('/deck/:id/:slug/cards', __ensureDeckRoute, function() {
 
         rootCursor.cursor(paths.dashboard.view).update(function() {
             return dashboard.view.cards;
         });
+    });
 
-        rootCursor.cursor(paths.route.handler).update(function() {
-            return Dashboard;
+    page('/deck/:id/:slug/cards/new', __ensureDeckRoute, function() {
+
+        rootCursor.cursor(paths.dashboard.cards.creatingNew).update(function() {
+            return true;
         });
 
-        const deckCursor = rootCursor.cursor(paths.deck.self);
-        const deck = deckCursor.deref(NOT_SET);
-
-        if(deck === NOT_SET) {
-            rootCursor.cursor(paths.route.params.deck.id).update(function() {
-                return maybeID;
-            });
-        }
-
+        rootCursor.cursor(paths.dashboard.view).update(function() {
+            return dashboard.view.cards;
+        });
     });
 
     page.start({
@@ -223,36 +99,6 @@ const bootDecks = co.wrap(function* (store) {
     const deckID = deckIDCursor.deref(NOT_SET);
 
     /* observers */
-
-    // watch deck and load children
-    deckCursor.cursor('children').observe(co.wrap(function*() {
-
-        const _deckID = deckCursor.cursor('id').deref();
-
-        const children = yield new Promise(function(resolve, reject) {
-            superhot
-                .get(`/decks/${_deckID}/children`)
-                .end(function(err, res){
-
-                    // no children
-                    if (res.status === 404) {
-                        return resolve(Immutable.List());
-                    }
-
-                    if (res.status === 200) {
-                        resolve(Immutable.fromJS(res.body));
-                    }
-
-                    // TODO: error handling
-                    reject(err);
-                });
-        });
-
-        rootCursor.cursor(paths.deck.children).update(function() {
-            return children;
-        });
-
-    }));
 
     // breadcrumb setup
 
@@ -309,51 +155,6 @@ const bootDecks = co.wrap(function* (store) {
         breadcrumbLoader(maybeDeck);
     }
 
-    // watch :id in route params and load deck
-
-    const deckLoader = co.wrap(function*(_deckID) {
-
-        const currentDeck = yield co(function*() {
-
-            // fetch deck
-            const {decksResponse} = yield new Promise(function(resolve) {
-                superhot
-                    .get(`/decks/${_deckID}`)
-                    .end(function(err, res){
-                        resolve({decksErr: err, decksResponse: res});
-                    });
-            });
-
-            if(decksResponse.status != 200) {
-                return NOT_SET;
-            }
-
-            // TODO: error handling here
-
-            return decksResponse.body;
-        });
-
-        if(currentDeck === NOT_SET) {
-            page.redirect(`/`);
-            return;
-        }
-
-        const ImmCurrentDeck = Immutable.fromJS(currentDeck);
-
-        // inject currently viewed deck from REST API into app state
-        deckCursor.update(function() {
-            return ImmCurrentDeck;
-        });
-    });
-
-    if(deckID === NOT_SET) {
-        deckIDCursor.observe(function(_deckID) {
-            deckLoader(_deckID);
-        });
-    } else {
-        deckLoader(deckID);
-    }
-
     /* root deck setup */
 
     const {response} = yield new Promise(function(resolve) {
@@ -398,3 +199,116 @@ module.exports = function(store) {
 const notValidID = function(id) {
     return (_.isNaN(id) || !Number.isInteger(id) || id <= 0);
 };
+
+// TODO: move this into module
+// parse value to an integer
+const filterInt = function (value) {
+    if(/^(\-|\+)?([0-9]+|Infinity)$/.test(value)) {
+        return Number(value);
+    }
+    return NaN;
+};
+
+const defaultRoute = function(rootCursor) {
+    const cursor = rootCursor.cursor(paths.root);
+
+    const handler = function(rootID) {
+        page.redirect(`/deck/${rootID}`);
+    };
+
+    if(cursor.deref(NOT_SET) === NOT_SET) {
+        cursor.once('any', function(rootID) {
+            handler(rootID);
+        });
+        return;
+    }
+
+    handler(cursor.deref());
+};
+
+// boilerplate for:
+// - /deck/:id
+// - /deck/:id/:slug
+const ensureDeckRoute = co.wrap(function* (store, ctx, next) {
+
+    const rootCursor = store.state();
+
+    if(!_.has(ctx.params, 'id')) {
+        throw Error('ensureDeckRoute used incorrectly');
+    }
+
+    const maybeID = filterInt(ctx.params.id);
+
+    // ensure :id is valid
+    if(notValidID(maybeID)) {
+        defaultRoute(rootCursor);
+        return;
+    }
+
+    // fetch deck from REST
+
+    const deckCursor = rootCursor.cursor(paths.deck.self);
+    let deck = deckCursor.deref(NOT_SET);
+    let deckID = deck === NOT_SET ? NOT_SET : deck.get('id', NOT_SET);
+    const oldDeckID = deckID;
+
+    if(deck === NOT_SET || deckID === NOT_SET || deckID != maybeID) {
+
+        // fetch deck
+        const {decksResponse} = yield new Promise(function(resolve) {
+            superhot
+                .get(`/decks/${maybeID}`)
+                .end(function(err, res){
+                    resolve({decksErr: err, decksResponse: res});
+                });
+        });
+
+        switch(decksResponse.status) {
+        case 404:
+            defaultRoute(rootCursor);
+            return;
+            break;
+        case 200:
+            // good
+            deck = Immutable.fromJS(decksResponse.body);
+            deckID = maybeID;
+            deckCursor.update(function() {
+                return deck;
+            });
+            break;
+        default:
+            throw Error('http code not found');
+            // TODO: error handling
+        }
+    }
+
+    // load deck children
+    if(oldDeckID === NOT_SET || oldDeckID != deckID) {
+        // watch deck and load full decks of children
+        store.dispatch(loadChildren, maybeID);
+    }
+
+    if(!_.has(ctx.params, 'slug')) {
+        // matched /deck/:id
+        store.dispatch(redirectToDeck, deck, maybeID);
+        return;
+    }
+
+    // verify if slug is valid
+
+    const slugged = generateSlug(deck.get('name'), maybeID);
+
+    if(ctx.params.slug != slugged) {
+        page.redirect(`/deck/${maybeID}/${slugged}`);
+        return;
+    }
+
+
+    // TODO: do this concurrently with below
+    rootCursor.cursor(paths.route.handler).update(function() {
+        return Dashboard;
+    });
+
+    next();
+    return;
+});

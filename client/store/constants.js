@@ -40,6 +40,11 @@ module.exports = {
                 editing: ['dashboard', 'decks', 'editing'],
                 finishEditing: ['dashboard', 'decks', 'finishEditing'],
                 creatingNew: ['dashboard', 'decks', 'creatingNew']
+            },
+            cards: {
+                editing: ['dashboard', 'cards', 'editing'],
+                finishEditing: ['dashboard', 'cards', 'finishEditing'],
+                creatingNew: ['dashboard', 'cards', 'creatingNew']
             }
         }
     },

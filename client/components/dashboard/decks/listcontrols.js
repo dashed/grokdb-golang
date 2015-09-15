@@ -4,7 +4,8 @@ const _ = require('lodash');
 
 const {paths, keypress} = require('store/constants');
 const {createNewDeck} = require('store/decks');
-const {setEditingDeck, setNewDeck} = require('store/dashboard');
+const {setNewDeck} = require('store/dashboard');
+const {toDeckSettings, toDeck} = require('store/route');
 
 const DecksListControls = React.createClass({
 
@@ -41,7 +42,7 @@ const DecksListControls = React.createClass({
 
         const {store} = this.props;
 
-        store.dispatch(setEditingDeck, true);
+        store.dispatch(toDeckSettings);
     },
 
     onClickCancelEditingDeck(event) {
@@ -50,7 +51,7 @@ const DecksListControls = React.createClass({
 
         const {store} = this.props;
 
-        store.dispatch(setEditingDeck, false);
+        store.dispatch(toDeck);
     },
 
     addNewDeck() {
