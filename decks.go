@@ -417,14 +417,6 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
         })
         ctx.Error(err)
         return
-    case err == ErrCardPageOutOfBounds:
-        ctx.JSON(http.StatusBadRequest, gin.H{
-            "status":           http.StatusBadRequest,
-            "developerMessage": err.Error(),
-            "userMessage":      "page is out of bound",
-        })
-        ctx.Error(err)
-        return
     case err != nil:
         ctx.JSON(http.StatusInternalServerError, gin.H{
             "status":           http.StatusInternalServerError,
@@ -448,11 +440,19 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
         })
         ctx.Error(err)
         return
+    case err == ErrCardPageOutOfBounds:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "page is out of bound",
+        })
+        ctx.Error(err)
+        return
     case err != nil:
         ctx.JSON(http.StatusInternalServerError, gin.H{
             "status":           http.StatusInternalServerError,
             "developerMessage": err.Error(),
-            "userMessage":      "unable to retrieve deck",
+            "userMessage":      "unable to retrieve cards for deck",
         })
         ctx.Error(err)
         return
