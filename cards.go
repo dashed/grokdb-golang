@@ -23,7 +23,6 @@ type CardProps struct {
     Title       string
     Description string
     Sides       string
-    Order       string
     Deck        uint
 }
 
@@ -32,7 +31,6 @@ type CardRow struct {
     Title       string
     Description string
     Sides       string
-    Order       string `db:"keyorder"`
     Deck        uint   `db:"deck"`
     CreatedAt   string `db:"created_at"`
     UpdatedAt   string `db:"updated_at"`
@@ -42,7 +40,6 @@ type CardPOSTRequest struct {
     Title       string `json:"title" binding:"required"`
     Description string `json:"description"`
     Sides       string `json:"sides" binding:"required"`
-    Order       string `json:"order"`
     Deck        uint   `json:"deck" binding:"required,min=1"`
 }
 
@@ -149,7 +146,6 @@ func CardPOST(db *sqlx.DB, ctx *gin.Context) {
         Title:       jsonRequest.Title,
         Description: jsonRequest.Description,
         Sides:       jsonRequest.Sides,
-        Order:       jsonRequest.Order,
         Deck:        jsonRequest.Deck,
     })
     if err != nil {
@@ -174,7 +170,6 @@ func CardResponse(overrides *gin.H) gin.H {
         "title":       "", // required
         "description": "",
         "sides":       "", // required
-        "order":       "", // required
         "deck":        0,  // required
     }
 
@@ -187,7 +182,6 @@ func CardRowToResponse(cardrow *CardRow) gin.H {
         "title":       cardrow.Title,
         "description": cardrow.Description,
         "sides":       cardrow.Sides,
-        "order":       cardrow.Order,
         "deck":        cardrow.Deck,
         "created_at":  cardrow.CreatedAt,
         "updated_at":  cardrow.UpdatedAt,
@@ -202,10 +196,6 @@ func ValidateCardProps(props *CardProps) error {
 
     if len(props.Sides) <= 0 {
         return errors.New("Sides must be non-empty string")
-    }
-
-    if len(props.Order) <= 0 {
-        return errors.New("Order must be non-empty string")
     }
 
     if props.Deck <= 0 {
@@ -263,7 +253,6 @@ func CreateCard(db *sqlx.DB, props *CardProps) (*CardRow, error) {
             "title":       props.Title,
             "description": props.Description,
             "sides":       props.Sides,
-            "keyorder":    props.Order,
             "deck":        props.Deck,
         })
     if err != nil {

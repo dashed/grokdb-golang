@@ -313,18 +313,17 @@ CREATE TABLE IF NOT EXISTS Cards (
     title TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     sides TEXT NOT NULL,
-    keyorder TEXT NOT NULL,
 
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format */
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format. time when the card was modified. not when it was seen. */
 
     deck INTEGER NOT NULL,
 
-    CHECK (title <> '' AND sides <> '' AND keyorder <> ''), /* ensure not empty */
+    CHECK (title <> '' AND sides <> ''), /* ensure not empty */
     FOREIGN KEY (deck) REFERENCES Decks(deck_id) ON DELETE CASCADE
 );
 
-CREATE TRIGGER IF NOT EXISTS cards_updated_card AFTER UPDATE OF title, description, sides, keyorder, deck
+CREATE TRIGGER IF NOT EXISTS cards_updated_card AFTER UPDATE OF title, description, sides, deck
 ON Cards
 BEGIN
     UPDATE Cards SET updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE card_id = NEW.card_id;
@@ -375,10 +374,10 @@ CREATE INDEX IF NOT EXISTS CardsScoreHistory_date_Index ON CardsScoreHistory (oc
 
 var CREATE_NEW_CARD_QUERY = (func() PipeInput {
     const __CREATE_NEW_CARD_QUERY string = `
-    INSERT INTO Cards(title, description, sides, keyorder, deck)
-    VALUES (:title, :description, :sides, :keyorder, :deck);
+    INSERT INTO Cards(title, description, sides, deck)
+    VALUES (:title, :description, :sides, :deck);
     `
-    var requiredInputCols []string = []string{"title", "description", "sides", "keyorder", "deck"}
+    var requiredInputCols []string = []string{"title", "description", "sides", "deck"}
 
     return composePipes(
         MakeCtxMaker(__CREATE_NEW_CARD_QUERY),
@@ -389,7 +388,7 @@ var CREATE_NEW_CARD_QUERY = (func() PipeInput {
 
 var FETCH_CARD_QUERY = (func() PipeInput {
     const __FETCH_CARD_QUERY string = `
-    SELECT card_id, title, description, sides, keyorder, deck, created_at, updated_at FROM Cards
+    SELECT card_id, title, description, sides, deck, created_at, updated_at FROM Cards
     WHERE card_id = :card_id;
     `
 
@@ -411,7 +410,7 @@ var UPDATE_CARD_QUERY = (func() PipeInput {
     `
 
     var requiredInputCols []string = []string{"card_id"}
-    var whiteListCols []string = []string{"title", "description", "sides", "keyorder"}
+    var whiteListCols []string = []string{"title", "description", "sides"}
 
     return composePipes(
         MakeCtxMaker(__UPDATE_CARD_QUERY),
