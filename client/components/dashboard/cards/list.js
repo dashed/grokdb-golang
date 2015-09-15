@@ -30,7 +30,7 @@ const CardsList = React.createClass({
                         <button
                             type="button"
                             className="btn btn-success btn-sm"
-                            onClick={this.onClickNewCard}>New Card</button>
+                            onClick={this.onClickNewCard}>{"New Card"}</button>
                     </div>
                 </div>
                 <div className="row">
