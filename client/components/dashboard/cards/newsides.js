@@ -3,6 +3,7 @@ const TextareaAutosize = require('react-textarea-autosize');
 const classNames = require('classnames');
 
 const Preview = require('components/markdownpreview');
+const {tabSize} = require('store/constants');
 
 const CardNewSides = React.createClass({
 
@@ -131,7 +132,7 @@ const CardNewSides = React.createClass({
             <div>
                 <div className="card-block">
                     {sideChooser}
-                    <ul className="nav nav-tabs m-b">
+                    <ul style={tabSize} className="nav nav-tabs m-b">
                         <li className="nav-item">
                             <a
                                 href={'#'}

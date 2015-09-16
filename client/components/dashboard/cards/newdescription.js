@@ -3,6 +3,7 @@ const TextareaAutosize = require('react-textarea-autosize');
 const classNames = require('classnames');
 
 const Preview = require('components/markdownpreview');
+const {tabSize} = require('store/constants');
 
 const CardNewDescription = React.createClass({
 
@@ -73,7 +74,7 @@ const CardNewDescription = React.createClass({
 
         return (
             <div className="card-block">
-                <ul className="nav nav-tabs m-b">
+                <ul style={tabSize} className="nav nav-tabs m-b">
                     <li className="nav-item">
                         <a
                             href={'#'}

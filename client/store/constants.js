@@ -2,6 +2,11 @@ const markdown = require('markdown-it')();
 
 module.exports = {
 
+    // TODO: refactor?
+    tabSize: {
+        fontSize: '0.85rem'
+    },
+
     // sentinel value
     NOT_SET: Symbol('NOT_SET'),
 

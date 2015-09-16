@@ -5,7 +5,7 @@ const _ = require('lodash');
 const classNames = require('classnames');
 const TextareaAutosize = require('react-textarea-autosize');
 
-const {paths, NOT_SET} = require('store/constants');
+const {paths, NOT_SET, tabSize} = require('store/constants');
 const {saveDeck} = require('store/decks');
 
 const Preview = require('components/markdownpreview');
@@ -161,7 +161,7 @@ const DeckInfo = React.createClass({
                     <fieldset className="form-group">
                         <input type="text" className="form-control" id="deckName" placeholder="Deck Name" value={this.state.name} onChange={this.onChangeName} />
                     </fieldset>
-                    <ul className="nav nav-tabs m-b">
+                    <ul style={tabSize} className="nav nav-tabs m-b">
                         <li className="nav-item">
                             <a
                                 href={!this.state.preview ? '' : '#'}
