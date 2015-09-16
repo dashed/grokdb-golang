@@ -164,6 +164,225 @@ func CardPOST(db *sqlx.DB, ctx *gin.Context) {
     ctx.JSON(http.StatusCreated, CardRowToResponse(newCardRow))
 }
 
+// PATCH /cards/:id
+//
+// Input:
+// title: non-empty string that shall be the new title of the deck
+//
+func CardPATCH(db *sqlx.DB, ctx *gin.Context) {
+
+    var (
+        err error
+    )
+
+    // parse id
+    var cardIDString string = strings.ToLower(ctx.Param("id"))
+    _cardID, err := strconv.ParseUint(cardIDString, 10, 32)
+    var cardID uint = uint(_cardID)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // parse request body
+    var patch *StringMap = &StringMap{}
+    err = ctx.BindJSON(patch)
+    if err != nil {
+
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "bad JSON input",
+        })
+        ctx.Error(err)
+        return
+    }
+    if len(*patch) <= 0 {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "no JSON input",
+            "userMessage":      "no JSON input",
+        })
+    }
+
+    // TODO: validate patch
+    // TODO: ensure title, if given, is non-empty string
+
+    var (
+        fetchedCardRow *CardRow = nil
+    )
+
+    // check requested card exists and fetch it
+
+    fetchedCardRow, err = GetCard(db, cardID)
+    switch {
+    case err == ErrCardNoSuchCard:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to find card with given id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to fetch card",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var (
+        deckID uint = fetchedCardRow.Deck
+    )
+
+    // case: moving card
+    if _, hasDeckKey := (*patch)["deck"]; hasDeckKey == true {
+
+        // check if new deck is valid
+
+        // TODO: do this earlier for early bail
+        // validate parent param
+        var maybeDeckID uint
+        maybeDeckID, err = (func() (uint, error) {
+            switch _deckID := (*patch)["deck"].(type) {
+            // note that according to docs: http://golang.org/pkg/encoding/json/#Unmarshal
+            // JSON numbers are converted to float64
+            case float64:
+                if _deckID > 0 {
+                    return uint(_deckID), nil
+                }
+            }
+            return 0, errors.New("target deck is invalid")
+        }())
+
+        if err != nil {
+            ctx.JSON(http.StatusBadRequest, gin.H{
+                "status":           http.StatusBadRequest,
+                "developerMessage": err.Error(),
+                "userMessage":      err.Error(),
+            })
+            ctx.Error(err)
+            return
+        }
+
+        // cannot move card to the same parent
+        if deckID == maybeDeckID {
+            ctx.JSON(http.StatusBadRequest, gin.H{
+                "status":           http.StatusBadRequest,
+                "developerMessage": "cannot move deck to the same parent",
+                "userMessage":      "cannot move deck to the same parent",
+            })
+            return
+        }
+        deckID = maybeDeckID
+
+        // validate target deck exists
+        _, err = GetDeck(db, deckID)
+        switch {
+        case err == ErrDeckNoSuchDeck:
+            ctx.JSON(http.StatusBadRequest, gin.H{
+                "status":           http.StatusBadRequest,
+                "developerMessage": err.Error(),
+                "userMessage":      "given deck id is invalid",
+            })
+            ctx.Error(err)
+            return
+        case err != nil:
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to fetch deck",
+            })
+            ctx.Error(err)
+            return
+        }
+    }
+
+    // generate SQL to patch card
+    var (
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(UPDATE_CARD_QUERY, &StringMap{"card_id": cardID}, patch)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to generate patch card SQL",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var res sql.Result
+    res, err = db.Exec(query, args...)
+    if err != nil {
+        // TODO: transaction rollback
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to patch card",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // ensure card is patched
+    num, err := res.RowsAffected()
+    if err != nil {
+        // TODO: transaction rollback
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to patch card",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    if num <= 0 {
+        // TODO: transaction rollback
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "given JSON is invalid",
+            "userMessage":      "given JSON is invalid",
+        })
+        return
+    }
+
+    fetchedCardRow, err = GetCard(db, cardID)
+    switch {
+    case err == ErrCardNoSuchCard:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find card by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // TODO: fetch card score and MergeResponse
+    ctx.JSON(http.StatusOK, CardRowToResponse(fetchedCardRow))
+}
+
 /* helpers */
 
 func CardResponse(overrides *gin.H) gin.H {

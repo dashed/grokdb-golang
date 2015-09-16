@@ -714,7 +714,7 @@ func DeckDELETE(db *sqlx.DB, ctx *gin.Context) {
 // PATCH /decks/:id
 //
 // Input:
-// name: non-empty string that shall be the name of the new deck
+// name: non-empty string that shall be the new name of the deck
 //
 // NOTE: PATCH operation on root node is allowed
 func DeckPATCH(db *sqlx.DB, ctx *gin.Context) {

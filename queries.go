@@ -410,7 +410,7 @@ var UPDATE_CARD_QUERY = (func() PipeInput {
     `
 
     var requiredInputCols []string = []string{"card_id"}
-    var whiteListCols []string = []string{"title", "description", "sides"}
+    var whiteListCols []string = []string{"title", "description", "sides", "deck"}
 
     return composePipes(
         MakeCtxMaker(__UPDATE_CARD_QUERY),

@@ -60,7 +60,7 @@ func bootAPI(db *Database) {
         // prefer to use DeckCardsGET
         // cardsAPI.GET("/", injectDB(CardGETMany))
 
-        // cardsAPI.PATCH("/:id", injectDB(CardPATCH))
+        cardsAPI.PATCH("/:id", injectDB(CardPATCH))
 
         // cardsAPI.DELETE("/:id", injectDB(CardDELETE))
 
