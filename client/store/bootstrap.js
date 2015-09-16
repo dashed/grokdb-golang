@@ -21,6 +21,8 @@ const bootRouter = co.wrap(function* (store) {
     page('*', function(ctx, next) {
 
         // reset dashboard state
+
+        // decks
         rootCursor.cursor(paths.dashboard.decks.editing).update(function() {
             return false;
         });
@@ -30,11 +32,16 @@ const bootRouter = co.wrap(function* (store) {
         rootCursor.cursor(paths.dashboard.decks.finishEditing).update(function() {
             return NOT_SET;
         });
+
+        // cards
         rootCursor.cursor(paths.dashboard.cards.creatingNew).update(function() {
             return false;
         });
         rootCursor.cursor(paths.dashboard.cards.page).update(function() {
             return 1;
+        });
+        rootCursor.cursor(paths.dashboard.cards.viewingProfile).update(function() {
+            return false;
         });
 
         return next();
@@ -47,6 +54,8 @@ const bootRouter = co.wrap(function* (store) {
 
     const __ensureDeckRoute = _.bind(ensureDeckRoute, void 0, store);
     const __ensureCardsRoute = _.bind(ensureCardsRoute, void 0, store);
+    const __ensureCurrentCardRoute = _.bind(ensureCurrentCardRoute, void 0, store);
+
 
     page('/deck/:id', __ensureDeckRoute, function() {
         // should not be here
@@ -88,12 +97,18 @@ const bootRouter = co.wrap(function* (store) {
         });
     });
 
-    page('/card/:id/edit', function() {
+    page('/card/:id', __ensureCurrentCardRoute, function() {
 
-        // TODO: implement
+        rootCursor.cursor(paths.dashboard.cards.viewingProfile).update(function() {
+            return true;
+        });
+
+        rootCursor.cursor(paths.dashboard.view).update(function() {
+            return dashboard.view.cards;
+        });
     });
 
-    page('/card/:id', function() {
+    page('/card/:id/edit', function() {
 
         // TODO: implement
     });
@@ -272,36 +287,22 @@ const ensureDeckRoute = co.wrap(function* (store, ctx, next) {
     const deckCursor = rootCursor.cursor(paths.deck.self);
     let deck = deckCursor.deref(NOT_SET);
     let deckID = deck === NOT_SET ? NOT_SET : deck.get('id', NOT_SET);
-    const oldDeckID = deckID;
+    const oldDeckID = deckID; // ensure old value of deckID is 'correct'
 
     if(deck === NOT_SET || deckID === NOT_SET || deckID != maybeID) {
 
-        // fetch deck
-        const {decksResponse} = yield new Promise(function(resolve) {
-            superhot
-                .get(`/decks/${maybeID}`)
-                .end(function(err, res){
-                    resolve({decksErr: err, decksResponse: res});
-                });
-        });
+        deck = yield loadDeck(maybeID, NOT_SET);
 
-        switch(decksResponse.status) {
-        case 404:
+        if(deck === NOT_SET) {
+            // 404
             defaultRoute(rootCursor);
             return;
-            break;
-        case 200:
-            // good
-            deck = Immutable.fromJS(decksResponse.body);
-            deckID = maybeID;
-            deckCursor.update(function() {
-                return deck;
-            });
-            break;
-        default:
-            throw Error('http code not found');
-            // TODO: error handling
         }
+
+        deckID = maybeID;
+        deckCursor.update(function() {
+            return deck;
+        });
     }
 
     // load deck children
@@ -333,6 +334,86 @@ const ensureDeckRoute = co.wrap(function* (store, ctx, next) {
     return;
 });
 
+const ensureCurrentCardRoute = co.wrap(function* (store, ctx, next) {
+
+    const rootCursor = store.state();
+
+    if(!_.has(ctx.params, 'id')) {
+        throw Error('ensureCurrentCardRoute used incorrectly');
+    }
+
+    const maybeID = filterInt(ctx.params.id);
+
+    // ensure :id is valid
+    if(notValidID(maybeID)) {
+        defaultRoute(rootCursor);
+        return;
+    }
+
+    // fetch card from REST
+
+    const cardCursor = rootCursor.cursor(paths.card.self);
+    let card = cardCursor.deref(NOT_SET);
+    let cardID = card === NOT_SET ? NOT_SET : card.get('id', NOT_SET);
+    // const oldCardID = cardID; // ensure old value of cardID is 'correct'
+
+    if(card === NOT_SET || cardID === NOT_SET || cardID != maybeID) {
+
+        // fetch card
+        const {response} = yield new Promise(function(resolve) {
+            superhot
+                .get(`/cards/${maybeID}`)
+                .end(function(err, res){
+                    resolve({err: err, response: res});
+                });
+        });
+
+        switch(response.status) {
+        case 404:
+            defaultRoute(rootCursor);
+            return;
+            break;
+        case 200:
+            // good
+            card = Immutable.fromJS(response.body);
+            cardID = maybeID;
+            cardCursor.update(function() {
+                return card;
+            });
+            break;
+        default:
+            throw Error('http code not found');
+            // TODO: error handling
+        }
+    }
+
+    // fetch deck
+    const deck = yield loadDeck(card.get('deck'), NOT_SET);
+
+    if(deck === NOT_SET) {
+        // 404
+        defaultRoute(rootCursor);
+        return;
+    }
+
+    const deckCursor = rootCursor.cursor(paths.deck.self);
+    deckCursor.update(function() {
+        return deck;
+    });
+
+    // load cards list
+    co(function*() {
+        yield loadCardsList(rootCursor, deck.get('id'));
+    });
+
+    rootCursor.cursor(paths.route.handler).update(function() {
+        return Dashboard;
+    });
+
+    next();
+    return;
+});
+
 const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
 
     const rootCursor = store.state();
@@ -352,6 +433,39 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
     const deckCursor = rootCursor.cursor(paths.deck.self);
     const deckID = deckCursor.deref().get('id');
 
+    yield loadCardsList(rootCursor, deckID, pageNum);
+
+    next();
+    return;
+});
+
+// returns deck (Immutable.Map) of given deckID; defaultValue otherwise
+const loadDeck = co.wrap(function*(deckID, defaultValue) {
+    // fetch deck
+    const {decksResponse} = yield new Promise(function(resolve) {
+        superhot
+            .get(`/decks/${deckID}`)
+            .end(function(err, res){
+                resolve({decksErr: err, decksResponse: res});
+            });
+    });
+
+    switch(decksResponse.status) {
+    case 404:
+        return defaultValue;
+        break;
+    case 200:
+        // good
+        return Immutable.fromJS(decksResponse.body);
+        break;
+    default:
+        throw Error('http code not found');
+        // TODO: error handling
+    }
+});
+
+const loadCardsList = co.wrap(function*(rootCursor, deckID, pageNum = 1) {
+
     // get page count
     const {cardsCount} = yield new Promise(function(resolve) {
         superhot
@@ -366,7 +480,6 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
         return cardsCount;
     });
 
-
     if(cardsCount <= 0) {
         rootCursor.cursor(paths.dashboard.cards.list).update(function() {
             return Immutable.List();
@@ -378,11 +491,12 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
             return 1;
         });
 
-        next();
         return;
     }
 
+    // TODO: move this constant
     const perPage = 25;
+
     rootCursor.cursor(paths.dashboard.cards.page).update(function() {
         return (pageNum-1)*perPage >= cardsCount ? 1 : pageNum;
     });
@@ -406,7 +520,8 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
 
         switch(cardsResponse.status) {
         case 400:
-            // page of out of bounds
+            // page of out of bounds;
+            // load the first page
             yield fetchCards(1);
             return;
             break;
@@ -429,6 +544,4 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
     });
     yield fetchCards(pageNum);
 
-    next();
-    return;
 });

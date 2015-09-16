@@ -33,6 +33,12 @@ module.exports = {
             breadcrumb: ['deck', 'breadcrumb']
         },
 
+        card: {
+            // currently viewed card
+            editing: ['card', 'editing'],
+            self: ['card', 'self']
+        },
+
         // ui flags
         dashboard: {
             view: ['dashboard', 'view'],
@@ -42,9 +48,9 @@ module.exports = {
                 creatingNew: ['dashboard', 'decks', 'creatingNew']
             },
             cards: {
-                editing: ['dashboard', 'cards', 'editing'],
                 finishEditing: ['dashboard', 'cards', 'finishEditing'],
                 creatingNew: ['dashboard', 'cards', 'creatingNew'],
+                viewingProfile: ['dashboard', 'cards', 'viewingProfile'],
 
                 // list
                 page: ['dashboard', 'cards', 'page'], // current page

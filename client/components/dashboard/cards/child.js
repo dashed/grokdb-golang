@@ -2,11 +2,22 @@ const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
 
+const {navigatetoCard} = require('store/cards');
+
 const CardChild = React.createClass({
 
     propTypes: {
         card: React.PropTypes.instanceOf(Immutable.Map).isRequired,
         store: React.PropTypes.object.isRequired
+    },
+
+    onClickCard(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const {card, store} = this.props;
+
+        store.dispatch(navigatetoCard, {card});
     },
 
     render() {
@@ -15,7 +26,7 @@ const CardChild = React.createClass({
         const title = card.get('title');
 
         return (
-            <a href="lol">{title}</a>
+            <a href="#" onClick={this.onClickCard}>{title}</a>
         );
     }
 });

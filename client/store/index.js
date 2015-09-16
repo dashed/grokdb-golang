@@ -41,7 +41,8 @@ const SCHEMA = {
             numOfPages: 0,
             list: NOT_SET,
 
-            creatingNew: false
+            creatingNew: false,
+            viewingProfile: false
         }
     },
 
@@ -52,6 +53,12 @@ const SCHEMA = {
         self: NOT_SET,
         children: NOT_SET,
         breadcrumb: NOT_SET
+    },
+
+    card: {
+        // card profile
+        editing: false,
+        self: NOT_SET // currently viewed card
     }
 };
 

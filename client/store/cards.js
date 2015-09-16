@@ -1,7 +1,7 @@
 const superhot = require('store/superhot');
 const {paths} = require('store/constants');
 
-const {toDeckCards} = require('store/route');
+const {toDeckCards, toCardProfile} = require('store/route');
 
 const transforms = {
     createNewCard(state, cardProps) {
@@ -27,7 +27,16 @@ const transforms = {
                 // go to card list
                 toDeckCards(state, {deck, deckID});
             });
-    }
+    },
+
+    navigatetoCard(state, card) {
+
+        state.cursor(paths.card.self).update(function() {
+            return card;
+        });
+
+        toCardProfile(state, card);
+    },
 };
 
 module.exports = transforms;

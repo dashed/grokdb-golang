@@ -28,6 +28,9 @@ const Dashboard = React.createClass({
             case dashboard.view.decks:
                 return DecksDashboard;
                 break;
+            default:
+                throw Error('unknown requested view');
+                break;
             }
         }());
 

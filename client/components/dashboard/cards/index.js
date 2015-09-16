@@ -8,10 +8,12 @@ const {toDeckCards, toDeckCardsNew} = require('store/route');
 const CardsList = require('./list');
 const CreatingCard = require('./new');
 const CardsPagination = require('./pagination');
+const CardProfile = require('./profile');
 
 const CardsDashboard = React.createClass({
 
     propTypes: {
+        viewingProfile: React.PropTypes.bool.isRequired,
         creatingNew: React.PropTypes.bool.isRequired,
         store: React.PropTypes.object.isRequired
     },
@@ -34,11 +36,31 @@ const CardsDashboard = React.createClass({
 
     render() {
 
-        const {creatingNew} = this.props;
+        const {creatingNew, viewingProfile} = this.props;
+
+        if(viewingProfile) {
+            return (
+                <div key="viewingProfile">
+                    <div className="row m-b">
+                        <div className="col-sm-12">
+                            <button
+                                type="button"
+                                className="btn btn-success btn-sm"
+                                onClick={this.onClickBack}>{"Back to list"}</button>
+                        </div>
+                    </div>
+                    <div className="row">
+                        <div className="col-sm-12">
+                            <CardProfile />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         if(creatingNew) {
             return (
-                <div>
+                <div key="creatingNew">
                     <div className="row m-b">
                         <div className="col-sm-12">
                             <button
@@ -57,7 +79,7 @@ const CardsDashboard = React.createClass({
         }
 
         return (
-            <div>
+            <div key="cardlist">
                 <div className="row">
                     <div className="col-sm-12">
                         <button
@@ -104,7 +126,8 @@ module.exports = orwell(CardsDashboardOcclusion, {
 
         return [
             state.cursor(paths.deck.self),
-            state.cursor(paths.dashboard.cards.creatingNew)
+            state.cursor(paths.dashboard.cards.creatingNew),
+            state.cursor(paths.dashboard.cards.viewingProfile)
         ];
     },
     assignNewProps(props, context) {
@@ -114,7 +137,8 @@ module.exports = orwell(CardsDashboardOcclusion, {
         return {
             store: context.store,
             deck: state.cursor(paths.deck.self).deref(),
-            creatingNew: state.cursor(paths.dashboard.cards.creatingNew).deref()
+            creatingNew: state.cursor(paths.dashboard.cards.creatingNew).deref(),
+            viewingProfile: state.cursor(paths.dashboard.cards.viewingProfile).deref()
         };
     }
 }).inject({
