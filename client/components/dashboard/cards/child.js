@@ -32,6 +32,7 @@ const CardChild = React.createClass({
 });
 
 module.exports = orwell(CardChild, {
+    // TODO: needs this fix: https://github.com/Dashed/orwell/issues/14
     // watchCursors(props, manual) {
 
     //     manual(function(update) {
