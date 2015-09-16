@@ -306,7 +306,8 @@ const ensureDeckRoute = co.wrap(function* (store, ctx, next) {
     }
 
     // load deck children
-    if(oldDeckID === NOT_SET || oldDeckID != deckID) {
+    const children = rootCursor.cursor(paths.deck.children).deref(NOT_SET);
+    if(children === NOT_SET || oldDeckID === NOT_SET || oldDeckID != deckID) {
         // watch deck and load full decks of children
         store.dispatch(loadChildren, maybeID);
     }
