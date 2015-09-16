@@ -6,17 +6,7 @@ const SCHEMA = {
 
     route: {
         // ideally, react-router should be awesome at this
-        handler: NOT_SET,
-
-        // input params extracted by router lib (i.e. page.js)
-        params: {
-            deck: {
-                id: NOT_SET
-            },
-            card: {
-                id: NOT_SET
-            }
-        }
+        handler: NOT_SET
     },
 
     // ui flags
