@@ -1,6 +1,7 @@
 const {Probe} = require('minitrue');
 const React = require('react');
 const orwell = require('orwell');
+const Immutable = require('immutable');
 
 const {paths} = require('store/constants');
 
@@ -9,31 +10,50 @@ const CardChild = require('./child');
 const CardsChildren = React.createClass({
 
     propTypes: {
+        list: React.PropTypes.instanceOf(Immutable.List).isRequired,
         listCursor: React.PropTypes.instanceOf(Probe).isRequired
     },
 
     render() {
-        const {listCursor} = this.props;
+        const {listCursor, list} = this.props;
 
-        const currentChildrenRendered = listCursor.reduce(function(accumulator, childCursor) {
-            accumulator.push(
-                <li className="list-group-item" key={childCursor.deref().get('id')}>
-                    <CardChild childCursor={childCursor} />
-                </li>
+        const display = (function() {
+
+            if(list.size <= 0) {
+                return (
+                    <div className="card-block text-center">
+                        <p className="card-text text-muted">
+                            {"No cards to display. To get started, you should create your first card for this deck."}
+                        </p>
+                    </div>
+                );
+            }
+
+            // display list of cards
+
+            const currentChildrenRendered = listCursor.reduce(function(accumulator, childCursor) {
+                accumulator.push(
+                    <li className="list-group-item" key={childCursor.deref().get('id')}>
+                        <CardChild childCursor={childCursor} />
+                    </li>
+                );
+
+                return accumulator;
+            }, []);
+
+            return (
+                <ul className="list-group">
+                    {currentChildrenRendered}
+                </ul>
             );
-
-            return accumulator;
-        }, []);
-
+        }());
 
         return (
             <div className="card m-y-0">
                 <div className="card-block">
                     {"card header here with some dropdowns"}
                 </div>
-                <ul className="list-group">
-                    {currentChildrenRendered}
-                </ul>
+                {display}
             </div>
         );
     }

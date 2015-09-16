@@ -1,18 +1,27 @@
 const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
+const Immutable = require('immutable');
 
 const {NOT_SET, paths} = require('store/constants');
 
 const CardsChildren = require('./children');
 
 const CardsList = React.createClass({
+
+    propTypes: {
+        list: React.PropTypes.instanceOf(Immutable.List).isRequired
+    },
+
     render() {
+
+        const {list} = this.props;
+
         return (
             <div>
                 <div className="row">
                     <div className="col-sm-12 m-y">
-                        <CardsChildren />
+                        <CardsChildren list={list} />
                     </div>
                 </div>
             </div>
