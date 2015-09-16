@@ -1,5 +1,4 @@
 const React = require('react');
-const _ = require('lodash');
 
 const NewSides = require('./newsides');
 const NewDescription = require('./newdescription');
@@ -8,25 +7,31 @@ const CardModify = React.createClass({
 
     propTypes: {
         onCommit: React.PropTypes.func.isRequired,
-        commitLabel: React.PropTypes.string.isRequired
-    },
+        onChangeTitle: React.PropTypes.func.isRequired,
+        onChangeDescription: React.PropTypes.func.isRequired,
+        onChangeSides: React.PropTypes.func.isRequired,
 
-    getInitialState() {
+        commitLabel: React.PropTypes.string.isRequired,
 
-        return {
-            title: '',
-            sides: {
-                front: '',
-                back: ''
-            },
-            description: ''
-        };
+        title: React.PropTypes.string.isRequired,
+        sides: React.PropTypes.shape({
+            front: React.PropTypes.string.isRequired,
+            back: React.PropTypes.string.isRequired
+        }),
+        description: React.PropTypes.string.isRequired,
     },
 
     onChangeTitle(event) {
-        this.setState({
-            title: event.target.value
-        });
+        this.props.onChangeTitle(event.target.value);
+    },
+
+    onChangeDescription(description) {
+        this.props.onChangeDescription(description);
+    },
+
+    onChangeSides(newSide) {
+        // only send patch
+        this.props.onChangeSides(newSide);
     },
 
     onClickCommit(event) {
@@ -34,22 +39,14 @@ const CardModify = React.createClass({
         event.stopPropagation();
 
         // TODO: form error handling
-        if(this.state.title.trim().length <= 0) {
+        if(this.props.title.trim().length <= 0) {
             return;
         }
 
-        this.props.onCommit(this.state);
-    },
-
-    onChangeDescription(description) {
-        this.setState({
-            description: description
-        });
-    },
-
-    onChangeSides(newSide) {
-        this.setState({
-            sides: _.assign(this.state.sides, newSide)
+        this.props.onCommit({
+            title: this.props.title,
+            sides: this.props.sides,
+            description: this.props.description
         });
     },
 
@@ -74,7 +71,7 @@ const CardModify = React.createClass({
                                         className="form-control"
                                         id="cardTitle"
                                         placeholder="Card Title"
-                                        value={this.state.title}
+                                        value={this.props.title}
                                         onChange={this.onChangeTitle}
                                     />
                                 </fieldset>
@@ -89,7 +86,7 @@ const CardModify = React.createClass({
 
                             <NewSides
                                 onChange={this.onChangeSides}
-                                sides={this.state.sides}
+                                sides={this.props.sides}
                             />
 
                             <div className="card-header p-y-0">
@@ -101,7 +98,7 @@ const CardModify = React.createClass({
 
                             <NewDescription
                                 onChange={this.onChangeDescription}
-                                description={this.state.description}
+                                description={this.props.description}
                             />
 
                             <div className="card-block p-t-0">
