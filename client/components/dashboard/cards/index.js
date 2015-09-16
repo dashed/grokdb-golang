@@ -65,7 +65,7 @@ const CardsDashboard = React.createClass({
                         <div className="col-sm-12">
                             <button
                                 type="button"
-                                className="btn btn-success btn-sm"
+                                className="btn btn-danger btn-sm"
                                 onClick={this.onClickBack}>{"Back to list"}</button>
                         </div>
                     </div>
