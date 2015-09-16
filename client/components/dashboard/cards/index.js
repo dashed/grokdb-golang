@@ -1,9 +1,10 @@
 const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
+const Immutable = require('immutable');
 
 const {NOT_SET, paths} = require('store/constants');
-const {toDeckCards, toDeckCardsNew} = require('store/route');
+const {toDeckCards, toDeckCardsNew, toCardProfileEdit} = require('store/route');
 
 const CardsList = require('./list');
 const CreatingCard = require('./new');
@@ -15,7 +16,8 @@ const CardsDashboard = React.createClass({
     propTypes: {
         viewingProfile: React.PropTypes.bool.isRequired,
         creatingNew: React.PropTypes.bool.isRequired,
-        store: React.PropTypes.object.isRequired
+        store: React.PropTypes.object.isRequired,
+        card: React.PropTypes.instanceOf(Immutable.Map).isRequired
     },
 
     onClickBack(event) {
@@ -38,7 +40,7 @@ const CardsDashboard = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        console.log('edit card');
+        this.props.store.dispatch(toCardProfileEdit, {card: this.props.card});
     },
 
     render() {
@@ -142,16 +144,20 @@ module.exports = orwell(CardsDashboardOcclusion, {
         return [
             state.cursor(paths.deck.self),
             state.cursor(paths.dashboard.cards.creatingNew),
-            state.cursor(paths.dashboard.cards.viewingProfile)
+            state.cursor(paths.dashboard.cards.viewingProfile),
+            state.cursor(paths.card.self)
         ];
     },
     assignNewProps(props, context) {
 
         const state = context.store.state();
 
+        const card = state.cursor(paths.card.self).deref(NOT_SET);
+
         return {
             store: context.store,
-            deck: state.cursor(paths.deck.self).deref(),
+            deck: state.cursor(paths.deck.self).deref(), // used for react-either
+            card: card === NOT_SET || !Immutable.Map.isMap(card) ? Immutable.Map() : card,
             creatingNew: state.cursor(paths.dashboard.cards.creatingNew).deref(),
             viewingProfile: state.cursor(paths.dashboard.cards.viewingProfile).deref()
         };

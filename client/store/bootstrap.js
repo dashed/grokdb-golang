@@ -20,28 +20,20 @@ const bootRouter = co.wrap(function* (store) {
 
     page('*', function(ctx, next) {
 
-        // reset dashboard state
+        // begin state change transaction
+        rootCursor.cursor(paths.transaction).update(function() {
+            return Immutable.Map().withMutations(function(map) {
+                map
+                    // decks
+                    .set(paths.dashboard.decks.editing, false)
+                    .set(paths.dashboard.decks.creatingNew, false)
+                    .set(paths.dashboard.decks.finishEditing, NOT_SET)
 
-        // decks
-        rootCursor.cursor(paths.dashboard.decks.editing).update(function() {
-            return false;
-        });
-        rootCursor.cursor(paths.dashboard.decks.creatingNew).update(function() {
-            return false;
-        });
-        rootCursor.cursor(paths.dashboard.decks.finishEditing).update(function() {
-            return NOT_SET;
-        });
-
-        // cards
-        rootCursor.cursor(paths.dashboard.cards.creatingNew).update(function() {
-            return false;
-        });
-        rootCursor.cursor(paths.dashboard.cards.page).update(function() {
-            return 1;
-        });
-        rootCursor.cursor(paths.dashboard.cards.viewingProfile).update(function() {
-            return false;
+                    // cards
+                    .set(paths.dashboard.cards.creatingNew, false)
+                    .set(paths.dashboard.cards.page, 1)
+                    .set(paths.dashboard.cards.viewingProfile, false);
+            });
         });
 
         return next();
@@ -52,66 +44,86 @@ const bootRouter = co.wrap(function* (store) {
         defaultRoute(rootCursor);
     });
 
+    const __commitStateTransaction = _.bind(commitStateTransaction, void 0, store);
     const __ensureDeckRoute = _.bind(ensureDeckRoute, void 0, store);
     const __ensureCardsRoute = _.bind(ensureCardsRoute, void 0, store);
     const __ensureCurrentCardRoute = _.bind(ensureCurrentCardRoute, void 0, store);
-
 
     page('/deck/:id', __ensureDeckRoute, function() {
         // should not be here
         defaultRoute(rootCursor);
     });
 
-    page('/deck/:id/:slug', __ensureDeckRoute, function() {
-        rootCursor.cursor(paths.dashboard.view).update(function() {
-            return dashboard.view.decks;
-        });
-    });
-
-    page('/deck/:id/:slug/settings', __ensureDeckRoute, function() {
-
-        rootCursor.cursor(paths.dashboard.decks.editing).update(function() {
-            return true;
+    page('/deck/:id/:slug', __ensureDeckRoute, function(ctx, next) {
+        rootCursor.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map.set(paths.dashboard.view, dashboard.view.decks);
+            });
         });
 
-        rootCursor.cursor(paths.dashboard.view).update(function() {
-            return dashboard.view.decks;
-        });
-    });
+        return next();
+    }, __commitStateTransaction);
 
-    page('/deck/:id/:slug/cards', __ensureDeckRoute, __ensureCardsRoute, function() {
-
-        rootCursor.cursor(paths.dashboard.view).update(function() {
-            return dashboard.view.cards;
-        });
-    });
-
-    page('/deck/:id/:slug/cards/new', __ensureDeckRoute, function() {
-
-        rootCursor.cursor(paths.dashboard.cards.creatingNew).update(function() {
-            return true;
+    page('/deck/:id/:slug/settings', __ensureDeckRoute, function(ctx, next) {
+        rootCursor.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.dashboard.view, dashboard.view.decks)
+                    .set(paths.dashboard.decks.editing, true);
+            });
         });
 
-        rootCursor.cursor(paths.dashboard.view).update(function() {
-            return dashboard.view.cards;
+        return next();
+    }, __commitStateTransaction);
+
+    page('/deck/:id/:slug/cards', __ensureDeckRoute, __ensureCardsRoute, function(ctx, next) {
+        rootCursor.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.dashboard.view, dashboard.view.cards);
+            });
         });
-    });
 
-    page('/card/:id', __ensureCurrentCardRoute, function() {
+        return next();
+    }, __commitStateTransaction);
 
-        rootCursor.cursor(paths.dashboard.cards.viewingProfile).update(function() {
-            return true;
+    page('/deck/:id/:slug/cards/new', __ensureDeckRoute, function(ctx, next) {
+        rootCursor.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.dashboard.cards.creatingNew, true)
+                    .set(paths.dashboard.view, dashboard.view.cards);
+            });
         });
 
-        rootCursor.cursor(paths.dashboard.view).update(function() {
-            return dashboard.view.cards;
+        return next();
+    }, __commitStateTransaction);
+
+    page('/card/:id', __ensureCurrentCardRoute, function(ctx, next) {
+        rootCursor.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.card.editing, false)
+                    .set(paths.dashboard.cards.viewingProfile, true)
+                    .set(paths.dashboard.view, dashboard.view.cards);
+            });
         });
-    });
 
-    page('/card/:id/edit', function() {
+        return next();
+    }, __commitStateTransaction);
 
-        // TODO: implement
-    });
+    page('/card/:id/edit', __ensureCurrentCardRoute, function(ctx, next) {
+        rootCursor.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.card.editing, true)
+                    .set(paths.dashboard.cards.viewingProfile, true)
+                    .set(paths.dashboard.view, dashboard.view.cards);
+            });
+        });
+
+        return next();
+    }, __commitStateTransaction);
 
     page('/review', function() {
 
@@ -244,6 +256,18 @@ const filterInt = function (value) {
         return Number(value);
     }
     return NaN;
+};
+
+const commitStateTransaction = function(store) {
+    const rootCursor = store.state();
+
+    const transaction = rootCursor.cursor(paths.transaction).deref(Immutable.Map());
+
+    transaction.forEach(function(value, path) {
+        rootCursor.cursor(path).update(function() {
+            return value;
+        });
+    });
 };
 
 const defaultRoute = function(rootCursor) {

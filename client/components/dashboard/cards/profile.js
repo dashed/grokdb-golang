@@ -1,6 +1,7 @@
 const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
+const _ = require('lodash');
 
 const {paths} = require('store/constants');
 const CardVisual = require('./visual');
@@ -12,6 +13,41 @@ const CardProfile = React.createClass({
         store: React.PropTypes.object.isRequired,
         card: React.PropTypes.instanceOf(Immutable.Map).isRequired,
         isEditing: React.PropTypes.bool.isRequired
+    },
+
+    getInitialState() {
+
+        const {card} = this.props;
+        const sides = JSON.parse(card.get('sides'));
+
+        return {
+            title: card.get('title'),
+            description: card.get('description'),
+            sides: sides
+        };
+    },
+
+    onChangeTitle(newTitle) {
+        this.setState({
+            title: newTitle
+        });
+    },
+
+    onChangeDescription(newDescription) {
+        this.setState({
+            description: newDescription
+        });
+    },
+
+    onChangeSides(patch) {
+        this.setState({
+            sides: _.assign(this.state.sides, patch)
+        });
+    },
+
+    onClickSave(newCard) {
+        console.log('save card');
+        // this.props.store.dispatch(createNewCard, newCard);
     },
 
     render() {
@@ -31,7 +67,20 @@ const CardProfile = React.createClass({
         }
 
         return (
-            <CardModify />
+            <CardModify
+                onCommit={this.onClickSave}
+
+                onChangeTitle={this.onChangeTitle}
+                title={this.state.title}
+
+                onChangeDescription={this.onChangeDescription}
+                description={this.state.description}
+
+                onChangeSides={this.onChangeSides}
+                sides={this.state.sides}
+
+                commitLabel={"Save Card"}
+            />
         );
     }
 });

@@ -17,17 +17,10 @@ module.exports = {
     // paths on the app state
     paths: {
 
-        route: {
-            handler: ['route', 'handler'],
+        transaction: ['transaction'],
 
-            params: {
-                deck: {
-                    id: ['route', 'params', 'deck', 'id']
-                },
-                card: {
-                    id: ['route', 'params', 'card', 'id']
-                }
-            }
+        route: {
+            handler: ['route', 'handler']
         },
 
         root: ['root'],

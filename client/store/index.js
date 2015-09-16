@@ -4,6 +4,9 @@ const {NOT_SET} = require('./constants');
 
 const SCHEMA = {
 
+    // map of keys (i.e. paths) to values to be committed
+    transaction: NOT_SET,
+
     route: {
         // ideally, react-router should be awesome at this
         handler: NOT_SET

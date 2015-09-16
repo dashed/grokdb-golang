@@ -60,7 +60,16 @@ const transforms = {
         ({card, cardID} = resolveCard(state, card, cardID));
 
         page(`/card/${cardID}`);
-    }
+    },
+
+    toCardProfileEdit(state, options) {
+
+        let {card, cardID} = options;
+
+        ({card, cardID} = resolveCard(state, card, cardID));
+
+        page(`/card/${cardID}/edit`);
+    },
 };
 
 module.exports = transforms;
