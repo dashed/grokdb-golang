@@ -14,8 +14,9 @@ const transforms = {
             return childDeck;
         });
 
-        transforms.loadChildren(state, childDeck.get('id'));
+        const deckID = childDeck.get('id');
 
+        transforms.loadChildren(state, deckID);
         transforms.pushOntoBreadcrumb(state, childDeck);
 
         toDeck(state, childDeck);
@@ -116,6 +117,10 @@ const transforms = {
                     });
                     return;
                 }
+
+                state.cursor(paths.deck.children).update(function() {
+                    return oldChildren.push(Immutable.fromJS(res.body));
+                });
 
                 state.cursor(paths.deck.self).cursor('children').update(function(lst) {
                     return lst.push(res.body.id);

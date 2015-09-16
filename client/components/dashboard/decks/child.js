@@ -2,6 +2,7 @@ const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
 
+const {NOT_SET} = require('store/constants');
 const {navigateChildDeck} = require('store/decks');
 
 const DeckChild = React.createClass({
@@ -16,6 +17,12 @@ const DeckChild = React.createClass({
         event.stopPropagation();
 
         const {store, deck} = this.props;
+
+        const id = deck.get('id', NOT_SET);
+
+        if(id === NOT_SET) {
+            return;
+        }
 
         store.dispatch(navigateChildDeck, deck);
     },
