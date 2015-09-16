@@ -34,6 +34,13 @@ const CardsDashboard = React.createClass({
         store.dispatch(toDeckCardsNew);
     },
 
+    onClickEditCard(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        console.log('edit card');
+    },
+
     render() {
 
         const {creatingNew, viewingProfile} = this.props;
@@ -43,10 +50,18 @@ const CardsDashboard = React.createClass({
                 <div key="viewingProfile">
                     <div className="row m-b">
                         <div className="col-sm-12">
-                            <button
-                                type="button"
-                                className="btn btn-success btn-sm"
-                                onClick={this.onClickBack}>{"Back to list"}</button>
+                            <div className="btn-group pull-left" role="group" aria-label="Basic example">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={this.onClickBack}>{"Back to list"}</button>
+                            </div>
+                            <div className="btn-group pull-right" role="group" aria-label="Basic example">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={this.onClickEditCard}>{"Edit Card"}</button>
+                            </div>
                         </div>
                     </div>
                     <div className="row">
