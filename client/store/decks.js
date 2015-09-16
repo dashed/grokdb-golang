@@ -125,7 +125,7 @@ const transforms = {
         setNewDeck(state, false);
     },
 
-    saveDeck: co.wrap(function*(state, patchDeck, callback) {
+    saveDeck: co.wrap(function*(state, patchDeck) {
 
         if(!_.isPlainObject(patchDeck)) {
             // TODO: error here
@@ -159,16 +159,13 @@ const transforms = {
         });
 
         if(!willChange) {
-            if(callback) {
-                callback.call(void 0);
-            }
 
             // get out of editing mode
             toDeck(state);
             return;
         }
 
-        // fetch deck
+        // save deck
         const {response} = yield new Promise(function(resolve) {
             superhot
                 .patch(`/decks/${deckID}`)
@@ -183,10 +180,6 @@ const transforms = {
             console.error('omg error');
 
             // TODO: revert optimistic update
-        }
-
-        if(callback) {
-            callback.call(void 0);
         }
 
         // get out of editing mode

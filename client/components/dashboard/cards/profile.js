@@ -4,6 +4,8 @@ const Immutable = require('immutable');
 const _ = require('lodash');
 
 const {paths} = require('store/constants');
+const {saveCard} = require('store/cards');
+
 const CardVisual = require('./visual');
 const CardModify = require('./modify');
 
@@ -46,8 +48,11 @@ const CardProfile = React.createClass({
     },
 
     onClickSave(newCard) {
-        console.log('save card');
-        // this.props.store.dispatch(createNewCard, newCard);
+        this.props.store.dispatch(saveCard, {
+            title: newCard.title,
+            sides: JSON.stringify(newCard.sides),
+            description: newCard.description
+        });
     },
 
     render() {
