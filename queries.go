@@ -450,10 +450,10 @@ var FETCH_CARDS_BY_DECK_QUERY = (func() PipeInput {
         SELECT card_id, title, description, sides, deck, created_at, updated_at FROM Cards
         WHERE oid NOT IN (
             SELECT oid FROM Cards
-            ORDER BY created_at DESC LIMIT :offset
+            ORDER BY datetime(created_at) DESC LIMIT :offset
         )
         AND deck = :deck_id
-        ORDER BY created_at DESC LIMIT :per_page;
+        ORDER BY datetime(created_at) DESC LIMIT :per_page;
     `
 
     // SELECT card_id, title, description, sides, deck, created_at, updated_at FROM Cards
@@ -479,6 +479,36 @@ var FETCH_CARD_SCORE = (func() PipeInput {
 
     return composePipes(
         MakeCtxMaker(__FETCH_CARD_SCORE),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var FETCH_NEXT_REVIEW_CARD_BY_DECK = (func() PipeInput {
+    const __FETCH_NEXT_REVIEW_CARD_BY_DECK string = `
+        SELECT
+        c.card_id, c.title, c.description, c.sides, c.deck, c.created_at, c.updated_at
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+            dc.ancestor = :deck_id
+            AND
+            datetime(cs.active_at) <= datetime('now')
+        ORDER BY
+            (cs.score * norm_age(datetime('now') - datetime(c.created_at))) DESC
+        LIMIT 1;
+    `
+
+    var requiredInputCols []string = []string{"deck_id"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_NEXT_REVIEW_CARD_BY_DECK),
         EnsureInputColsPipe(requiredInputCols),
         BuildQueryPipe,
     )

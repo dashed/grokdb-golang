@@ -93,6 +93,7 @@ func CardGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
+    // fetch card's score
     var fetchedCardScore *CardScoreRow
     fetchedCardScore, err = GetCardScoreRecord(db, cardID)
     if err != nil {

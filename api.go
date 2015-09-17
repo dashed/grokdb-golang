@@ -46,6 +46,9 @@ func bootAPI(db *Database) {
         decksAPI.PATCH("/:id", injectDB(DeckPATCH))
 
         decksAPI.DELETE("/:id", injectDB(DeckDELETE))
+
+        // get next card within the deck to review
+        decksAPI.GET("/:id/review", injectDB(ReviewDeckGET))
     }
 
     cardsAPI := api.Group("/cards")
