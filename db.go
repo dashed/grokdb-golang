@@ -36,7 +36,7 @@ func (db *Database) Init() error {
 
     db.NormalizeFileName()
 
-    db.instance, err = sqlx.Connect("sqlite3", db.filename)
+    db.instance, err = sqlx.Connect("sqlite3_custom", db.filename)
     if err != nil {
         return err
     }
