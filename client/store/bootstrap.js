@@ -552,7 +552,7 @@ const ensureDeckReviewRoute = co.wrap(function*(store, ctx, next) {
 
     // TODO: error handling
 
-    const reviewCard = Immutable.fromJS(response.body);
+    const reviewCard = response.status == 404 ? NOT_SET : Immutable.fromJS(response.body);
 
     rootCursor.cursor(paths.transaction).update(function(map) {
         return map.withMutations(function(__map) {

@@ -11,7 +11,8 @@ const SubNav = React.createClass({
     propTypes: {
         store: React.PropTypes.object.isRequired,
         isCard: React.PropTypes.bool.isRequired,
-        isDeck: React.PropTypes.bool.isRequired
+        isDeck: React.PropTypes.bool.isRequired,
+        isReview: React.PropTypes.bool.isRequired
     },
 
     onClickDecks(event) {
@@ -37,7 +38,7 @@ const SubNav = React.createClass({
 
     render() {
 
-        const {isCard, isDeck} = this.props;
+        const {isCard, isDeck, isReview} = this.props;
 
         return (
             <div className="row">
@@ -51,6 +52,10 @@ const SubNav = React.createClass({
                         type="button"
                         className={classNames('btn', {'btn-primary': isCard, 'btn-secondary': !isCard})}
                         onClick={this.onClickCards}>{"Cards"}</button>
+                      <button
+                        type="button"
+                        className={classNames('btn', {'btn-primary': isReview, 'btn-secondary': !isReview})}
+                        onClick={this.onClickReview}>{"Review"}</button>
                     </div>
                 </div>
                 <div className="col-sm-6">
@@ -58,9 +63,6 @@ const SubNav = React.createClass({
                       <button type="button" className="btn btn-secondary">{"Quizzes"}</button>
                       <button type="button" className="btn btn-secondary">{"Labels"}</button>
                       <button type="button" className="btn btn-secondary">{"Settings"}</button>
-                    </div>
-                    <div className="btn-group p-b m-r pull-right" role="group" aria-label="Basic example">
-                      <button type="button" className="btn btn-success" onClick={this.onClickReview}>{"Review"}</button>
                     </div>
                 </div>
             </div>
@@ -88,11 +90,13 @@ module.exports = orwell(SubNav, {
 
         const isCard = currentView === dashboard.view.cards;
         const isDeck = currentView === dashboard.view.decks;
+        const isReview = currentView === dashboard.view.review;
 
         return {
             store: store,
             isCard: isCard,
-            isDeck: isDeck
+            isDeck: isDeck,
+            isReview: isReview
         };
     }
 
