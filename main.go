@@ -50,5 +50,5 @@ func exitIfErr(err error, code int) {
 }
 
 func norm_age(x int64) float64 {
-    return math.Log(float64(x) + math.Exp(1))
+    return math.Log(math.Abs(float64(x)) + math.Exp(1))
 }
