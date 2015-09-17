@@ -7,6 +7,9 @@ const Preview = require('components/markdownpreview');
 
 const {NOT_SET, paths} = require('store/constants');
 
+const ReviewCardSides = require('./sides');
+const ReviewControls = require('./controls');
+
 const ReviewDashboard = React.createClass({
 
     propTypes: {
@@ -17,7 +20,8 @@ const ReviewDashboard = React.createClass({
 
     getInitialState() {
         return {
-            showDescription: false
+            showDescription: false,
+            showBackSide: false
         };
     },
 
@@ -30,9 +34,22 @@ const ReviewDashboard = React.createClass({
         });
     },
 
+    onClickShowBackSide(event) {
+
+        this.setState({
+            showBackSide: true
+        });
+    },
+
     render() {
 
-        const {reviewCard, front} = this.props;
+        const {reviewCard, front, back} = this.props;
+
+        const sides = {
+            front,
+            back
+        };
+
         console.log(reviewCard + '');
 
         const title = reviewCard.get('title');
@@ -47,22 +64,32 @@ const ReviewDashboard = React.createClass({
                 <div className="row">
                     <div className="col-sm-12">
                         <div className="card">
-                            <div className="card-block">
+                            <div className="card-block p-b-0">
                                 <h4 className="card-title m-y-0">{title}</h4>
                                 <hr/>
-                                <Preview text={front} />
+                            </div>
+                            <ReviewCardSides
+                                sides={sides}
+                                showButtons={this.state.showBackSide} />
+                        </div>
+                    </div>
+                </div>
+                <ReviewControls
+                    showBackSide={this.state.showBackSide}
+                    onClickShowBackSide={this.onClickShowBackSide}
+                />
+                <div className="row">
+                    <div className="col-sm-12">
+                        <div className="card m-t">
+                            <div className="card-block">
+                                loool
                             </div>
                         </div>
                     </div>
                 </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        <button type="button" className="btn btn-primary btn-lg btn-block">{"Show the back side"}</button>
-                    </div>
-                </div>
-                <div className="row">
-                    <div className="col-sm-12">
-                        <div className="card m-t">
+                        <div className="card">
                             <div className="card-block">
                                 <div className="btn-group btn-group-sm" role="group" aria-label="Basic example">
                                     <button type="button" className="btn btn-secondary" onClick={this.onClickShowDescription}>
@@ -73,12 +100,15 @@ const ReviewDashboard = React.createClass({
                                 {(function() {
 
                                     if(!this.state.showDescription) {
-                                        return null;
+                                        return (
+                                            <p className="card-text">
+                                                <i><small className="text-muted">{`Description hidden`}</small></i>
+                                            </p>
+                                        );
                                     }
 
                                     return (<Preview text={description} />);
                                 }.call(this))}
-
                             </div>
                         </div>
                     </div>

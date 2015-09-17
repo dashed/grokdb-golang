@@ -22,7 +22,7 @@ const App = React.createClass({
                 <div className="row">
                     <div className="col-sm-12">
                         <header>
-                            <h1 className="display-4 m-y">butterfoo.app</h1>
+                            <h1 className="display-4 m-y">butterfoo</h1>
                         </header>
                     </div>
                 </div>

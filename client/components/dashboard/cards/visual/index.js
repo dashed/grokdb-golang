@@ -64,7 +64,7 @@ const CardVisual = React.createClass({
                     <div className="col-sm-12">
                         <div className="card">
                             <div className="card-block">
-                                <h4 className="card-title m-y-0">{this.props.title}</h4>
+                                <h4 className="card-title">{this.props.title}</h4>
 
                                 <Preview text={this.props.description} />
 
@@ -98,7 +98,7 @@ const CardVisual = React.createClass({
                                             </p>
                                             <hr/>
                                             <p className="card-text">
-                                                <strong>{`Score: ${review.get('score')}`}</strong><br/>
+                                                <strong>{`Score: ${review.get('score').toFixed(5)}`}</strong><br/>
                                                 <small className="text-muted">{"Lower is better"}</small>
                                             </p>
                                         </div>

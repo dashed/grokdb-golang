@@ -484,7 +484,6 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
 
     // fetch deck id from transaction
 
-
     const deckID = (function() {
         let maybeDeck = rootCursor.cursor(paths.transaction).deref().get(paths.deck.self, NOT_SET);
 
