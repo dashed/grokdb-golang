@@ -541,18 +541,24 @@ const ensureDeckReviewRoute = co.wrap(function*(store, ctx, next) {
 
 
     // fetch next card to review
-    // const {response} = yield new Promise(function(resolve) {
-    //     superhot
-    //         .get(`/decks/${maybeID}/review`)
-    //         .end(function(err, res){
-    //             // TODO: error handling
-    //             resolve({err: err, response: res});
-    //         });
-    // });
+    const {response} = yield new Promise(function(resolve) {
+        superhot
+            .get(`/decks/${maybeID}/review`)
+            .end(function(err, res){
+                // TODO: error handling
+                resolve({err: err, response: res});
+            });
+    });
+
+    // TODO: error handling
+
+    const reviewCard = Immutable.fromJS(response.body);
 
     rootCursor.cursor(paths.transaction).update(function(map) {
         return map.withMutations(function(__map) {
-            __map.set(paths.route.handler, Dashboard);
+            __map
+                .set(paths.review.self, reviewCard)
+                .set(paths.route.handler, Dashboard);
         });
     });
 

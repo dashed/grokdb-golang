@@ -37,6 +37,10 @@ module.exports = {
             self: ['card', 'self']
         },
 
+        review: {
+            self: ['review', 'self']
+        },
+
         // ui flags
         dashboard: {
             view: ['dashboard', 'view'],

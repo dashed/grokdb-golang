@@ -53,6 +53,10 @@ const SCHEMA = {
         // card profile
         editing: false,
         self: NOT_SET // currently viewed card
+    },
+
+    review: {
+        self: NOT_SET
     }
 };
 
