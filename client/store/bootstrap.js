@@ -48,6 +48,7 @@ const bootRouter = co.wrap(function* (store) {
     const __ensureDeckRoute = _.bind(ensureDeckRoute, void 0, store);
     const __ensureCardsRoute = _.bind(ensureCardsRoute, void 0, store);
     const __ensureCurrentCardRoute = _.bind(ensureCurrentCardRoute, void 0, store);
+    const __ensureDeckReviewRoute = _.bind(ensureDeckReviewRoute, void 0, store);
 
     page('/deck/:id', __ensureDeckRoute, function() {
         // should not be here
@@ -125,15 +126,29 @@ const bootRouter = co.wrap(function* (store) {
         return next();
     }, __commitStateTransaction);
 
-    page('/review', function() {
+    page('/review/deck/:id', __ensureDeckReviewRoute, function(ctx, next) {
 
-        // TODO: implement
-    });
+        rootCursor.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.dashboard.view, dashboard.view.review);
+            });
+        });
 
-    page('/review/deck/:id', function() {
+        return next();
+    }, __commitStateTransaction);
 
-        // TODO: implement
-    });
+    page('/review/card/:id', function(ctx, next) {
+
+        rootCursor.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.dashboard.view, dashboard.view.review);
+            });
+        });
+
+        return next();
+    }, __commitStateTransaction);
 
     page.start({
         hashbang: true,
@@ -394,6 +409,7 @@ const ensureCurrentCardRoute = co.wrap(function* (store, ctx, next) {
             superhot
                 .get(`/cards/${maybeID}`)
                 .end(function(err, res){
+                    // TODO: error handling
                     resolve({err: err, response: res});
                 });
         });
@@ -489,6 +505,61 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
     next();
     return;
 });
+
+// review on a deck and its children
+const ensureDeckReviewRoute = co.wrap(function*(store, ctx, next) {
+
+    const rootCursor = store.state();
+
+    if(!_.has(ctx.params, 'id')) {
+        throw Error('ensureDeckRoute used incorrectly');
+    }
+
+    const maybeID = filterInt(ctx.params.id);
+
+    // ensure :id is valid
+    if(notValidID(maybeID)) {
+        defaultRoute(rootCursor);
+        return;
+    }
+
+    // fetch deck
+    const deck = yield loadDeck(maybeID, NOT_SET);
+
+    if(deck === NOT_SET) {
+        // 404
+        defaultRoute(rootCursor);
+        return;
+    }
+
+    // load deck onto app state
+    rootCursor.cursor(paths.transaction).update(function(map) {
+        return map.withMutations(function(__map) {
+            __map.set(paths.deck.self, deck);
+        });
+    });
+
+
+    // fetch next card to review
+    // const {response} = yield new Promise(function(resolve) {
+    //     superhot
+    //         .get(`/decks/${maybeID}/review`)
+    //         .end(function(err, res){
+    //             // TODO: error handling
+    //             resolve({err: err, response: res});
+    //         });
+    // });
+
+    rootCursor.cursor(paths.transaction).update(function(map) {
+        return map.withMutations(function(__map) {
+            __map.set(paths.route.handler, Dashboard);
+        });
+    });
+
+    next();
+    return;
+});
+
 
 // returns deck (Immutable.Map) of given deckID; defaultValue otherwise
 const loadDeck = co.wrap(function*(deckID, defaultValue) {

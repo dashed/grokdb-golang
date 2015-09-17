@@ -62,7 +62,8 @@ module.exports = {
     dashboard: {
         view: {
             decks: 'decks',
-            cards: 'cards'
+            cards: 'cards',
+            review: 'review'
         }
     },
 

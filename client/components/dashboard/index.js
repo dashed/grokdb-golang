@@ -9,6 +9,7 @@ const Breadcrumb = require('./breadcrumb');
 const SubNav = require('./subnav');
 const DecksDashboard = require('./decks');
 const CardsDashboard = require('./cards');
+const ReviewDashboard = require('./review');
 
 const Dashboard = React.createClass({
 
@@ -27,6 +28,9 @@ const Dashboard = React.createClass({
                 break;
             case dashboard.view.decks:
                 return DecksDashboard;
+                break;
+            case dashboard.view.review:
+                return ReviewDashboard;
                 break;
             default:
                 throw Error('unknown requested view');

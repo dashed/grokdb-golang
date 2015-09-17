@@ -59,7 +59,7 @@ const transforms = {
         page.redirect(`/deck/${deckID}/${slugged}`);
     },
 
-    toCardProfile(state, options) {
+    toCardProfile(state, options = {}) {
 
         let {card, cardID} = options;
 
@@ -68,7 +68,7 @@ const transforms = {
         page(`/card/${cardID}`);
     },
 
-    toCardProfileEdit(state, options) {
+    toCardProfileEdit(state, options = {}) {
 
         let {card, cardID} = options;
 
@@ -77,8 +77,13 @@ const transforms = {
         page(`/card/${cardID}/edit`);
     },
 
-    idioms: {
+    toReview(state, options = {}) {
 
+        let {deck, deckID} = options;
+
+        ({deck, deckID} = resolveDeck(state, deck, deckID));
+
+        page(`/review/deck/${deckID}`);
     }
 };
 

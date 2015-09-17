@@ -3,13 +3,15 @@ const orwell = require('orwell');
 const classNames = require('classnames');
 
 const {dashboard, paths} = require('store/constants');
-const {toDeckCards, toDeck} = require('store/route');
+// const {applyDeckArgs} = require('store/decks');
+const {toDeckCards, toDeck, toReview} = require('store/route');
 
 const SubNav = React.createClass({
 
     propTypes: {
         store: React.PropTypes.object.isRequired,
-        isCard: React.PropTypes.bool.isRequired
+        isCard: React.PropTypes.bool.isRequired,
+        isDeck: React.PropTypes.bool.isRequired
     },
 
     onClickDecks(event) {
@@ -26,9 +28,16 @@ const SubNav = React.createClass({
         this.props.store.invoke(toDeckCards);
     },
 
+    onClickReview(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        this.props.store.invoke(toReview);
+    },
+
     render() {
 
-        const {isCard} = this.props;
+        const {isCard, isDeck} = this.props;
 
         return (
             <div className="row">
@@ -36,7 +45,7 @@ const SubNav = React.createClass({
                     <div className="btn-group p-b pull-left" role="group" aria-label="Basic example">
                       <button
                         type="button"
-                        className={classNames('btn', {'btn-primary': !isCard, 'btn-secondary': isCard})}
+                        className={classNames('btn', {'btn-primary': isDeck, 'btn-secondary': !isDeck})}
                         onClick={this.onClickDecks}>{"Decks"}</button>
                       <button
                         type="button"
@@ -51,7 +60,7 @@ const SubNav = React.createClass({
                       <button type="button" className="btn btn-secondary">{"Settings"}</button>
                     </div>
                     <div className="btn-group p-b m-r pull-right" role="group" aria-label="Basic example">
-                      <button type="button" className="btn btn-success">{"Review"}</button>
+                      <button type="button" className="btn btn-success" onClick={this.onClickReview}>{"Review"}</button>
                     </div>
                 </div>
             </div>
@@ -75,11 +84,15 @@ module.exports = orwell(SubNav, {
         const store = context.store;
         const state = store.state();
 
-        const isCard = state.cursor(paths.dashboard.view).deref() === dashboard.view.cards;
+        const currentView = state.cursor(paths.dashboard.view).deref();
+
+        const isCard = currentView === dashboard.view.cards;
+        const isDeck = currentView === dashboard.view.decks;
 
         return {
             store: store,
-            isCard: isCard
+            isCard: isCard,
+            isDeck: isDeck
         };
     }
 
