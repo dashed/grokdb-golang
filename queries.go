@@ -334,7 +334,7 @@ CREATE INDEX IF NOT EXISTS Cards_Index ON Cards (deck);
 CREATE TABLE IF NOT EXISTS CardsScore (
     success INTEGER NOT NULL DEFAULT 0,
     fail INTEGER NOT NULL DEFAULT 0,
-    score REAL NOT NULL DEFAULT 0,
+    score REAL NOT NULL DEFAULT 0.5, /* jeffrey-perks law */
     active_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format. active_at denotes date of when this card becomes active */
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format */
 
@@ -361,12 +361,21 @@ CREATE INDEX IF NOT EXISTS CardsScoreHistory_date_Index ON CardsScore (score DES
 
 CREATE TABLE IF NOT EXISTS CardsScoreHistory (
     occured_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format */
-    action INTEGER NOT NULL, /* values: +1 => success; -1 => fail */
-
+    success INTEGER NOT NULL DEFAULT 0,
+    fail INTEGER NOT NULL DEFAULT 0,
+    score REAL NOT NULL DEFAULT 0.5, /* jeffrey-perks law */
     card INTEGER NOT NULL,
 
     FOREIGN KEY (card) REFERENCES Cards(card_id) ON DELETE CASCADE
 );
+
+CREATE TRIGGER record_cardscore AFTER UPDATE
+OF success, fail, score
+ON CardsScore
+BEGIN
+   INSERT INTO CardsScoreHistory(occured_at, success, fail, score, card)
+   VALUES (strftime('%Y-%m-%d %H:%M:%f', 'now'), NEW.success, NEW.fail, NEW.score, NEW.card);
+END;
 
 CREATE INDEX IF NOT EXISTS CardsScoreHistory_relation_Index ON CardsScoreHistory (card);
 CREATE INDEX IF NOT EXISTS CardsScoreHistory_date_Index ON CardsScoreHistory (occured_at DESC);
