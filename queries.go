@@ -369,7 +369,7 @@ CREATE TABLE IF NOT EXISTS CardsScoreHistory (
     FOREIGN KEY (card) REFERENCES Cards(card_id) ON DELETE CASCADE
 );
 
-CREATE TRIGGER record_cardscore AFTER UPDATE
+CREATE TRIGGER IF NOT EXISTS record_cardscore AFTER UPDATE
 OF success, fail, score
 ON CardsScore
 BEGIN
