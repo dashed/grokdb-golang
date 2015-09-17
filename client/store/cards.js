@@ -130,7 +130,13 @@ const transforms = {
             // TODO: revert optimistic update
         }
 
-        options.card = state.cursor(paths.card.self).deref();
+
+
+        options.card = Immutable.fromJS(response.body);
+
+        state.cursor(paths.card.self).update(function() {
+            return options.card;
+        });
 
         return options;
     })
