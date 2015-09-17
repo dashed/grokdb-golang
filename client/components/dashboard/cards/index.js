@@ -24,7 +24,7 @@ const CardsDashboard = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.store.dispatch(toDeckCards);
+        this.props.store.invoke(toDeckCards);
     },
 
     onClickNewCard(event) {
@@ -32,15 +32,14 @@ const CardsDashboard = React.createClass({
         event.stopPropagation();
 
         const {store} = this.props;
-
-        store.dispatch(toDeckCardsNew);
+        store.invoke(toDeckCardsNew);
     },
 
     onClickEditCard(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.store.dispatch(toCardProfileEdit, {card: this.props.card});
+        this.props.store.invoke(toCardProfileEdit, {card: this.props.card});
     },
 
     render() {

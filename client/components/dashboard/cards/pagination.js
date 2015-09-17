@@ -29,7 +29,7 @@ const CardsPagination = React.createClass({
         }
 
         const {store, currentPage} = this.props;
-        store.dispatch(toDeckCards, {page: currentPage - 1});
+        store.invoke(toDeckCards, {page: currentPage - 1});
 
     },
 
@@ -44,7 +44,7 @@ const CardsPagination = React.createClass({
         }
 
         const {store, currentPage} = this.props;
-        store.dispatch(toDeckCards, {page: currentPage + 1});
+        store.invoke(toDeckCards, {page: currentPage + 1});
     },
 
     onClickPage(requestedPage) {
@@ -54,7 +54,7 @@ const CardsPagination = React.createClass({
             event.stopPropagation();
 
             const {store} = this.props;
-            store.dispatch(toDeckCards, {page: requestedPage});
+            store.invoke(toDeckCards, {page: requestedPage});
         };
     },
 

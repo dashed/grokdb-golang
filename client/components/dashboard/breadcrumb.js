@@ -21,6 +21,8 @@ const Breadcrumb = React.createClass({
 
         const breadCrumbRendered = breadcrumb.reduce(function(accumulator, deck, index) {
 
+            // console.log(deck + '');
+
             accumulator.push(
                 <BreadcrumbChild key={deck.get('id')} deck={deck} active={index === lastIdx} />
             );

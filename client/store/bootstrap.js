@@ -324,8 +324,11 @@ const ensureDeckRoute = co.wrap(function* (store, ctx, next) {
         }
 
         deckID = maybeID;
-        deckCursor.update(function() {
-            return deck;
+
+        rootCursor.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map.set(paths.deck.self, deck);
+            });
         });
     }
 
@@ -333,12 +336,12 @@ const ensureDeckRoute = co.wrap(function* (store, ctx, next) {
     const children = rootCursor.cursor(paths.deck.children).deref(NOT_SET);
     if(children === NOT_SET || oldDeckID === NOT_SET || oldDeckID != deckID) {
         // watch deck and load full decks of children
-        store.dispatch(loadChildren, maybeID);
+        store.invoke(loadChildren, {deckID: maybeID});
     }
 
     if(!_.has(ctx.params, 'slug')) {
         // matched /deck/:id
-        store.dispatch(redirectToDeck, deck, maybeID);
+        store.invoke(redirectToDeck, {deck, deckID: maybeID});
         return;
     }
 
@@ -351,8 +354,10 @@ const ensureDeckRoute = co.wrap(function* (store, ctx, next) {
         return;
     }
 
-    rootCursor.cursor(paths.route.handler).update(function() {
-        return Dashboard;
+    rootCursor.cursor(paths.transaction).update(function(map) {
+        return map.withMutations(function(__map) {
+            __map.set(paths.route.handler, Dashboard);
+        });
     });
 
     next();
@@ -402,8 +407,11 @@ const ensureCurrentCardRoute = co.wrap(function* (store, ctx, next) {
             // good
             card = Immutable.fromJS(response.body);
             cardID = maybeID;
-            cardCursor.update(function() {
-                return card;
+
+            rootCursor.cursor(paths.transaction).update(function(map) {
+                return map.withMutations(function(__map) {
+                    __map.set(paths.card.self, card);
+                });
             });
             break;
         default:
@@ -421,9 +429,11 @@ const ensureCurrentCardRoute = co.wrap(function* (store, ctx, next) {
         return;
     }
 
-    const deckCursor = rootCursor.cursor(paths.deck.self);
-    deckCursor.update(function() {
-        return deck;
+    // load deck onto app state
+    rootCursor.cursor(paths.transaction).update(function(map) {
+        return map.withMutations(function(__map) {
+            __map.set(paths.deck.self, deck);
+        });
     });
 
     // load cards list
@@ -431,8 +441,10 @@ const ensureCurrentCardRoute = co.wrap(function* (store, ctx, next) {
         yield loadCardsList(rootCursor, deck.get('id'));
     });
 
-    rootCursor.cursor(paths.route.handler).update(function() {
-        return Dashboard;
+    rootCursor.cursor(paths.transaction).update(function(map) {
+        return map.withMutations(function(__map) {
+            __map.set(paths.route.handler, Dashboard);
+        });
     });
 
     next();
@@ -489,6 +501,7 @@ const loadDeck = co.wrap(function*(deckID, defaultValue) {
     }
 });
 
+// note: not transaction safe
 const loadCardsList = co.wrap(function*(rootCursor, deckID, pageNum = 1) {
 
     // get page count

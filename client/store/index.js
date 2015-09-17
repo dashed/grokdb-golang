@@ -1,4 +1,5 @@
 const minitrue = require('minitrue');
+
 const bootstrap = require('./bootstrap');
 const {NOT_SET} = require('./constants');
 
@@ -66,8 +67,12 @@ Store.prototype.state = function() {
     return this._state;
 };
 
-Store.prototype.dispatch = function(transformer, ...args) {
+Store.prototype.invoke = function(transformer, ...args) {
+    transformer.bind(void 0, this._state).apply(null, args);
+};
 
+Store.prototype.dispatch = function(transformer, ...args) {
+    throw Error('use invoke');
     const ctx = {
         store: this
     };

@@ -2,8 +2,24 @@ const React = require('react');
 const orwell = require('orwell');
 const _ = require('lodash');
 
-const CardModify = require('./modify');
+const {flow} = require('store/utils');
 const {createNewCard} = require('store/cards');
+const {toDeckCards} = require('store/route');
+const {applyDeckArgs} = require('store/decks');
+
+const CardModify = require('./modify');
+
+const saveNewCard = flow(
+
+    // decks
+    applyDeckArgs,
+
+    // cards
+    createNewCard,
+
+    // route
+    toDeckCards
+);
 
 const CardNew = React.createClass({
 
@@ -41,7 +57,9 @@ const CardNew = React.createClass({
     },
 
     onClickAdd(newCard) {
-        this.props.store.dispatch(createNewCard, newCard);
+        this.props.store.invoke(saveNewCard, {
+            newCard
+        });
     },
 
     render() {

@@ -3,9 +3,30 @@ const orwell = require('orwell');
 const _ = require('lodash');
 
 const {paths, keypress} = require('store/constants');
-const {createNewDeck} = require('store/decks');
+const {createNewDeck, loadDeck, applyDeckArgs, loadChildren} = require('store/decks');
 const {setNewDeck} = require('store/dashboard');
 const {toDeckSettings, toDeck} = require('store/route');
+const {flow} = require('store/utils');
+
+const makeNewDeck = flow(
+
+    // decks
+    applyDeckArgs,
+    createNewDeck,
+    applyDeckArgs,
+    function(state, ...args) {
+
+        return Promise.settle([
+            Promise.resolve(loadDeck(state, ...args)),
+            Promise.resolve(loadChildren(state, ...args))
+        ]).then(function() {
+            return Promise.resolve(args);
+        });
+    },
+
+    // dashboard
+    setNewDeck
+);
 
 const DecksListControls = React.createClass({
 
@@ -27,7 +48,9 @@ const DecksListControls = React.createClass({
 
         const {store, creatingNewDeck} = this.props;
 
-        store.dispatch(setNewDeck, !creatingNewDeck);
+        store.invoke(setNewDeck, {
+            value: !creatingNewDeck
+        });
     },
 
     onChangeNewDeck(event) {
@@ -42,7 +65,7 @@ const DecksListControls = React.createClass({
 
         const {store} = this.props;
 
-        store.dispatch(toDeckSettings);
+        store.invoke(toDeckSettings);
     },
 
     onClickCancelEditingDeck(event) {
@@ -51,7 +74,7 @@ const DecksListControls = React.createClass({
 
         const {store} = this.props;
 
-        store.dispatch(toDeck);
+        store.invoke(toDeck);
     },
 
     addNewDeck() {
@@ -64,10 +87,18 @@ const DecksListControls = React.createClass({
 
         const {store} = this.props;
 
-        store.dispatch(createNewDeck, newDeckName);
-
         this.setState({
             newDeckName: ''
+        });
+
+        store.invoke(makeNewDeck, {
+
+            newDeck: {
+                name: newDeckName
+            },
+
+            // setnewdeck value
+            value: false
         });
     },
 

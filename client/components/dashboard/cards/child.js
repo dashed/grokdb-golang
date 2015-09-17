@@ -2,7 +2,19 @@ const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
 
-const {navigatetoCard} = require('store/cards');
+const {flow} = require('store/utils');
+const {setCard} = require('store/cards');
+const {toCardProfile} = require('store/route');
+
+
+const changeToCard = flow(
+
+    // cards
+    setCard,
+
+    // route
+    toCardProfile
+);
 
 const CardChild = React.createClass({
 
@@ -16,8 +28,7 @@ const CardChild = React.createClass({
         event.stopPropagation();
 
         const {card, store} = this.props;
-
-        store.dispatch(navigatetoCard, {card});
+        store.invoke(changeToCard, {card, cardID: card.get('id')});
     },
 
     render() {

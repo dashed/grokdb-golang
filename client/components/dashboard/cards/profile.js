@@ -3,11 +3,22 @@ const orwell = require('orwell');
 const Immutable = require('immutable');
 const _ = require('lodash');
 
+const {flow} = require('store/utils');
 const {paths} = require('store/constants');
-const {saveCard} = require('store/cards');
+const {applyCardArgs, saveCard} = require('store/cards');
+const {toCardProfile} = require('store/route');
 
 const CardVisual = require('./visual');
 const CardModify = require('./modify');
+
+const saveCardState = flow(
+    // cards
+    applyCardArgs,
+    saveCard,
+
+    // route
+    toCardProfile
+);
 
 const CardProfile = React.createClass({
 
@@ -47,12 +58,15 @@ const CardProfile = React.createClass({
         });
     },
 
-    onClickSave(newCard) {
-        this.props.store.dispatch(saveCard, {
-            title: newCard.title,
-            sides: JSON.stringify(newCard.sides),
-            description: newCard.description
-        });
+    onClickSave(patchCard) {
+
+        const __patchCard = {
+            title: patchCard.title,
+            sides: JSON.stringify(patchCard.sides),
+            description: patchCard.description
+        };
+
+        this.props.store.invoke(saveCardState, {patchCard: __patchCard});
     },
 
     render() {

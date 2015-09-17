@@ -3,7 +3,20 @@ const orwell = require('orwell');
 const Immutable = require('immutable');
 
 const {NOT_SET} = require('store/constants');
-const {navigateChildDeck} = require('store/decks');
+const {flow} = require('store/utils');
+const {setDeck, loadChildren, pushOntoBreadcrumb} = require('store/decks');
+const {toDeck} = require('store/route');
+
+const navigateToChild = flow(
+
+    // decks
+    setDeck,
+    loadChildren,
+    pushOntoBreadcrumb,
+
+    // route
+    toDeck
+);
 
 const DeckChild = React.createClass({
 
@@ -24,7 +37,8 @@ const DeckChild = React.createClass({
             return;
         }
 
-        store.dispatch(navigateChildDeck, deck);
+        store.invoke(navigateToChild, {deck, deckID: id});
+
     },
 
     render() {

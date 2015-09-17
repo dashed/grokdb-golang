@@ -1,54 +1,75 @@
 const co = require('co');
 const _ = require('lodash');
+const Immutable = require('immutable');
 
 const superhot = require('store/superhot');
 const {paths} = require('store/constants');
 
-const {toDeckCards, toCardProfile} = require('store/route');
-
 const transforms = {
-    createNewCard(state, cardProps) {
 
-        // get deck id
-        const deck = state.cursor(paths.deck.self).deref();
-        const deckID = deck.get('id');
+    applyCardArgs(state, options = {}) {
 
-        const marshalledSides = JSON.stringify(cardProps.sides);
+        const card = state.cursor(paths.card.self).deref();
+        const cardID = card.get('id');
 
-        // TODO: optimistic update
+        options.card = card;
+        options.cardID = cardID;
 
-        superhot
-            .post(`/cards`)
-            .type('json')
-            .send({
-                title: cardProps.title,
-                description: cardProps.description,
-                sides: marshalledSides,
-                deck: deckID
-            })
-            .end(function() {
-                // go to card list
-                toDeckCards(state, {deck, deckID});
-            });
+        return options;
     },
 
-    navigatetoCard(state, card) {
+    // passthroughs
+
+    setCard: function(state, options) {
+
+        const {card} = options;
 
         state.cursor(paths.card.self).update(function() {
             return card;
         });
-
-        toCardProfile(state, card);
+        return options;
     },
 
-    saveCard: co.wrap(function*(state, patchCard) {
+    createNewCard: co.wrap(function*(state, options) {
+
+        const {deckID, newCard} = options;
+
+        const marshalledSides = JSON.stringify(newCard.sides);
+
+        return new Promise(function(resolve) {
+            superhot
+                .post(`/cards`)
+                .type('json')
+                .send({
+                    title: newCard.title,
+                    description: newCard.description,
+                    sides: marshalledSides,
+                    deck: deckID
+                })
+                .end(function(err, res) {
+
+                    // TODO: error handling
+                    if(res.status != 201) {
+                        throw Error('bad');
+                    }
+
+                    options.card = Immutable.fromJS(res.body);
+                    options.cardID = res.body.id;
+
+                    return resolve(options);
+                });
+        });
+    }),
+
+    saveCard: co.wrap(function*(state, options) {
+
+        const {patchCard} = options;
 
         if(!_.isPlainObject(patchCard)) {
             // TODO: error here
-            return;
+            throw Error('bad patch');
+            return void 0;
         }
-
-        const cardID = state.cursor(paths.card.self).deref().get('id');
 
         let willChange = true;
 
@@ -81,20 +102,16 @@ const transforms = {
                 });
             }
 
-            willChange = oldCard != card;
+            willChange = oldCard !== card;
 
             return card;
         });
 
         if(!willChange) {
-
-            // get out of editing mode
-            toCardProfile(state, {
-                card: state.cursor(paths.card.self).deref(),
-                cardID
-            });
-            return;
+            return options;
         }
+
+        const {cardID} = options;
 
         // save deck
         const {response} = yield new Promise(function(resolve) {
@@ -113,12 +130,11 @@ const transforms = {
             // TODO: revert optimistic update
         }
 
-        // get out of editing mode
-        toCardProfile(state, {
-            card: state.cursor(paths.card.self).deref(),
-            cardID
-        });
+        options.card = state.cursor(paths.card.self).deref();
+
+        return options;
     })
+
 };
 
 module.exports = transforms;

@@ -16,14 +16,14 @@ const SubNav = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.store.dispatch(toDeck);
+        this.props.store.invoke(toDeck);
     },
 
     onClickCards(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.store.dispatch(toDeckCards);
+        this.props.store.invoke(toDeckCards);
     },
 
     render() {

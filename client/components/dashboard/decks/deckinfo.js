@@ -6,9 +6,20 @@ const classNames = require('classnames');
 const TextareaAutosize = require('react-textarea-autosize');
 
 const {paths, NOT_SET, tabSize} = require('store/constants');
-const {saveDeck} = require('store/decks');
+const {applyDeckArgs, saveDeck} = require('store/decks');
+const {toDeck} = require('store/route');
+const {flow} = require('store/utils');
 
 const Preview = require('components/markdownpreview');
+
+const saveDeckState = flow(
+    // decks
+    applyDeckArgs,
+    saveDeck,
+
+    // route
+    toDeck
+);
 
 const DeckInfo = React.createClass({
 
@@ -84,10 +95,12 @@ const DeckInfo = React.createClass({
             return;
         }
 
-        store.dispatch(saveDeck, {
+        const patchDeck = {
             name: this.state.name,
             description: this.state.description
-        });
+        };
+
+        store.invoke(saveDeckState, {patchDeck});
     },
 
     setUpHandler(props) {

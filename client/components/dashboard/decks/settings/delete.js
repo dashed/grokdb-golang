@@ -3,7 +3,19 @@ const orwell = require('orwell');
 const either = require('react-either');
 
 const {paths} = require('store/constants');
-const {deleteDeck} = require('store/decks');
+const {flow} = require('store/utils');
+const {deleteDeck, applyDeckArgs, popFromBreadcrumb} = require('store/decks');
+const {redirectToDeck} = require('store/route');
+
+const invokeDeleteDeck = flow(
+    // decks
+    applyDeckArgs,
+    deleteDeck,
+    popFromBreadcrumb,
+
+    // route
+    redirectToDeck
+);
 
 const DeleteDeck = React.createClass({
 
@@ -40,7 +52,7 @@ const DeleteDeck = React.createClass({
         event.stopPropagation();
 
         const {store} = this.props;
-        store.dispatch(deleteDeck, true);
+        store.invoke(invokeDeleteDeck);
     },
 
     render() {

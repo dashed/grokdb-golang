@@ -1,10 +1,15 @@
 const {paths} = require('store/constants');
 
 const transforms = {
-    setNewDeck(state, bool) {
+    setNewDeck(state, options) {
+
+        const {value} = options;
+
         state.cursor(paths.dashboard.decks.creatingNew).update(function() {
-            return bool;
+            return value;
         });
+
+        return options;
     }
 };
 

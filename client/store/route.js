@@ -4,15 +4,18 @@ const {paths} = require('store/constants');
 const {generateSlug} = require('store/utils');
 
 const transforms = {
-    toDeck(state, deck = void 0, deckID = void 0) {
+    toDeck(state, options = {}) {
 
+        let {deck, deckID} = options;
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 
         const slugged = generateSlug(deck.get('name'), deckID);
         page(`/deck/${deckID}/${slugged}`);
     },
 
-    toDeckSettings(state, deck = void 0, deckID = void 0) {
+    toDeckSettings(state, options = {}) {
+
+        let {deck, deckID} = options;
 
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 
@@ -36,7 +39,9 @@ const transforms = {
         page(`/deck/${deckID}/${slugged}/cards`);
     },
 
-    toDeckCardsNew(state, deck = void 0, deckID = void 0) {
+    toDeckCardsNew(state, options = {}) {
+
+        let {deck, deckID} = options;
 
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 
@@ -44,12 +49,13 @@ const transforms = {
         page(`/deck/${deckID}/${slugged}/cards/new`);
     },
 
-    redirectToDeck(state, deck, deckID) {
+    redirectToDeck(state, options = {}) {
+
+        let {deck, deckID} = options;
 
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 
         const slugged = generateSlug(deck.get('name'), deckID);
-
         page.redirect(`/deck/${deckID}/${slugged}`);
     },
 
@@ -70,6 +76,10 @@ const transforms = {
 
         page(`/card/${cardID}/edit`);
     },
+
+    idioms: {
+
+    }
 };
 
 module.exports = transforms;

@@ -1,7 +1,27 @@
 const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
-const {navigateParentDeck} = require('store/decks');
+
+const {flow} = require('store/utils');
+const {setDeck, loadChildren, popFromBreadcrumb, applyDeckArgs} = require('store/decks');
+const {toDeck} = require('store/route');
+
+const changeToBreadcrumb = flow(
+
+    // decks
+    applyDeckArgs,
+    popFromBreadcrumb,
+    function(state, options) {
+        options.deck = options.toDeck;
+        options.deckID = options.toDeckID;
+        return options;
+    },
+    setDeck,
+    loadChildren,
+
+    // route
+    toDeck
+);
 
 const BreadcrumbChild = React.createClass({
 
@@ -22,8 +42,8 @@ const BreadcrumbChild = React.createClass({
         event.stopPropagation();
 
         const {store, deck} = this.props;
+        store.invoke(changeToBreadcrumb, {toDeck: deck, toDeckID: deck.get('id')});
 
-        store.dispatch(navigateParentDeck, deck);
     },
 
     render() {
