@@ -1,4 +1,6 @@
 const React = require('react');
+const Immutable = require('immutable');
+const moment = require('moment');
 
 const Preview = require('components/markdownpreview');
 const Sides = require('./sides');
@@ -11,10 +13,25 @@ const CardVisual = React.createClass({
             front: React.PropTypes.string.isRequired,
             back: React.PropTypes.string.isRequired
         }),
-        description: React.PropTypes.string.isRequired
+        description: React.PropTypes.string.isRequired,
+        review: React.PropTypes.instanceOf(Immutable.Map).isRequired,
+        createdAt: React.PropTypes.string.isRequired,
+        updatedAt: React.PropTypes.string.isRequired,
     },
 
     render() {
+
+        const {review, createdAt, updatedAt} = this.props;
+
+        const success = review.get('success');
+        const fails = review.get('fail');
+        const total = success + fails;
+
+        const __createdAt = moment.utc(createdAt);
+        const createdAtString = __createdAt.format("ddd, MMM Do YYYY, h:mm:ss a");
+        const createdAtRel = __createdAt.fromNow();
+        const updatedAtString = moment.utc(updatedAt).fromNow();
+
         return (
             <div>
                 <div className="row">
@@ -30,7 +47,7 @@ const CardVisual = React.createClass({
 
                                 <Preview text={this.props.description} />
 
-                                <p className="card-text"><small className="text-muted">Last updated 3 mins ago</small></p>
+                                <p className="card-text"><small className="text-muted">{`Last updated ${updatedAtString}`}</small></p>
                             </div>
                         </div>
 
@@ -43,17 +60,18 @@ const CardVisual = React.createClass({
                                     <div className="row">
                                         <div className="col-sm-2">
                                             <p className="card-text">
-                                                <strong>Success: 123</strong>
+                                                <strong>{`Success: ${success}`}</strong>
                                             </p>
                                             <p className="card-text">
-                                                <strong>Fails: 123</strong>
+                                                <strong>{`Fails: ${fails}`}</strong>
                                             </p>
                                             <p className="card-text">
-                                                <strong>Total: 123</strong>
+                                                <strong>{`Total: ${total}`}</strong>
                                             </p>
                                             <hr/>
                                             <p className="card-text">
-                                                <strong>Score: 123</strong>
+                                                <strong>{`Score: ${review.get('score')}`}</strong><br/>
+                                                <small className="text-muted">{"Lower is better"}</small>
                                             </p>
                                         </div>
                                         <div className="col-sm-6">
@@ -66,7 +84,21 @@ const CardVisual = React.createClass({
                                 </div>
                             </div>
                             <div className="card-footer text-muted">
-                                <center>{"Reviewed 2 days ago"}</center>
+                                <div className="container">
+                                    <div className="row">
+                                        <div className="col-sm-6">
+                                            <center>
+                                                {"Created on "}
+                                                <abbr title={`Created on ${createdAtString}`}>
+                                                    {createdAtRel}
+                                                </abbr>
+                                            </center>
+                                        </div>
+                                        <div className="col-sm-6">
+                                            <center>{"Last reviewed 2 days ago"}</center>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

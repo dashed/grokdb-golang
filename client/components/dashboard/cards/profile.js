@@ -81,6 +81,9 @@ const CardProfile = React.createClass({
                     title={card.get('title')}
                     description={card.get('description')}
                     sides={JSON.parse(card.get('sides'))}
+                    review={card.get('review')}
+                    createdAt={card.get('created_at')}
+                    updatedAt={card.get('updated_at')}
                 />
             );
         }
