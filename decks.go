@@ -475,7 +475,25 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
     var response []gin.H = make([]gin.H, 0, len(*cards))
 
     for _, cr := range *cards {
-        response = append(response, CardRowToResponse(&cr))
+
+        // fetch card score
+        var fetchedCardScore *CardScoreRow
+        fetchedCardScore, err = GetCardScoreRecord(db, cr.ID)
+        if err != nil {
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to retrieve card score record",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        var cardrow gin.H = CardRowToResponse(&cr)
+        var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
+
+        foo := MergeResponse(&cardrow, &gin.H{"review": cardscore})
+        response = append(response, foo)
     }
 
     ctx.JSON(http.StatusOK, response)

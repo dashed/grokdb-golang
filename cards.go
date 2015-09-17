@@ -70,6 +70,7 @@ func CardGET(db *sqlx.DB, ctx *gin.Context) {
         ctx.Error(err)
         return
     }
+    var cardID uint = uint(_cardID)
 
     var fetchedCardRow *CardRow
     fetchedCardRow, err = GetCard(db, uint(_cardID))
@@ -92,8 +93,22 @@ func CardGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    // TODO: fetch card score and MergeResponse
-    ctx.JSON(http.StatusOK, CardRowToResponse(fetchedCardRow))
+    var fetchedCardScore *CardScoreRow
+    fetchedCardScore, err = GetCardScoreRecord(db, cardID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card score record",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var cardrow gin.H = CardRowToResponse(fetchedCardRow)
+    var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
+
+    ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
 }
 
 // POST /cards
@@ -159,9 +174,22 @@ func CardPOST(db *sqlx.DB, ctx *gin.Context) {
         ctx.Error(err)
     }
 
-    // TODO: fetch card score and MergeResponse
+    var fetchedCardScore *CardScoreRow
+    fetchedCardScore, err = GetCardScoreRecord(db, newCardRow.ID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card score record",
+        })
+        ctx.Error(err)
+        return
+    }
 
-    ctx.JSON(http.StatusCreated, CardRowToResponse(newCardRow))
+    var cardrow gin.H = CardRowToResponse(newCardRow)
+    var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
+
+    ctx.JSON(http.StatusCreated, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
 }
 
 // PATCH /cards/:id
@@ -379,8 +407,23 @@ func CardPATCH(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    // TODO: fetch card score and MergeResponse
-    ctx.JSON(http.StatusOK, CardRowToResponse(fetchedCardRow))
+    // fetch card score
+    var fetchedCardScore *CardScoreRow
+    fetchedCardScore, err = GetCardScoreRecord(db, cardID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card score record",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var cardrow gin.H = CardRowToResponse(fetchedCardRow)
+    var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
+
+    ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
 }
 
 /* helpers */

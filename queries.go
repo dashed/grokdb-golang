@@ -468,6 +468,22 @@ var FETCH_CARDS_BY_DECK_QUERY = (func() PipeInput {
     )
 }())
 
+var FETCH_CARD_SCORE = (func() PipeInput {
+    const __FETCH_CARD_SCORE string = `
+    SELECT success, fail, score, active_at, updated_at, card FROM CardsScore
+    WHERE card = :card_id
+    LIMIT 1;
+    `
+
+    var requiredInputCols []string = []string{"card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARD_SCORE),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 /* helpers */
 
 func JSON2Map(rawJSON []byte) (*StringMap, error) {
