@@ -501,7 +501,7 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK = (func() PipeInput {
             AND
             datetime(cs.active_at) <= datetime('now')
         ORDER BY
-            (cs.score * norm_age(datetime('now') - datetime(c.created_at))) DESC
+            (cs.score * norm_age(datetime('now') - datetime(cs.active_at))) DESC
         LIMIT 1;
     `
 
@@ -510,6 +510,25 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK = (func() PipeInput {
     return composePipes(
         MakeCtxMaker(__FETCH_NEXT_REVIEW_CARD_BY_DECK),
         EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var UPDATE_CARD_SCORE_QUERY = (func() PipeInput {
+    const __UPDATE_CARD_SCORE_QUERY string = `
+    UPDATE CardsScore
+    SET
+    %s
+    WHERE card = :card_id
+    `
+
+    var requiredInputCols []string = []string{"card_id"}
+    var whiteListCols []string = []string{"success", "fail", "score", "active_at"}
+
+    return composePipes(
+        MakeCtxMaker(__UPDATE_CARD_SCORE_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        PatchFilterPipe(whiteListCols),
         BuildQueryPipe,
     )
 }())

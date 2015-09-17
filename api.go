@@ -67,9 +67,9 @@ func bootAPI(db *Database) {
 
         // cardsAPI.DELETE("/:id", injectDB(CardDELETE))
 
-        // cardsAPI.POST("/:id/success", injectDB(CardDELETE))
+        cardsAPI.POST("/:id/success", injectDB(ReviewCardSuccessPOST))
 
-        // cardsAPI.POST("/:id/fail", injectDB(CardDELETE))
+        cardsAPI.POST("/:id/fail", injectDB(ReviewCardFailPOST))
     }
 
     configsAPI := api.Group("/configs")
