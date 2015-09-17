@@ -466,9 +466,23 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
         return 1;
     }());
 
-    // fetch deck id
-    const deckCursor = rootCursor.cursor(paths.deck.self);
-    const deckID = deckCursor.deref().get('id');
+    // fetch deck id from transaction
+
+
+    const deckID = (function() {
+        let maybeDeck = rootCursor.cursor(paths.transaction).deref().get(paths.deck.self, NOT_SET);
+
+        if(maybeDeck === NOT_SET) {
+            maybeDeck = rootCursor.cursor(paths.deck.self).deref(NOT_SET);
+
+            if(maybeDeck === NOT_SET) {
+                // TODO: error handling
+                throw Error('bad');
+            }
+        }
+
+        return maybeDeck.get('id');
+    }());
 
     yield loadCardsList(rootCursor, deckID, pageNum);
 
