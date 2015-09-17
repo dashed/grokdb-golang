@@ -5,6 +5,8 @@ const moment = require('moment');
 const Preview = require('components/markdownpreview');
 const Sides = require('./sides');
 
+const timeFormat = `ddd, MMM Do YYYY, h:mm:ss a ZZ`;
+
 const CardVisual = React.createClass({
 
     propTypes: {
@@ -16,21 +18,40 @@ const CardVisual = React.createClass({
         description: React.PropTypes.string.isRequired,
         review: React.PropTypes.instanceOf(Immutable.Map).isRequired,
         createdAt: React.PropTypes.string.isRequired,
-        updatedAt: React.PropTypes.string.isRequired,
+        updatedAt: React.PropTypes.string.isRequired
     },
 
     render() {
 
         const {review, createdAt, updatedAt} = this.props;
 
+        const reviewedAt = review.get('updated_at');
+
         const success = review.get('success');
         const fails = review.get('fail');
         const total = success + fails;
 
-        const __createdAt = moment.utc(createdAt);
-        const createdAtString = __createdAt.format("ddd, MMM Do YYYY, h:mm:ss a");
+        const offset = new Date().getTimezoneOffset();
+
+        const __createdAt = moment.utc(createdAt).utcOffset(-offset);
+        const __updatedAt = moment.utc(updatedAt).utcOffset(-offset);
+        const __activeAt = moment.utc(review.get('active_at')).utcOffset(-offset);
+        const __reviewedAt = moment.utc(reviewedAt).utcOffset(-offset);
+
+        const createdAtString = __createdAt.format(timeFormat);
         const createdAtRel = __createdAt.fromNow();
-        const updatedAtString = moment.utc(updatedAt).fromNow();
+
+        const updatedAtString = __updatedAt.format(timeFormat);
+        const updatedAtRel = __updatedAt.fromNow();
+
+        const activeAtString = __activeAt.format(timeFormat);
+        const activeAtRel = __activeAt.fromNow();
+        const activeString = __activeAt.diff(moment.utc()) <= 0 ? `Can review card now` : `Reviewable ${activeAtRel}`;
+
+        const reviewedAtString = __reviewedAt.format(timeFormat);
+        const reviewedAtRel = __reviewedAt.fromNow();
+
+        const lastReviewedString = Math.abs(__reviewedAt.diff(__createdAt)) <= 100 ? `Haven't been reviewed yet` : `Last reviewed ${reviewedAtRel}`;
 
         return (
             <div>
@@ -47,7 +68,14 @@ const CardVisual = React.createClass({
 
                                 <Preview text={this.props.description} />
 
-                                <p className="card-text"><small className="text-muted">{`Last updated ${updatedAtString}`}</small></p>
+                                <p className="card-text">
+                                    <small className="text-muted">
+                                        {'Last updated '}
+                                        <abbr title={`Last updated on ${updatedAtString}`}>
+                                            {updatedAtRel}
+                                        </abbr>
+                                    </small>
+                                </p>
                             </div>
                         </div>
 
@@ -86,16 +114,19 @@ const CardVisual = React.createClass({
                             <div className="card-footer text-muted">
                                 <div className="container">
                                     <div className="row">
-                                        <div className="col-sm-6">
+                                        <div className="col-sm-4">
                                             <center>
-                                                {"Created on "}
+                                                {"Created "}
                                                 <abbr title={`Created on ${createdAtString}`}>
                                                     {createdAtRel}
                                                 </abbr>
                                             </center>
                                         </div>
-                                        <div className="col-sm-6">
-                                            <center>{"Last reviewed 2 days ago"}</center>
+                                        <div className="col-sm-4">
+                                            <center>{lastReviewedString}</center>
+                                        </div>
+                                        <div className="col-sm-4">
+                                            <center>{activeString}</center>
                                         </div>
                                     </div>
                                 </div>
