@@ -335,8 +335,8 @@ CREATE TABLE IF NOT EXISTS CardsScore (
     success INTEGER NOT NULL DEFAULT 0,
     fail INTEGER NOT NULL DEFAULT 0,
     score REAL NOT NULL DEFAULT 0.5, /* jeffrey-perks law */
-    active_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format. active_at denotes date of when this card becomes active */
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format */
+    active_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format in utc. active_at denotes date of when this card becomes active */
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format in utc */
 
     card INTEGER NOT NULL,
 
