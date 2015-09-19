@@ -314,8 +314,8 @@ CREATE TABLE IF NOT EXISTS Cards (
     description TEXT NOT NULL DEFAULT '',
     sides TEXT NOT NULL,
 
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format */
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format. time when the card was modified. not when it was seen. */
+    created_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
+    updated_at INT NOT NULL DEFAULT (strftime('%s', 'now')), /* note: time when the card was modified. not when it was seen. */
 
     deck INTEGER NOT NULL,
 
@@ -326,7 +326,7 @@ CREATE TABLE IF NOT EXISTS Cards (
 CREATE TRIGGER IF NOT EXISTS cards_updated_card AFTER UPDATE OF title, description, sides, deck
 ON Cards
 BEGIN
-    UPDATE Cards SET updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE card_id = NEW.card_id;
+    UPDATE Cards SET updated_at = strftime('%s', 'now') WHERE card_id = NEW.card_id;
 END;
 
 CREATE INDEX IF NOT EXISTS Cards_Index ON Cards (deck);
@@ -335,8 +335,8 @@ CREATE TABLE IF NOT EXISTS CardsScore (
     success INTEGER NOT NULL DEFAULT 0,
     fail INTEGER NOT NULL DEFAULT 0,
     score REAL NOT NULL DEFAULT 0.5, /* jeffrey-perks law */
-    hide_until TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format in utc. hide_until denotes date of when this card becomes not hidden */
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format in utc */
+    hide_until INT NOT NULL DEFAULT (strftime('%s', 'now')), /* hide_until denotes date of when this card becomes not hidden */
+    updated_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
 
     card INTEGER NOT NULL,
 
@@ -352,7 +352,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS cardsscore_updated_score AFTER UPDATE OF success, fail, score
 ON CardsScore
 BEGIN
-    UPDATE CardsScore SET updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE card = NEW.card;
+    UPDATE CardsScore SET updated_at = strftime('%s', 'now') WHERE card = NEW.card;
 END;
 
 /* enforce 1-1 relationship */
@@ -360,7 +360,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS CardsScore_Index ON CardsScore (card);
 CREATE INDEX IF NOT EXISTS CardsScoreHistory_date_Index ON CardsScore (score DESC);
 
 CREATE TABLE IF NOT EXISTS CardsScoreHistory (
-    occured_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format */
+    occured_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
     success INTEGER NOT NULL DEFAULT 0,
     fail INTEGER NOT NULL DEFAULT 0,
     score REAL NOT NULL DEFAULT 0.5, /* jeffrey-perks law */
@@ -374,7 +374,7 @@ OF success, fail, score
 ON CardsScore
 BEGIN
    INSERT INTO CardsScoreHistory(occured_at, success, fail, score, card)
-   VALUES (strftime('%Y-%m-%d %H:%M:%f', 'now'), NEW.success, NEW.fail, NEW.score, NEW.card);
+   VALUES (strftime('%s', 'now'), NEW.success, NEW.fail, NEW.score, NEW.card);
 END;
 
 CREATE INDEX IF NOT EXISTS CardsScoreHistory_relation_Index ON CardsScoreHistory (card);
@@ -450,10 +450,10 @@ var FETCH_CARDS_BY_DECK_QUERY = (func() PipeInput {
         SELECT card_id, title, description, sides, deck, created_at, updated_at FROM Cards
         WHERE oid NOT IN (
             SELECT oid FROM Cards
-            ORDER BY datetime(created_at) DESC LIMIT :offset
+            ORDER BY created_at DESC LIMIT :offset
         )
         AND deck = :deck_id
-        ORDER BY datetime(created_at) DESC LIMIT :per_page;
+        ORDER BY created_at DESC LIMIT :per_page;
     `
 
     // SELECT card_id, title, description, sides, deck, created_at, updated_at FROM Cards
@@ -487,8 +487,7 @@ var FETCH_CARD_SCORE = (func() PipeInput {
 var FETCH_NEXT_REVIEW_CARD_BY_DECK = (func() PipeInput {
     const __FETCH_NEXT_REVIEW_CARD_BY_DECK string = `
         SELECT
-        c.card_id, c.title, c.description, c.sides, c.deck, c.created_at, c.updated_at,
-        norm_score(cs.success, cs.fail, strftime('%s','now') - strftime('%s', cs.updated_at)) AS normalized_score
+        c.card_id, c.title, c.description, c.sides, c.deck, c.created_at, c.updated_at
         FROM DecksClosure AS dc
 
         INNER JOIN Cards AS c
@@ -500,9 +499,9 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK = (func() PipeInput {
         WHERE
             dc.ancestor = :deck_id
             AND
-            strftime('%s', cs.hide_until) <= strftime('%s','now')
+            cs.hide_until <= strftime('%s','now')
         ORDER BY
-            normalized_score DESC
+            norm_score(cs.success, cs.fail, strftime('%s','now') - cs.updated_at) DESC
         LIMIT 1;
     `
 
@@ -524,7 +523,10 @@ var UPDATE_CARD_SCORE_QUERY = (func() PipeInput {
     `
 
     var requiredInputCols []string = []string{"card_id"}
-    var whiteListCols []string = []string{"success", "fail", "score", "hide_until"}
+
+    // note: only set "updated_at" when not setting any other cols; allows user
+    // to skip cards
+    var whiteListCols []string = []string{"success", "fail", "score", "hide_until", "updated_at"}
 
     return composePipes(
         MakeCtxMaker(__UPDATE_CARD_SCORE_QUERY),

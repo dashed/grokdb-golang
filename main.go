@@ -61,6 +61,7 @@ func norm_score(success int64, fail int64, age int64) float64 {
 
     // - favour cards that are seen less frequently
     // - favour less successful cards
+    // - penalize more successful cards
     var bias_factor float64 = float64(1+fail) / float64(1+success+total)
 
     var base float64 = lidstone + 1

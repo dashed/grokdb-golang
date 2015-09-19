@@ -47,7 +47,7 @@ func bootAPI(db *Database) {
 
         decksAPI.DELETE("/:id", injectDB(DeckDELETE))
 
-        // get next card within the deck to review
+        // get card within the deck to be reviewed
         decksAPI.GET("/:id/review", injectDB(ReviewDeckGET))
     }
 
@@ -67,9 +67,8 @@ func bootAPI(db *Database) {
 
         // cardsAPI.DELETE("/:id", injectDB(CardDELETE))
 
-        cardsAPI.POST("/:id/success", injectDB(ReviewCardSuccessPOST))
+        cardsAPI.PATCH("/:id/review", injectDB(ReviewCardPATCH))
 
-        cardsAPI.POST("/:id/fail", injectDB(ReviewCardFailPOST))
     }
 
     configsAPI := api.Group("/configs")

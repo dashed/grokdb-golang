@@ -22,13 +22,9 @@ type CardScoreRow struct {
     Success   int
     Fail      int
     Score     float64
-    Card      uint   `db:"card"`
-    HideUntil string `db:"hide_until"`
-    UpdatedAt string `db:"updated_at"`
-}
-
-type CardScorePOSTRequest struct {
-    HideUntil string `json:"hide_until"`
+    Card      uint  `db:"card"`
+    HideUntil int64 `db:"hide_until"`
+    UpdatedAt int64 `db:"updated_at"`
 }
 
 /* REST Handlers */
@@ -76,8 +72,8 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
     }
 
     // fetch review card
-    var fetchedCardRow *CardRow
-    fetchedCardRow, err = GetNextReviewCard(db, deckID)
+    var fetchedReviewCardRow *CardRow
+    fetchedReviewCardRow, err = GetNextReviewCard(db, deckID)
 
     switch {
     case err == ErrCardNoSuchCard:
@@ -100,7 +96,7 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
 
     // fetch card's score
     var fetchedCardScore *CardScoreRow
-    fetchedCardScore, err = GetCardScoreRecord(db, fetchedCardRow.ID)
+    fetchedCardScore, err = GetCardScoreRecord(db, fetchedReviewCardRow.ID)
 
     if err != nil {
         ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -112,13 +108,13 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    var cardrow gin.H = CardRowToResponse(fetchedCardRow)
+    var cardrow gin.H = CardRowToResponse(fetchedReviewCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
     ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
 }
 
-func ReviewCardSuccessPOST(db *sqlx.DB, ctx *gin.Context) {
+func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
 
     // parse id param
     var cardIDString string = strings.ToLower(ctx.Param("id"))
@@ -135,12 +131,9 @@ func ReviewCardSuccessPOST(db *sqlx.DB, ctx *gin.Context) {
     }
     var cardID uint = uint(_cardID)
 
-    // parse request
-    var (
-        jsonRequest CardScorePOSTRequest
-    )
-
-    err = ctx.BindJSON(&jsonRequest)
+    // parse request body
+    var requestPatch StringMap = StringMap{}
+    err = ctx.BindJSON(&requestPatch)
     if err != nil {
 
         ctx.JSON(http.StatusBadRequest, gin.H{
@@ -151,22 +144,73 @@ func ReviewCardSuccessPOST(db *sqlx.DB, ctx *gin.Context) {
         ctx.Error(err)
         return
     }
+    if len(requestPatch) <= 0 {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "no JSON input",
+            "userMessage":      "no JSON input",
+        })
+    }
 
-    // parse hide_until
-    if len(jsonRequest.HideUntil) > 0 {
-        err = testTime(jsonRequest.HideUntil)
+    var patch StringMap = StringMap{} // sanitized
+
+    // validate hide_until
+    if _, hasHideUntil := requestPatch["hide_until"]; hasHideUntil == true {
+
+        var hideUntil uint
+        hideUntil, err = (func() (uint, error) {
+            switch _hide_until := requestPatch["hide_until"].(type) {
+            // note that according to docs: http://golang.org/pkg/encoding/json/#Unmarshal
+            // JSON numbers are converted to float64
+            case float64:
+                __hide_until := uint(_hide_until)
+                if _hide_until > 0 && _hide_until == float64(__hide_until) {
+
+                    return __hide_until, nil
+                }
+            }
+            return 0, errors.New("given hide_until is invalid")
+        }())
+
         if err != nil {
             ctx.JSON(http.StatusBadRequest, gin.H{
                 "status":           http.StatusBadRequest,
                 "developerMessage": err.Error(),
-                "userMessage":      "invalid hide_until format",
+                "userMessage":      err.Error(),
             })
             ctx.Error(err)
             return
         }
 
-    } else {
-        jsonRequest.HideUntil = time.Now().UTC().Format("2006-01-02 15:04:05Z")
+        patch["hide_until"] = hideUntil
+    }
+
+    // validate value
+    var value uint = 1
+    if _, hasValue := requestPatch["value"]; hasValue == true {
+        value, err = (func() (uint, error) {
+            switch _value := requestPatch["value"].(type) {
+            // note that according to docs: http://golang.org/pkg/encoding/json/#Unmarshal
+            // JSON numbers are converted to float64
+            case float64:
+                __value := uint(_value)
+                if _value > 0 && _value == float64(__value) {
+
+                    return __value, nil
+                }
+            }
+            return 0, errors.New("given value is invalid")
+        }())
+
+        if err != nil {
+            ctx.JSON(http.StatusBadRequest, gin.H{
+                "status":           http.StatusBadRequest,
+                "developerMessage": err.Error(),
+                "userMessage":      err.Error(),
+            })
+            ctx.Error(err)
+            return
+        }
     }
 
     // verify card id exists
@@ -206,125 +250,48 @@ func ReviewCardSuccessPOST(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    err = ApplySuccessToCard(db, fetchedCardScore, fetchedCardRow, jsonRequest.HideUntil)
-    if err != nil {
-        ctx.JSON(http.StatusInternalServerError, gin.H{
-            "status":           http.StatusInternalServerError,
-            "developerMessage": err.Error(),
-            "userMessage":      "unable to update card score record",
-        })
-        ctx.Error(err)
-        return
-    }
+    // validate action
+    if _, hasAction := requestPatch["action"]; hasAction == true {
 
-    // refetch card's score
-    fetchedCardScore, err = GetCardScoreRecord(db, fetchedCardRow.ID)
+        err = (func() error {
+            switch _action := requestPatch["action"].(type) {
+            case string:
+                __action := strings.ToLower(_action)
+                switch __action {
+                case "success":
+                    _val := uint(fetchedCardScore.Success) + value
+                    patch["success"] = _val
+                    patch["score"] = calculateScore(_val, uint(fetchedCardScore.Fail))
+                case "fail":
+                    _val := uint(fetchedCardScore.Fail) + value
+                    patch["fail"] = _val
+                    patch["score"] = calculateScore(uint(fetchedCardScore.Success), _val)
+                case "reset":
+                    // noop update
+                    patch["updated_at"] = uint(time.Now().Unix())
+                default:
+                    return errors.New("given action is invalid")
+                }
+            default:
+                return errors.New("given action is invalid")
+            }
+            return nil
+        }())
 
-    if err != nil {
-        ctx.JSON(http.StatusInternalServerError, gin.H{
-            "status":           http.StatusInternalServerError,
-            "developerMessage": err.Error(),
-            "userMessage":      "unable to retrieve card score record",
-        })
-        ctx.Error(err)
-        return
-    }
-
-    var cardrow gin.H = CardRowToResponse(fetchedCardRow)
-    var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
-
-    ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
-}
-
-func ReviewCardFailPOST(db *sqlx.DB, ctx *gin.Context) {
-
-    // parse id param
-    var cardIDString string = strings.ToLower(ctx.Param("id"))
-
-    _cardID, err := strconv.ParseUint(cardIDString, 10, 32)
-    if err != nil {
-        ctx.JSON(http.StatusBadRequest, gin.H{
-            "status":           http.StatusBadRequest,
-            "developerMessage": err.Error(),
-            "userMessage":      "given id is invalid",
-        })
-        ctx.Error(err)
-        return
-    }
-    var cardID uint = uint(_cardID)
-
-    // parse request
-    var (
-        jsonRequest CardScorePOSTRequest
-    )
-
-    err = ctx.BindJSON(&jsonRequest)
-    if err != nil {
-
-        ctx.JSON(http.StatusBadRequest, gin.H{
-            "status":           http.StatusBadRequest,
-            "developerMessage": err.Error(),
-            "userMessage":      "bad JSON input",
-        })
-        ctx.Error(err)
-        return
-    }
-
-    // parse hide_until
-    if len(jsonRequest.HideUntil) > 0 {
-        err = testTime(jsonRequest.HideUntil)
         if err != nil {
             ctx.JSON(http.StatusBadRequest, gin.H{
                 "status":           http.StatusBadRequest,
                 "developerMessage": err.Error(),
-                "userMessage":      "invalid hide_until format",
+                "userMessage":      err.Error(),
             })
             ctx.Error(err)
             return
         }
-
-    } else {
-        jsonRequest.HideUntil = time.Now().UTC().Format("2006-01-02 15:04:05Z")
     }
 
-    // verify card id exists
-    var fetchedCardRow *CardRow
-    fetchedCardRow, err = GetCard(db, cardID)
+    // update card review
+    err = UpdateCardScore(db, fetchedCardRow.ID, &patch)
 
-    switch {
-    case err == ErrCardNoSuchCard:
-        ctx.JSON(http.StatusNotFound, gin.H{
-            "status":           http.StatusNotFound,
-            "developerMessage": err.Error(),
-            "userMessage":      "cannot find card by id",
-        })
-        ctx.Error(err)
-        return
-    case err != nil:
-        ctx.JSON(http.StatusInternalServerError, gin.H{
-            "status":           http.StatusInternalServerError,
-            "developerMessage": err.Error(),
-            "userMessage":      "unable to retrieve card",
-        })
-        ctx.Error(err)
-        return
-    }
-
-    // fetch card's score
-    var fetchedCardScore *CardScoreRow
-    fetchedCardScore, err = GetCardScoreRecord(db, fetchedCardRow.ID)
-
-    if err != nil {
-        ctx.JSON(http.StatusInternalServerError, gin.H{
-            "status":           http.StatusInternalServerError,
-            "developerMessage": err.Error(),
-            "userMessage":      "unable to retrieve card score record",
-        })
-        ctx.Error(err)
-        return
-    }
-
-    err = ApplyFailToCard(db, fetchedCardScore, fetchedCardRow, jsonRequest.HideUntil)
     if err != nil {
         ctx.JSON(http.StatusInternalServerError, gin.H{
             "status":           http.StatusInternalServerError,
@@ -352,9 +319,16 @@ func ReviewCardFailPOST(db *sqlx.DB, ctx *gin.Context) {
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
     ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
+
 }
 
 /* helpers */
+
+func calculateScore(success uint, fail uint) float64 {
+    var total uint = success + fail
+    var _lidstone float64 = (float64(fail) + 0.5) / float64(total+1)
+    return _lidstone
+}
 
 func CardScoreResponse(overrides *gin.H) gin.H {
     defaultResponse := &gin.H{
@@ -362,8 +336,8 @@ func CardScoreResponse(overrides *gin.H) gin.H {
         "fail":       0,
         "score":      0,
         "card":       0,
-        "hide_until": "",
-        "updated_at": "",
+        "hide_until": 0,
+        "updated_at": 0,
     }
 
     return MergeResponse(defaultResponse, overrides)
@@ -419,9 +393,9 @@ func GetNextReviewCard(db *sqlx.DB, deckID uint) (*CardRow, error) {
         return nil, err
     }
 
-    var fetchedCard *CardRow = &CardRow{}
+    var fetchedReviewCard *CardRow = &CardRow{}
 
-    err = db.QueryRowx(query, args...).StructScan(fetchedCard)
+    err = db.QueryRowx(query, args...).StructScan(fetchedReviewCard)
 
     switch {
     case err == sql.ErrNoRows:
@@ -429,36 +403,8 @@ func GetNextReviewCard(db *sqlx.DB, deckID uint) (*CardRow, error) {
     case err != nil:
         return nil, err
     default:
-        return fetchedCard, nil
+        return fetchedReviewCard, nil
     }
-}
-
-func ApplySuccessToCard(db *sqlx.DB, cardscore *CardScoreRow, card *CardRow, hide_until string) error {
-
-    var newSuccess int = cardscore.Success + 1
-
-    var patch StringMap = StringMap{
-        "card_id":   card.ID,
-        "success":   newSuccess,
-        "score":     calculateScore(newSuccess, cardscore.Fail),
-        "hide_until": hide_until,
-    }
-
-    return UpdateCardScore(db, card.ID, &patch)
-}
-
-func ApplyFailToCard(db *sqlx.DB, cardscore *CardScoreRow, card *CardRow, hide_until string) error {
-
-    var newFail int = cardscore.Fail + 1
-
-    var patch StringMap = StringMap{
-        "card_id":   card.ID,
-        "fail":      newFail,
-        "score":     calculateScore(cardscore.Success, newFail),
-        "hide_until": hide_until,
-    }
-
-    return UpdateCardScore(db, card.ID, &patch)
 }
 
 func UpdateCardScore(db *sqlx.DB, cardID uint, patch *StringMap) error {
@@ -489,28 +435,6 @@ func UpdateCardScore(db *sqlx.DB, cardID uint, patch *StringMap) error {
 
     if num <= 0 {
         return errors.New("unable to update card score record")
-    }
-    return nil
-}
-
-func calculateScore(success int, fail int) float64 {
-    var numerator float64 = float64(fail) + 0.5
-    var denominator float64 = float64(success + fail + 1)
-    return numerator / denominator
-}
-
-func testTime(timeString string) error {
-
-    // sqlite
-    _, err := time.Parse("2006-01-02 15:04:05Z", timeString)
-    if err == nil {
-        return nil
-    }
-
-    // js
-    _, err = time.Parse("2006-01-02T15:04:05Z", timeString)
-    if err == nil {
-        return nil
     }
     return nil
 }

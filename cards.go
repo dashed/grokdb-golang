@@ -33,9 +33,9 @@ type CardRow struct {
     Title       string
     Description string
     Sides       string
-    Deck        uint   `db:"deck"`
-    CreatedAt   string `db:"created_at"`
-    UpdatedAt   string `db:"updated_at"`
+    Deck        uint  `db:"deck"`
+    CreatedAt   int64 `db:"created_at"`
+    UpdatedAt   int64 `db:"updated_at"`
 }
 
 type CardPOSTRequest struct {
@@ -436,6 +436,8 @@ func CardResponse(overrides *gin.H) gin.H {
         "description": "",
         "sides":       "", // required
         "deck":        0,  // required
+        "created_at":  0,
+        "updated_at":  0,
     }
 
     return MergeResponse(defaultResponse, overrides)
