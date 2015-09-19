@@ -61,9 +61,6 @@ const CardModify = React.createClass({
                 <div className="row">
                     <div className="col-sm-12">
                         <div className="card">
-                            <div className="card-header">
-                                <strong>{"Card Title"}</strong>
-                            </div>
                             <div className="card-block">
                                 <fieldset className="form-group m-y-0">
                                     <input
@@ -81,7 +78,7 @@ const CardModify = React.createClass({
                                 {""}
                             </div>
                             <div className="card-header">
-                                <strong>{"Sides"}</strong>
+                                <strong>{"Card Entries"}</strong>
                             </div>
 
                             <NewSides

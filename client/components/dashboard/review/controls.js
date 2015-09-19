@@ -20,9 +20,14 @@ const ReviewControls = React.createClass({
 
             return (
                 <div key="showbackbutton" className="row">
-                    <div className="col-sm-12">
+                    <div className="col-sm-6">
                         <button type="button" className="btn btn-primary btn-lg btn-block" onClick={this.onClickShowBackSide}>
                             {"Show Back Side"}
+                        </button>
+                    </div>
+                    <div className="col-sm-6">
+                        <button type="button" className="btn btn-info btn-lg btn-block" onClick={this.onClickSkip}>
+                            {"Skip Card"}
                         </button>
                     </div>
                 </div>

@@ -34,11 +34,22 @@ const ReviewDashboard = React.createClass({
         });
     },
 
-    onClickShowBackSide(event) {
+    onClickShowBackSide() {
 
         this.setState({
             showBackSide: true
         });
+    },
+
+    onClickEntries(event){
+        event.preventDefault();
+        event.stopPropagation();
+    },
+
+    onClickMeta(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
     },
 
     render() {
@@ -57,8 +68,18 @@ const ReviewDashboard = React.createClass({
 
         return (
             <div>
-                <div className="row">
+                <div className="row m-b">
                     <div className="col-sm-12">
+                            <div className="btn-group pull-left" role="group" aria-label="Basic example">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={this.onClickEntries}>{"Entries"}</button>
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={this.onClickMeta}>{"Meta"}</button>
+                            </div>
                     </div>
                 </div>
                 <div className="row">
@@ -69,6 +90,7 @@ const ReviewDashboard = React.createClass({
                                 <hr/>
                             </div>
                             <ReviewCardSides
+                                showFront={this.state.showBackSide }
                                 sides={sides}
                                 showButtons={this.state.showBackSide} />
                         </div>
