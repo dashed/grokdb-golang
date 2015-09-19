@@ -45,7 +45,8 @@ module.exports = {
             'markdown-it',
             'react-textarea-autosize',
             'qs',
-            'moment'
+            'moment',
+            'react-prop-once'
             // 'intl',
             // 'between2',
             // 'pouchdb',

@@ -1,5 +1,7 @@
 const React = require('react');
 const classNames = require('classnames');
+const {Probe} = require('minitrue');
+const orwell = require('orwell');
 
 const Preview = require('components/markdownpreview');
 
@@ -10,25 +12,18 @@ const ReviewCardSides = React.createClass({
             front: React.PropTypes.string.isRequired,
             back: React.PropTypes.string.isRequired
         }),
-        showButtons: React.PropTypes.bool.isRequired
-    },
-
-    getInitialState() {
-        return {
-            isFront: true
-        };
+        showBackSide: React.PropTypes.bool.isRequired,
+        revealCard: React.PropTypes.bool.isRequired,
+        localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
 
     onClickFront(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        if(this.state.isFront) {
-            return;
-        }
-
-        this.setState({
-            isFront: true
+        const {localstate} = this.props;
+        localstate.cursor('showBackSide').update(function() {
+            return false;
         });
     },
 
@@ -36,38 +31,41 @@ const ReviewCardSides = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        if(!this.state.isFront) {
-            return;
-        }
-
-        this.setState({
-            isFront: false
+        const {localstate} = this.props;
+        localstate.cursor('showBackSide').update(function() {
+            return true;
         });
     },
 
     getText() {
-        return this.state.isFront ? this.props.sides.front : this.props.sides.back;
+
+        const {showBackSide} = this.props;
+
+        return showBackSide ?
+            this.props.sides.back : this.props.sides.front;
     },
 
     render() {
 
         const sideChooser = (function() {
 
-            if(!this.props.showButtons) {
+            if(!this.props.revealCard) {
                 return null;
             }
+
+            const {showBackSide} = this.props;
 
             return (
                 <div className="card-block p-t-0">
                     <div className="btn-group btn-group-sm" role="group" aria-label="Basic example">
                         <button
                             type="button"
-                            className={classNames('btn', {'btn-primary': this.state.isFront, 'btn-secondary': !this.state.isFront})}
+                            className={classNames('btn', {'btn-primary': !showBackSide, 'btn-secondary': showBackSide})}
                             onClick={this.onClickFront}
                         >{"Front"}</button>
                         <button
                             type="button"
-                            className={classNames('btn', {'btn-primary': !this.state.isFront, 'btn-secondary': this.state.isFront})}
+                            className={classNames('btn', {'btn-primary': showBackSide, 'btn-secondary': !showBackSide})}
                             onClick={this.onClickBack}
                         >{"Back"}</button>
                     </div>
@@ -87,4 +85,21 @@ const ReviewCardSides = React.createClass({
     }
 });
 
-module.exports = ReviewCardSides;
+module.exports = orwell(ReviewCardSides, {
+    watchCursors(props) {
+        const {localstate} = props;
+
+        return [
+            localstate.cursor('revealCard'),
+            localstate.cursor('showBackSide')
+        ];
+    },
+    assignNewProps(props) {
+        const {localstate} = props;
+
+        return {
+            revealCard: localstate.cursor('revealCard').deref(false),
+            showBackSide: localstate.cursor('showBackSide').deref(false)
+        };
+    }
+});

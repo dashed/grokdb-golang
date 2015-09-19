@@ -1,27 +1,37 @@
 const React = require('react');
+const {Probe} = require('minitrue');
+const orwell = require('orwell');
 
 const ReviewControls = React.createClass({
 
     propTypes: {
-        showBackSide: React.PropTypes.bool.isRequired,
-        onClickShowBackSide: React.PropTypes.func.isRequired
+        revealCard: React.PropTypes.bool.isRequired,
+        localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
 
-    onClickShowBackSide(event) {
+    onClickRevealCard(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.onClickShowBackSide.call(void 0);
+        const {localstate} = this.props;
+        localstate.cursor('revealCard').update(function() {
+            return true;
+        });
+    },
+
+    onClickSkip(event) {
+        event.preventDefault();
+        event.stopPropagation();
     },
 
     render() {
 
-        if(!this.props.showBackSide) {
+        if(!this.props.revealCard) {
 
             return (
                 <div key="showbackbutton" className="row">
                     <div className="col-sm-6">
-                        <button type="button" className="btn btn-primary btn-lg btn-block" onClick={this.onClickShowBackSide}>
+                        <button type="button" className="btn btn-primary btn-lg btn-block" onClick={this.onClickRevealCard}>
                             {"Show Back Side"}
                         </button>
                     </div>
@@ -52,5 +62,19 @@ const ReviewControls = React.createClass({
     }
 });
 
-module.exports = ReviewControls;
+module.exports = orwell(ReviewControls, {
+    watchCursors(props) {
+        const {localstate} = props;
 
+        return [
+            localstate.cursor('revealCard')
+        ];
+    },
+    assignNewProps(props) {
+        const {localstate} = props;
+
+        return {
+            revealCard: localstate.cursor('revealCard').deref(false)
+        };
+    }
+});

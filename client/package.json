@@ -33,6 +33,7 @@
     "react": "^0.13.3",
     "react-dnd": "^1.1.5",
     "react-either": "^0.1.1",
+    "react-prop-once": "^0.1.2",
     "react-textarea-autosize": "^2.5.1",
     "shallowequal": "^0.2.2",
     "slug": "^0.9.1",
