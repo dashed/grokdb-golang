@@ -115,7 +115,7 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
 }
 
 // PATCH /cards/:id/review
-// 
+//
 // Params:
 // hide_until: unix timestamp
 // action: one of: success, fail, reset, skip
@@ -276,6 +276,10 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
                     patch["fail"] = 0
                     patch["success"] = 0
                     patch["score"] = calculateScore(0, 0)
+                case "forgot":
+                    patch["fail"] = 2
+                    patch["success"] = 0
+                    patch["score"] = calculateScore(0, 2)
                 case "skip":
                     // noop update
                     patch["updated_at"] = uint(time.Now().Unix())
