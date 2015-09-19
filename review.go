@@ -114,6 +114,12 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
     ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
 }
 
+// PATCH /cards/:id/review
+// 
+// Params:
+// hide_until: unix timestamp
+// action: one of: success, fail, reset, skip
+// value: amount to add to success or fail. must be positive non-zero int (optional. default: 1)
 func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
 
     // parse id param
@@ -323,7 +329,6 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
     ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
-
 }
 
 /* helpers */
