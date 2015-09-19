@@ -335,7 +335,7 @@ CREATE TABLE IF NOT EXISTS CardsScore (
     success INTEGER NOT NULL DEFAULT 0,
     fail INTEGER NOT NULL DEFAULT 0,
     score REAL NOT NULL DEFAULT 0.5, /* jeffrey-perks law */
-    active_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format in utc. active_at denotes date of when this card becomes active */
+    hide_until TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format in utc. hide_until denotes date of when this card becomes not hidden */
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')), /* ISO8601 format in utc */
 
     card INTEGER NOT NULL,
@@ -470,7 +470,7 @@ var FETCH_CARDS_BY_DECK_QUERY = (func() PipeInput {
 
 var FETCH_CARD_SCORE = (func() PipeInput {
     const __FETCH_CARD_SCORE string = `
-    SELECT success, fail, score, active_at, updated_at, card FROM CardsScore
+    SELECT success, fail, score, hide_until, updated_at, card FROM CardsScore
     WHERE card = :card_id
     LIMIT 1;
     `
@@ -487,7 +487,8 @@ var FETCH_CARD_SCORE = (func() PipeInput {
 var FETCH_NEXT_REVIEW_CARD_BY_DECK = (func() PipeInput {
     const __FETCH_NEXT_REVIEW_CARD_BY_DECK string = `
         SELECT
-        c.card_id, c.title, c.description, c.sides, c.deck, c.created_at, c.updated_at
+        c.card_id, c.title, c.description, c.sides, c.deck, c.created_at, c.updated_at,
+        norm_score(cs.success, cs.fail, strftime('%s','now') - strftime('%s', updated_at)) AS normalized_score
         FROM DecksClosure AS dc
 
         INNER JOIN Cards AS c
@@ -499,9 +500,9 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK = (func() PipeInput {
         WHERE
             dc.ancestor = :deck_id
             AND
-            datetime(cs.active_at) <= datetime('now')
+            strftime('%s', cs.hide_until) <= strftime('%s','now')
         ORDER BY
-            (cs.score * norm_age(datetime('now') - datetime(cs.active_at))) DESC
+            normalized_score DESC
         LIMIT 1;
     `
 
@@ -523,7 +524,7 @@ var UPDATE_CARD_SCORE_QUERY = (func() PipeInput {
     `
 
     var requiredInputCols []string = []string{"card_id"}
-    var whiteListCols []string = []string{"success", "fail", "score", "active_at"}
+    var whiteListCols []string = []string{"success", "fail", "score", "hide_until"}
 
     return composePipes(
         MakeCtxMaker(__UPDATE_CARD_SCORE_QUERY),

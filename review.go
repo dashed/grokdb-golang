@@ -23,18 +23,19 @@ type CardScoreRow struct {
     Fail      int
     Score     float64
     Card      uint   `db:"card"`
-    ActiveAt  string `db:"active_at"`
+    HideUntil string `db:"hide_until"`
     UpdatedAt string `db:"updated_at"`
 }
 
 type CardScorePOSTRequest struct {
-    ActiveAt string `json:"active_at"`
+    HideUntil string `json:"hide_until"`
 }
 
 /* REST Handlers */
 
 // GET /decks/:id/review
 //
+// get card within the deck to be reviewed
 func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
 
     // parse id param
@@ -151,21 +152,21 @@ func ReviewCardSuccessPOST(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    // parse active_at
-    if len(jsonRequest.ActiveAt) > 0 {
-        err = testTime(jsonRequest.ActiveAt)
+    // parse hide_until
+    if len(jsonRequest.HideUntil) > 0 {
+        err = testTime(jsonRequest.HideUntil)
         if err != nil {
             ctx.JSON(http.StatusBadRequest, gin.H{
                 "status":           http.StatusBadRequest,
                 "developerMessage": err.Error(),
-                "userMessage":      "invalid active_at format",
+                "userMessage":      "invalid hide_until format",
             })
             ctx.Error(err)
             return
         }
 
     } else {
-        jsonRequest.ActiveAt = time.Now().UTC().Format("2006-01-02 15:04:05Z")
+        jsonRequest.HideUntil = time.Now().UTC().Format("2006-01-02 15:04:05Z")
     }
 
     // verify card id exists
@@ -205,7 +206,7 @@ func ReviewCardSuccessPOST(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    err = ApplySuccessToCard(db, fetchedCardScore, fetchedCardRow, jsonRequest.ActiveAt)
+    err = ApplySuccessToCard(db, fetchedCardScore, fetchedCardRow, jsonRequest.HideUntil)
     if err != nil {
         ctx.JSON(http.StatusInternalServerError, gin.H{
             "status":           http.StatusInternalServerError,
@@ -269,21 +270,21 @@ func ReviewCardFailPOST(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    // parse active_at
-    if len(jsonRequest.ActiveAt) > 0 {
-        err = testTime(jsonRequest.ActiveAt)
+    // parse hide_until
+    if len(jsonRequest.HideUntil) > 0 {
+        err = testTime(jsonRequest.HideUntil)
         if err != nil {
             ctx.JSON(http.StatusBadRequest, gin.H{
                 "status":           http.StatusBadRequest,
                 "developerMessage": err.Error(),
-                "userMessage":      "invalid active_at format",
+                "userMessage":      "invalid hide_until format",
             })
             ctx.Error(err)
             return
         }
 
     } else {
-        jsonRequest.ActiveAt = time.Now().UTC().Format("2006-01-02 15:04:05Z")
+        jsonRequest.HideUntil = time.Now().UTC().Format("2006-01-02 15:04:05Z")
     }
 
     // verify card id exists
@@ -323,7 +324,7 @@ func ReviewCardFailPOST(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    err = ApplyFailToCard(db, fetchedCardScore, fetchedCardRow, jsonRequest.ActiveAt)
+    err = ApplyFailToCard(db, fetchedCardScore, fetchedCardRow, jsonRequest.HideUntil)
     if err != nil {
         ctx.JSON(http.StatusInternalServerError, gin.H{
             "status":           http.StatusInternalServerError,
@@ -361,7 +362,7 @@ func CardScoreResponse(overrides *gin.H) gin.H {
         "fail":       0,
         "score":      0,
         "card":       0,
-        "active_at":  "",
+        "hide_until": "",
         "updated_at": "",
     }
 
@@ -374,7 +375,7 @@ func CardScoreToResponse(cardscore *CardScoreRow) gin.H {
         "fail":       cardscore.Fail,
         "score":      cardscore.Score,
         "card":       cardscore.Card,
-        "active_at":  cardscore.ActiveAt,
+        "hide_until": cardscore.HideUntil,
         "updated_at": cardscore.UpdatedAt,
     })
 }
@@ -432,7 +433,7 @@ func GetNextReviewCard(db *sqlx.DB, deckID uint) (*CardRow, error) {
     }
 }
 
-func ApplySuccessToCard(db *sqlx.DB, cardscore *CardScoreRow, card *CardRow, activeAt string) error {
+func ApplySuccessToCard(db *sqlx.DB, cardscore *CardScoreRow, card *CardRow, hide_until string) error {
 
     var newSuccess int = cardscore.Success + 1
 
@@ -440,13 +441,13 @@ func ApplySuccessToCard(db *sqlx.DB, cardscore *CardScoreRow, card *CardRow, act
         "card_id":   card.ID,
         "success":   newSuccess,
         "score":     calculateScore(newSuccess, cardscore.Fail),
-        "active_at": activeAt,
+        "hide_until": hide_until,
     }
 
     return UpdateCardScore(db, card.ID, &patch)
 }
 
-func ApplyFailToCard(db *sqlx.DB, cardscore *CardScoreRow, card *CardRow, activeAt string) error {
+func ApplyFailToCard(db *sqlx.DB, cardscore *CardScoreRow, card *CardRow, hide_until string) error {
 
     var newFail int = cardscore.Fail + 1
 
@@ -454,7 +455,7 @@ func ApplyFailToCard(db *sqlx.DB, cardscore *CardScoreRow, card *CardRow, active
         "card_id":   card.ID,
         "fail":      newFail,
         "score":     calculateScore(cardscore.Success, newFail),
-        "active_at": activeAt,
+        "hide_until": hide_until,
     }
 
     return UpdateCardScore(db, card.ID, &patch)

@@ -17,7 +17,7 @@ func main() {
     // adapted from: https://github.com/mattn/go-sqlite3/blob/master/_example/custom_func/main.go
     sql.Register("sqlite3_custom", &sqlite.SQLiteDriver{
         ConnectHook: func(conn *sqlite.SQLiteConn) error {
-            if err := conn.RegisterFunc("norm_age", norm_age, true); err != nil {
+            if err := conn.RegisterFunc("norm_score", norm_score, true); err != nil {
                 return err
             }
             return nil
@@ -49,6 +49,22 @@ func exitIfErr(err error, code int) {
     }
 }
 
-func norm_age(x int64) float64 {
-    return math.Log(math.Abs(float64(x)) + math.Exp(1))
+func norm_score(success int64, fail int64, age int64) float64 {
+
+    var total int64 = success + fail
+
+    // this is Jeffrey-Perks law where h = 0.5
+    // References:
+    // - http://www.dcs.bbk.ac.uk/~dell/publications/dellzhang_ictir2011.pdf
+    // - http://bl.ocks.org/ajschumacher/b9645724d9d842810613
+    var lidstone float64 = (float64(fail) + 0.5) / float64(total+1)
+
+    // - favour cards that are seen less frequently
+    // - favour less successful cards
+    var bias_factor float64 = float64(1+fail) / float64(1+success+total)
+
+    var base float64 = lidstone + 1
+    var normalized float64 = lidstone * math.Log(float64(age)*bias_factor+base) / math.Log(base)
+
+    return normalized
 }
