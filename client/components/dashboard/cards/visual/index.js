@@ -17,8 +17,8 @@ const CardVisual = React.createClass({
         }),
         description: React.PropTypes.string.isRequired,
         review: React.PropTypes.instanceOf(Immutable.Map).isRequired,
-        createdAt: React.PropTypes.string.isRequired,
-        updatedAt: React.PropTypes.string.isRequired
+        createdAt: React.PropTypes.number.isRequired,
+        updatedAt: React.PropTypes.number.isRequired
     },
 
     render() {
@@ -33,10 +33,10 @@ const CardVisual = React.createClass({
 
         const offset = new Date().getTimezoneOffset();
 
-        const __createdAt = moment.utc(createdAt).utcOffset(-offset);
-        const __updatedAt = moment.utc(updatedAt).utcOffset(-offset);
-        const __activeAt = moment.utc(review.get('active_at')).utcOffset(-offset);
-        const __reviewedAt = moment.utc(reviewedAt).utcOffset(-offset);
+        const __createdAt = moment.unix(createdAt).utcOffset(-offset);
+        const __updatedAt = moment.unix(updatedAt).utcOffset(-offset);
+        const __activeAt = moment.unix(review.get('hide_until')).utcOffset(-offset);
+        const __reviewedAt = moment.unix(reviewedAt).utcOffset(-offset);
 
         const createdAtString = __createdAt.format(timeFormat);
         const createdAtRel = __createdAt.fromNow();
