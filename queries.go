@@ -488,7 +488,7 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK = (func() PipeInput {
     const __FETCH_NEXT_REVIEW_CARD_BY_DECK string = `
         SELECT
         c.card_id, c.title, c.description, c.sides, c.deck, c.created_at, c.updated_at,
-        norm_score(cs.success, cs.fail, strftime('%s','now') - strftime('%s', updated_at)) AS normalized_score
+        norm_score(cs.success, cs.fail, strftime('%s','now') - strftime('%s', cs.updated_at)) AS normalized_score
         FROM DecksClosure AS dc
 
         INNER JOIN Cards AS c
