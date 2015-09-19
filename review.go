@@ -267,6 +267,10 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
                     patch["fail"] = _val
                     patch["score"] = calculateScore(uint(fetchedCardScore.Success), _val)
                 case "reset":
+                    patch["fail"] = 0
+                    patch["success"] = 0
+                    patch["score"] = calculateScore(0, 0)
+                case "skip":
                     // noop update
                     patch["updated_at"] = uint(time.Now().Unix())
                 default:
