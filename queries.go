@@ -337,6 +337,7 @@ CREATE TABLE IF NOT EXISTS CardsScore (
     score REAL NOT NULL DEFAULT 0.5, /* jeffrey-perks law */
     hide_until INT NOT NULL DEFAULT (strftime('%s', 'now')), /* hide_until denotes date of when this card becomes not hidden */
     updated_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
+    changelog TEXT NOT NULL DEFAULT '', /* internal for CardsScoreHistory to take snapshot of */
 
     card INTEGER NOT NULL,
 
@@ -364,17 +365,18 @@ CREATE TABLE IF NOT EXISTS CardsScoreHistory (
     success INTEGER NOT NULL DEFAULT 0,
     fail INTEGER NOT NULL DEFAULT 0,
     score REAL NOT NULL DEFAULT 0.5, /* jeffrey-perks law */
+    changelog TEXT NOT NULL DEFAULT '', /* internal for CardsScoreHistory to take snapshot of */
     card INTEGER NOT NULL,
 
     FOREIGN KEY (card) REFERENCES Cards(card_id) ON DELETE CASCADE
 );
 
 CREATE TRIGGER IF NOT EXISTS record_cardscore AFTER UPDATE
-OF success, fail, score
+OF success, fail, score, changelog
 ON CardsScore
 BEGIN
-   INSERT INTO CardsScoreHistory(occured_at, success, fail, score, card)
-   VALUES (strftime('%s', 'now'), NEW.success, NEW.fail, NEW.score, NEW.card);
+   INSERT INTO CardsScoreHistory(occured_at, success, fail, score, changelog, card)
+   VALUES (strftime('%s', 'now'), NEW.success, NEW.fail, NEW.score, NEW.changelog, NEW.card);
 END;
 
 CREATE INDEX IF NOT EXISTS CardsScoreHistory_relation_Index ON CardsScoreHistory (card);
@@ -526,7 +528,7 @@ var UPDATE_CARD_SCORE_QUERY = (func() PipeInput {
 
     // note: only set "updated_at" when not setting any other cols; allows user
     // to skip cards
-    var whiteListCols []string = []string{"success", "fail", "score", "hide_until", "updated_at"}
+    var whiteListCols []string = []string{"success", "fail", "score", "hide_until", "updated_at", "changelog"}
 
     return composePipes(
         MakeCtxMaker(__UPDATE_CARD_SCORE_QUERY),

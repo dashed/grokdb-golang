@@ -160,6 +160,31 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
 
     var patch StringMap = StringMap{} // sanitized
 
+    // validate changelog
+    if _, hasChangelog := requestPatch["changelog"]; hasChangelog == true {
+
+        var changelog string
+        changelog, err = (func() (string, error) {
+            switch _changelog := requestPatch["changelog"].(type) {
+            case string:
+                return _changelog, nil
+            }
+            return "", errors.New("given changelog is invalid")
+        }())
+
+        if err != nil {
+            ctx.JSON(http.StatusBadRequest, gin.H{
+                "status":           http.StatusBadRequest,
+                "developerMessage": err.Error(),
+                "userMessage":      err.Error(),
+            })
+            ctx.Error(err)
+            return
+        }
+
+        patch["changelog"] = changelog
+    }
+
     // validate hide_until
     if _, hasHideUntil := requestPatch["hide_until"]; hasHideUntil == true {
 
