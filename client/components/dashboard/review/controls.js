@@ -48,13 +48,22 @@ const ReviewControls = React.createClass({
         return (
             <div className="row m-t">
                 <div className="col-sm-4">
-                    <button type="button" className="btn btn-success-outline btn-lg btn-block">{"Success"}</button>
+                    <div style={{width: '100%'}} className="btn-group btn-group-lg" role="group" aria-label="Basic example">
+                        <button style={{width: '50%'}} type="button" className="btn btn-danger-outline">{"Hard"}</button>
+                        <button style={{width: '50%'}} type="button" className="btn btn-danger-outline">{"Fail"}</button>
+                    </div>
                 </div>
                 <div className="col-sm-4">
-                    <button type="button" className="btn btn-danger-outline btn-lg btn-block">{"Fail"}</button>
+                    <div style={{width: '100%'}} className="btn-group btn-group-lg" role="group" aria-label="Basic example">
+                        <button style={{width: '50%'}} type="button" className="btn btn-success-outline">{"Good"}</button>
+                        <button style={{width: '50%'}} type="button" className="btn btn-success-outline">{"Easy"}</button>
+                    </div>
                 </div>
                 <div className="col-sm-4">
-                    <button type="button" className="btn btn-info btn-lg btn-block">{"Next Card"}</button>
+                    <div style={{width: '100%'}} className="btn-group btn-group-lg" role="group" aria-label="Basic example">
+                        <button style={{width: '70%'}} type="button" className="btn btn-info-outline">{"Next"}</button>
+                        <button style={{width: '30%'}} type="button" className="btn btn-info-outline">{"Skip"}</button>
+                    </div>
                 </div>
             </div>
         );
