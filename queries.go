@@ -335,7 +335,7 @@ CREATE TABLE IF NOT EXISTS CardsScore (
     success INTEGER NOT NULL DEFAULT 0,
     fail INTEGER NOT NULL DEFAULT 0,
     score REAL NOT NULL DEFAULT 0.5, /* jeffrey-perks law */
-    hide_until INT NOT NULL DEFAULT (strftime('%s', 'now')), /* hide_until denotes date of when this card becomes not hidden */
+    times_reviewed INT NOT NULL DEFAULT 0,
     updated_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
     changelog TEXT NOT NULL DEFAULT '', /* internal for CardsScoreHistory to take snapshot of */
 
@@ -472,7 +472,7 @@ var FETCH_CARDS_BY_DECK_QUERY = (func() PipeInput {
 
 var FETCH_CARD_SCORE = (func() PipeInput {
     const __FETCH_CARD_SCORE string = `
-    SELECT success, fail, score, hide_until, updated_at, card FROM CardsScore
+    SELECT success, fail, score, times_reviewed, updated_at, card FROM CardsScore
     WHERE card = :card_id
     LIMIT 1;
     `
@@ -486,8 +486,32 @@ var FETCH_CARD_SCORE = (func() PipeInput {
     )
 }())
 
-var FETCH_NEXT_REVIEW_CARD_BY_DECK = (func() PipeInput {
-    const __FETCH_NEXT_REVIEW_CARD_BY_DECK string = `
+var COUNT_REVIEW_CARDS_BY_DECK = (func() PipeInput {
+    const __COUNT_REVIEW_CARDS_BY_DECK string = `
+        SELECT
+            COUNT(1)
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE dc.ancestor = :deck_id;
+    `
+
+    var requiredInputCols []string = []string{"deck_id"}
+
+    return composePipes(
+        MakeCtxMaker(__COUNT_REVIEW_CARDS_BY_DECK),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE = (func() PipeInput {
+    const __FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE string = `
         SELECT
         c.card_id, c.title, c.description, c.sides, c.deck, c.created_at, c.updated_at
         FROM DecksClosure AS dc
@@ -500,14 +524,49 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK = (func() PipeInput {
 
         WHERE
             dc.ancestor = :deck_id
-            AND
-            cs.hide_until <= strftime('%s','now')
         ORDER BY
-            norm_score(cs.success, cs.fail, strftime('%s','now') - cs.updated_at) DESC
-        LIMIT 1;
+            (strftime('%s','now') - cs.updated_at) DESC
+        LIMIT :purgatory_size
+        OFFSET :purgatory_index;
     `
+    /* should range from 0 to purgatory_size-1 */
 
-    var requiredInputCols []string = []string{"deck_id"}
+    var requiredInputCols []string = []string{"deck_id", "purgatory_size", "purgatory_index"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE = (func() PipeInput {
+    const __FETCH_NEXT_REVIEW_CARD_BY_DECK string = `
+        SELECT sub.card_id, sub.title, sub.description, sub.sides, sub.deck, sub.created_at, sub.updated_at FROM (
+            SELECT
+            c.card_id, c.title, c.description, c.sides, c.deck, c.created_at, c.updated_at,
+            cs.success, cs.fail, cs.updated_at AS cs_updated_at
+            FROM DecksClosure AS dc
+
+            INNER JOIN Cards AS c
+            ON c.deck = dc.descendent
+
+            INNER JOIN CardsScore AS cs
+            ON cs.card = c.card_id
+
+            WHERE
+                dc.ancestor = :deck_id
+            ORDER BY
+                (strftime('%s','now') - cs.updated_at) DESC
+            LIMIT :purgatory_size
+        )
+        AS sub
+        LIMIT 1
+        OFFSET :purgatory_index;
+    `
+    /* should range from 0 to purgatory_size-1 */
+
+    var requiredInputCols []string = []string{"deck_id", "purgatory_size", "purgatory_index"}
 
     return composePipes(
         MakeCtxMaker(__FETCH_NEXT_REVIEW_CARD_BY_DECK),
@@ -528,7 +587,7 @@ var UPDATE_CARD_SCORE_QUERY = (func() PipeInput {
 
     // note: only set "updated_at" when not setting any other cols; allows user
     // to skip cards
-    var whiteListCols []string = []string{"success", "fail", "score", "hide_until", "updated_at", "changelog"}
+    var whiteListCols []string = []string{"success", "fail", "score", "updated_at", "changelog", "times_reviewed"}
 
     return composePipes(
         MakeCtxMaker(__UPDATE_CARD_SCORE_QUERY),

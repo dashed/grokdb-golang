@@ -3,6 +3,8 @@ package main
 import (
     "database/sql"
     "errors"
+    "math"
+    "math/rand"
     "net/http"
     "strconv"
     "strings"
@@ -19,12 +21,12 @@ var ErrCardHasNoScore = errors.New("cardscore: this card has no score record")
 /* types */
 
 type CardScoreRow struct {
-    Success   int
-    Fail      int
-    Score     float64
-    Card      uint  `db:"card"`
-    HideUntil int64 `db:"hide_until"`
-    UpdatedAt int64 `db:"updated_at"`
+    Success       int
+    Fail          int
+    Score         float64
+    Card          uint  `db:"card"`
+    TimesReviewed int64 `db:"times_reviewed"`
+    UpdatedAt     int64 `db:"updated_at"`
 }
 
 /* REST Handlers */
@@ -71,9 +73,41 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
+    // get count of cards available to fetch
+    var count int
+    count, err = CountReviewCardsByDeck(db, deckID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve review card count",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    if count <= 0 {
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "no review card available",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // determine purgatory_size
+    var purgatory_size int = 10
+
+    if count < 50 {
+        purgatory_size = int(math.Ceil(0.2 * float64(count)))
+    } else {
+        purgatory_size = 10
+    }
+
     // fetch review card
     var fetchedReviewCardRow *CardRow
-    fetchedReviewCardRow, err = GetNextReviewCard(db, deckID)
+    fetchedReviewCardRow, err = GetNextReviewCard(db, deckID, purgatory_size)
 
     switch {
     case err == ErrCardNoSuchCard:
@@ -117,8 +151,7 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
 // PATCH /cards/:id/review
 //
 // Params:
-// hide_until: unix timestamp
-// action: one of: success, fail, reset, skip
+// action: one of: success, fail, reset, skip, forgot
 // value: amount to add to success or fail. must be positive non-zero int (optional. default: 1)
 func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
 
@@ -185,37 +218,6 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
         patch["changelog"] = changelog
     }
 
-    // validate hide_until
-    if _, hasHideUntil := requestPatch["hide_until"]; hasHideUntil == true {
-
-        var hideUntil uint
-        hideUntil, err = (func() (uint, error) {
-            switch _hide_until := requestPatch["hide_until"].(type) {
-            // note that according to docs: http://golang.org/pkg/encoding/json/#Unmarshal
-            // JSON numbers are converted to float64
-            case float64:
-                __hide_until := uint(_hide_until)
-                if _hide_until > 0 && _hide_until == float64(__hide_until) {
-
-                    return __hide_until, nil
-                }
-            }
-            return 0, errors.New("given hide_until is invalid")
-        }())
-
-        if err != nil {
-            ctx.JSON(http.StatusBadRequest, gin.H{
-                "status":           http.StatusBadRequest,
-                "developerMessage": err.Error(),
-                "userMessage":      err.Error(),
-            })
-            ctx.Error(err)
-            return
-        }
-
-        patch["hide_until"] = hideUntil
-    }
-
     // validate value
     var value uint = 1
     if _, hasValue := requestPatch["value"]; hasValue == true {
@@ -226,7 +228,6 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
             case float64:
                 __value := uint(_value)
                 if _value > 0 && _value == float64(__value) {
-
                     return __value, nil
                 }
             }
@@ -293,18 +294,21 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
                     _val := uint(fetchedCardScore.Success) + value
                     patch["success"] = _val
                     patch["score"] = calculateScore(_val, uint(fetchedCardScore.Fail))
+                    patch["times_reviewed"] = fetchedCardScore.TimesReviewed + 1
                 case "fail":
                     _val := uint(fetchedCardScore.Fail) + value
                     patch["fail"] = _val
                     patch["score"] = calculateScore(uint(fetchedCardScore.Success), _val)
+                    patch["times_reviewed"] = fetchedCardScore.TimesReviewed + 1
                 case "reset":
                     patch["fail"] = 0
                     patch["success"] = 0
                     patch["score"] = calculateScore(0, 0)
                 case "forgot":
-                    patch["fail"] = 2
+                    patch["fail"] = 2 // minor boost
                     patch["success"] = 0
                     patch["score"] = calculateScore(0, 2)
+                    patch["times_reviewed"] = fetchedCardScore.TimesReviewed + 1
                 case "skip":
                     // noop update
                     patch["updated_at"] = uint(time.Now().Unix())
@@ -370,12 +374,12 @@ func calculateScore(success uint, fail uint) float64 {
 
 func CardScoreResponse(overrides *gin.H) gin.H {
     defaultResponse := &gin.H{
-        "success":    0,
-        "fail":       0,
-        "score":      0,
-        "card":       0,
-        "hide_until": 0,
-        "updated_at": 0,
+        "success":        0,
+        "fail":           0,
+        "score":          0,
+        "card":           0,
+        "times_reviewed": 0,
+        "updated_at":     0,
     }
 
     return MergeResponse(defaultResponse, overrides)
@@ -383,12 +387,12 @@ func CardScoreResponse(overrides *gin.H) gin.H {
 
 func CardScoreToResponse(cardscore *CardScoreRow) gin.H {
     return CardScoreResponse(&gin.H{
-        "success":    cardscore.Success,
-        "fail":       cardscore.Fail,
-        "score":      cardscore.Score,
-        "card":       cardscore.Card,
-        "hide_until": cardscore.HideUntil,
-        "updated_at": cardscore.UpdatedAt,
+        "success":        cardscore.Success,
+        "fail":           cardscore.Fail,
+        "score":          cardscore.Score,
+        "card":           cardscore.Card,
+        "times_reviewed": cardscore.TimesReviewed,
+        "updated_at":     cardscore.UpdatedAt,
     })
 }
 
@@ -418,21 +422,64 @@ func GetCardScoreRecord(db *sqlx.DB, cardID uint) (*CardScoreRow, error) {
     }
 }
 
-func GetNextReviewCard(db *sqlx.DB, deckID uint) (*CardRow, error) {
+// alias method:
+// - ref: http://stackoverflow.com/questions/5027757/data-structure-for-loaded-dice
+// - ref: http://www.keithschwarz.com/darts-dice-coins/
+const __OLDEST = 0.1
+const __HIGHEST_NORM_SCORE = 0.75
+const __RANDOM = 0.15
+
+func GetNextReviewCard(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow, error) {
 
     var (
-        err   error
-        query string
-        args  []interface{}
+        err     error
+        queryfn PipeInput = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE
+        args    []interface{}
     )
 
-    query, args, err = QueryApply(FETCH_NEXT_REVIEW_CARD_BY_DECK, &StringMap{"deck_id": deckID})
+    if _purgatory_size <= 0 {
+        return nil, errors.New("invalid _purgatory_size")
+    }
+
+    var purgatory_size int = 10
+    var purgatory_index int = 0
+
+    var pin float64 = rand.Float64()
+
+    // alias method
+    // TODO: needs refactor
+    switch {
+    case pin <= __OLDEST:
+
+        queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE
+        purgatory_size = 1
+        purgatory_index = 0
+
+    case pin > __OLDEST && pin <= (__OLDEST+__HIGHEST_NORM_SCORE):
+
+        queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE
+        purgatory_size = _purgatory_size
+        purgatory_index = 0
+
+    case pin > (__OLDEST + __HIGHEST_NORM_SCORE):
+
+        queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE // more efficient
+        purgatory_size = _purgatory_size
+        purgatory_index = rand.Intn(_purgatory_size)
+    }
+
+    var query string
+    query, args, err = QueryApply(queryfn, &StringMap{
+        "deck_id":         deckID,
+        "purgatory_size":  purgatory_size,
+        "purgatory_index": purgatory_index,
+    })
+
     if err != nil {
         return nil, err
     }
 
     var fetchedReviewCard *CardRow = &CardRow{}
-
     err = db.QueryRowx(query, args...).StructScan(fetchedReviewCard)
 
     switch {
@@ -475,4 +522,28 @@ func UpdateCardScore(db *sqlx.DB, cardID uint, patch *StringMap) error {
         return errors.New("unable to update card score record")
     }
     return nil
+}
+
+func CountReviewCardsByDeck(db *sqlx.DB, deckID uint) (int, error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(COUNT_REVIEW_CARDS_BY_DECK, &StringMap{
+        "deck_id": deckID,
+    })
+    if err != nil {
+        return 0, err
+    }
+
+    var count int
+    err = db.QueryRowx(query, args...).Scan(&count)
+    if err != nil {
+        return 0, err
+    }
+
+    return count, nil
 }
