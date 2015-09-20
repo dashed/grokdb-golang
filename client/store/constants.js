@@ -10,6 +10,14 @@ module.exports = {
     // sentinel value
     NOT_SET: Symbol('NOT_SET'),
 
+    difficulty: {
+        forgot: Symbol('FORGOT'),
+        hard: Symbol('HARD'),
+        fail: Symbol('FAIL'),
+        good: Symbol('GOOD'),
+        easy: Symbol('EASY')
+    },
+
     markdown: markdown,
 
     /* magic constants */

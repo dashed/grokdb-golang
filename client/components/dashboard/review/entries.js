@@ -26,7 +26,7 @@ const ReviewEntries = React.createClass({
             <div>
                 <div className="row">
                     <div className="col-sm-12">
-                        <div className="card">
+                        <div className="card m-y-0">
                             <div className="card-block p-b-0">
                                 <h4 className="card-title m-y-0">{title}</h4>
                                 <hr/>
@@ -38,14 +38,9 @@ const ReviewEntries = React.createClass({
                         </div>
                     </div>
                 </div>
-                <ReviewControls localstate={localstate} />
-                <div className="row">
+                <div className="row m-y">
                     <div className="col-sm-12">
-                        <div className="card m-t">
-                            <div className="card-block">
-                                time skip
-                            </div>
-                        </div>
+                        <ReviewControls localstate={localstate} />
                     </div>
                 </div>
             </div>

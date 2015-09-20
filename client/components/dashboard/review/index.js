@@ -15,9 +15,7 @@ const ReviewEntries = require('./entries');
 const ReviewDashboard = React.createClass({
 
     propTypes: {
-        title: React.PropTypes.string.isRequired,
-        front: React.PropTypes.string.isRequired,
-        back: React.PropTypes.string.isRequired,
+        reviewCard: React.PropTypes.instanceOf(Immutable.Map).isRequired,
         showMeta: React.PropTypes.bool.isRequired,
         localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
@@ -44,16 +42,25 @@ const ReviewDashboard = React.createClass({
 
     render() {
 
-        const {front, back, title, showMeta} = this.props;
+        const {showMeta, reviewCard, localstate} = this.props;
 
         const handler = (function() {
             if(showMeta) {
                 return (
-                    <ReviewMeta key="meta" />
+                    <ReviewMeta
+                        key="meta"
+                        localstate={localstate}
+                        reviewCard={reviewCard}
+                    />
                 );
             }
 
-            return (<ReviewEntries key="entries" localstate={this.props.localstate} front={front} back={back} title={title} />);
+            const title = reviewCard.get('title');
+            const jsonMarshalled = JSON.parse(reviewCard.get('sides'));
+            const {front = void 0} = jsonMarshalled;
+            const {back = void 0} = jsonMarshalled;
+
+            return (<ReviewEntries key="entries" localstate={localstate} front={front} back={back} title={title} />);
         }.call(this));
 
         return (
@@ -139,17 +146,8 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
             };
         }
 
-        const jsonMarshalled = JSON.parse(reviewCard.get('sides'));
-        const {front = void 0} = jsonMarshalled;
-        const {back = void 0} = jsonMarshalled;
-
         return {
             reviewCard,
-            title: reviewCard.get('title'),
-            description: reviewCard.get('description'),
-            front,
-            back,
-
             showMeta: localstate.cursor('showMeta').deref(false)
         };
     }
@@ -159,13 +157,16 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
     }
 });
 
+// local state
 module.exports = once(OrwellWrappedReviewDashboard, function assignPropsOnMount() {
     return {
         localstate: minitrue({
             showDescription: false,
             showBackSide: false,
             showMeta: false,
-            revealCard: false
+            revealCard: false,
+
+            difficulty: void 0
         })
     };
 }, function cleanOnUnmount(cachedProps) {
