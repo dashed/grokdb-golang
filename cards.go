@@ -578,6 +578,9 @@ func CardsByDeck(db *sqlx.DB, deckID uint, page uint, per_page uint) (*([]CardRo
 
     var count uint
     count, err = CountCardsByDeck(db, deckID)
+    if err != nil {
+        return nil, err
+    }
 
     if offset >= count {
         return nil, ErrCardPageOutOfBounds
