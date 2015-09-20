@@ -35,7 +35,6 @@ const CardVisual = React.createClass({
 
         const __createdAt = moment.unix(createdAt).utcOffset(-offset);
         const __updatedAt = moment.unix(updatedAt).utcOffset(-offset);
-        const __activeAt = moment.unix(review.get('hide_until')).utcOffset(-offset);
         const __reviewedAt = moment.unix(reviewedAt).utcOffset(-offset);
 
         const createdAtString = __createdAt.format(timeFormat);
@@ -44,14 +43,11 @@ const CardVisual = React.createClass({
         const updatedAtString = __updatedAt.format(timeFormat);
         const updatedAtRel = __updatedAt.fromNow();
 
-        const activeAtString = __activeAt.format(timeFormat);
-        const activeAtRel = __activeAt.fromNow();
-        const activeString = __activeAt.diff(moment.utc()) <= 0 ? `Can review card now` : `Reviewable ${activeAtRel}`;
-
         const reviewedAtString = __reviewedAt.format(timeFormat);
         const reviewedAtRel = __reviewedAt.fromNow();
 
-        const lastReviewedString = Math.abs(__reviewedAt.diff(__createdAt)) <= 100 ? `Haven't been reviewed yet` : `Last reviewed ${reviewedAtRel}`;
+        // difference in milliseconds
+        const wasReviewed = Math.abs(__reviewedAt.diff(__createdAt)) <= 250 ? false : true;
 
         return (
             <div>
@@ -114,7 +110,7 @@ const CardVisual = React.createClass({
                             <div className="card-footer text-muted">
                                 <div className="container">
                                     <div className="row">
-                                        <div className="col-sm-4">
+                                        <div className="col-sm-6">
                                             <center>
                                                 {"Created "}
                                                 <abbr title={`Created on ${createdAtString}`}>
@@ -122,11 +118,25 @@ const CardVisual = React.createClass({
                                                 </abbr>
                                             </center>
                                         </div>
-                                        <div className="col-sm-4">
-                                            <center>{lastReviewedString}</center>
-                                        </div>
-                                        <div className="col-sm-4">
-                                            <center>{activeString}</center>
+                                        <div className="col-sm-6">
+                                            <center>
+                                                {
+                                                    (function() {
+                                                        if(!wasReviewed) {
+                                                            return `Hasn't been reviewed yet`;
+                                                        }
+
+                                                        return (
+                                                            <div>
+                                                                {"Last reviewed"}
+                                                                <abbr title={`Reviewed on ${reviewedAtString}`}>
+                                                                    {reviewedAtRel}
+                                                                </abbr>
+                                                            </div>
+                                                        );
+                                                    }())
+                                                }
+                                            </center>
                                         </div>
                                     </div>
                                 </div>
