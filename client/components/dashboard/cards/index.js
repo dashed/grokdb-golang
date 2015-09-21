@@ -2,10 +2,9 @@ const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
 const Immutable = require('immutable');
-const classNames = require('classnames');
 
 const {NOT_SET, paths} = require('store/constants');
-const {toDeckCards, toDeckCardsNew, toCardProfileEdit, toCardProfile} = require('store/route');
+const {toDeckCards, toDeckCardsNew} = require('store/route');
 
 const CardsList = require('./list');
 const CreatingCard = require('./new');
@@ -18,8 +17,7 @@ const CardsDashboard = React.createClass({
         viewingProfile: React.PropTypes.bool.isRequired,
         creatingNew: React.PropTypes.bool.isRequired,
         store: React.PropTypes.object.isRequired,
-        card: React.PropTypes.instanceOf(Immutable.Map).isRequired,
-        isEditing: React.PropTypes.bool.isRequired
+        card: React.PropTypes.instanceOf(Immutable.Map).isRequired
     },
 
     onClickBack(event) {
@@ -37,23 +35,9 @@ const CardsDashboard = React.createClass({
         store.invoke(toDeckCardsNew);
     },
 
-    onClickEditCard(event) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const {isEditing, store, card} = this.props;
-
-        if(isEditing) {
-            store.invoke(toCardProfile, {card, cardID: card.get('id')});
-            return;
-        }
-
-        store.invoke(toCardProfileEdit, {card: this.props.card});
-    },
-
     render() {
 
-        const {creatingNew, viewingProfile, isEditing} = this.props;
+        const {creatingNew, viewingProfile} = this.props;
 
         if(viewingProfile) {
 
@@ -66,12 +50,6 @@ const CardsDashboard = React.createClass({
                                     type="button"
                                     className="btn btn-secondary btn-sm"
                                     onClick={this.onClickBack}>{"Back to list"}</button>
-                            </div>
-                            <div className="btn-group pull-right" role="group" aria-label="Basic example">
-                                <button
-                                    type="button"
-                                    className={classNames('btn', 'btn-sm', {'btn-secondary': !isEditing, 'btn-danger': isEditing})}
-                                    onClick={this.onClickEditCard}>{isEditing ? 'Cancel' : 'Edit Card'}</button>
                             </div>
                         </div>
                     </div>
@@ -169,8 +147,7 @@ module.exports = orwell(CardsDashboardOcclusion, {
             deck: state.cursor(paths.deck.self).deref(), // used for react-either
             card: card === NOT_SET || !Immutable.Map.isMap(card) ? Immutable.Map() : card,
             creatingNew: state.cursor(paths.dashboard.cards.creatingNew).deref(),
-            viewingProfile: state.cursor(paths.dashboard.cards.viewingProfile).deref(),
-            isEditing: state.cursor(paths.card.editing).deref(false)
+            viewingProfile: state.cursor(paths.dashboard.cards.viewingProfile).deref()
         };
     }
 }).inject({

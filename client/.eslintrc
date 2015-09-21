@@ -18,7 +18,7 @@
         "camelcase": [2, {"properties": "never"}],
         "no-underscore-dangle": 0,
         "new-cap": [2, {
-            "capIsNewExceptions": ["Record", "Map", "List"]
+            "capIsNewExceptions": ["Record", "Map", "List", "Immutable"]
         }],
         "dot-location": [2, "property"],
         "no-floating-decimal": 2,
@@ -35,10 +35,10 @@
         "no-multi-spaces": 2,
         "linebreak-style": 2,
 
+        "jsx-quotes": 1, // eslint rule
         "react/display-name": 0, // babel covers this
         "react/jsx-boolean-value": 1,
         "react/jsx-no-undef": 1,
-        "react/jsx-quotes": 1,
         "react/jsx-sort-prop-types": 0,
         "react/jsx-sort-props": 0,
         "react/jsx-uses-react": 1,

@@ -2,100 +2,77 @@ const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
 const either = require('react-either');
-const classNames = require('classnames');
 const minitrue = require('minitrue');
 const once = require('react-prop-once');
 const {Probe} = require('minitrue');
 
-const {NOT_SET, paths} = require('store/constants');
+const {NOT_SET, paths, cards} = require('store/constants');
 
-const ReviewMeta = require('./meta');
-const ReviewEntries = require('./entries');
+const GenericCard = require('components/dashboard/cards/generic');
+const ReviewControls = require('./controls');
 
 const ReviewDashboard = React.createClass({
 
     propTypes: {
         reviewCard: React.PropTypes.instanceOf(Immutable.Map).isRequired,
-        showMeta: React.PropTypes.bool.isRequired,
-        localstate: React.PropTypes.instanceOf(Probe).isRequired
+        localstate: React.PropTypes.instanceOf(Probe).isRequired,
+        revealCard: React.PropTypes.bool.isRequired
     },
 
-    onClickEntries(event){
-        event.preventDefault();
-        event.stopPropagation();
-
-        const {localstate} = this.props;
-        localstate.cursor('showMeta').update(function() {
-            return false;
-        });
+    componentWillMount() {
+        this.loadCard(this.props);
     },
 
-    onClickMeta(event) {
-        event.preventDefault();
-        event.stopPropagation();
 
-        const {localstate} = this.props;
-        localstate.cursor('showMeta').update(function() {
-            return true;
+    componentWillReceiveProps(nextProps) {
+        const {revealCard, localstate} = nextProps;
+
+        if(revealCard != this.props.revealCard) {
+            localstate.cursor('hideBack').update(function() {
+                return false;
+            });
+            localstate.cursor(['display', 'view']).update(function() {
+                return cards.view.back;
+            });
+        }
+    },
+
+    loadCard(props) {
+        const {localstate, reviewCard: card} = props;
+
+        localstate.cursor('card').update(Immutable.Map(), function(map) {
+
+            const parsed = JSON.parse(card.get('sides'));
+
+            const overrides = Immutable.fromJS({
+                title: card.get('title'),
+                description: card.get('description'),
+                front: parsed.front,
+                back: parsed.back
+            });
+
+            return map.mergeDeep(overrides);
         });
     },
 
     render() {
 
-        const {showMeta, reviewCard, localstate} = this.props;
-
-        const handler = (function() {
-            if(showMeta) {
-                return (
-                    <ReviewMeta
-                        key="meta"
-                        localstate={localstate}
-                        reviewCard={reviewCard}
-                    />
-                );
-            }
-
-            const title = reviewCard.get('title');
-            const jsonMarshalled = JSON.parse(reviewCard.get('sides'));
-            const {front = void 0} = jsonMarshalled;
-            const {back = void 0} = jsonMarshalled;
-
-            return (<ReviewEntries key="entries" localstate={localstate} front={front} back={back} title={title} />);
-        }.call(this));
+        const {localstate} = this.props;
 
         return (
             <div>
-                <div className="row m-b">
-                    <div className="col-sm-12">
-                            <div className="btn-group pull-left" role="group" aria-label="Basic example">
-                                <button
-                                    type="button"
-                                    className={classNames(
-                                        'btn',
-                                        'btn-sm',
-                                        {
-                                            'btn-secondary': showMeta,
-                                            'btn-primary': !showMeta
-                                        }
-                                    )}
-                                    onClick={this.onClickEntries}>{"Entries"}</button>
-                                <button
-                                    type="button"
-                                    className={classNames(
-                                        'btn',
-                                        'btn-sm',
-                                        {
-                                            'btn-secondary': !showMeta,
-                                            'btn-primary': showMeta
-                                        }
-                                    )}
-                                    onClick={this.onClickMeta}>{"Meta"}</button>
-                            </div>
-                    </div>
-                </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        {handler}
+                        <GenericCard
+                            localstate={localstate}
+                        />
+                    </div>
+                </div>
+                <div className="row m-b">
+                    <div className="col-sm-12">
+                        <ReviewControls
+                            localstate={localstate}
+                        />
                     </div>
                 </div>
             </div>
@@ -130,7 +107,7 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
 
         return [
             state.cursor(paths.review.self),
-            localstate.cursor('showMeta')
+            localstate.cursor('revealCard')
         ];
     },
     assignNewProps(props, context) {
@@ -148,7 +125,7 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
 
         return {
             reviewCard,
-            showMeta: localstate.cursor('showMeta').deref(false)
+            revealCard: localstate.cursor('revealCard').deref(false)
         };
     }
 }).inject({
@@ -159,15 +136,20 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
 
 // local state
 module.exports = once(OrwellWrappedReviewDashboard, function assignPropsOnMount() {
-    return {
-        localstate: minitrue({
-            showDescription: false,
-            showBackSide: false,
-            showMeta: false,
-            revealCard: false,
 
-            difficulty: void 0
-        })
+    const localstate = minitrue({
+        showEditButton: false,
+        editMode: false,
+        hideMeta: false,
+        hideBack: true,
+
+        // review
+        revealCard: false,
+        difficulty: void 0
+    });
+
+    return {
+        localstate: localstate
     };
 }, function cleanOnUnmount(cachedProps) {
     cachedProps.localstate.removeListeners('any');

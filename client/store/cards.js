@@ -34,7 +34,10 @@ const transforms = {
 
         const {deckID, newCard} = options;
 
-        const marshalledSides = JSON.stringify(newCard.sides);
+        const marshalledSides = JSON.stringify({
+            front: newCard.front,
+            back: newCard.back
+        });
 
         return new Promise(function(resolve) {
             superhot
@@ -78,29 +81,16 @@ const transforms = {
 
             const oldCard = card;
 
-            if(_.has(patchCard, 'title')) {
-                card = card.update('title', function() {
-                    return patchCard.title;
-                });
-            }
+            patchCard.sides = JSON.stringify({
+                front: patchCard.front,
+                back: patchCard.back
+            });
+            delete patchCard.front;
+            delete patchCard.back;
 
-            if(_.has(patchCard, 'description')) {
-                card = card.update('description', function() {
-                    return patchCard.description;
-                });
-            }
+            const overrides = Immutable.fromJS(patchCard);
 
-            if(_.has(patchCard, 'sides')) {
-                card = card.update('sides', function() {
-                    return patchCard.sides;
-                });
-            }
-
-            if(_.has(patchCard, 'deck')) {
-                card = card.update('deck', function() {
-                    return patchCard.deck;
-                });
-            }
+            card = card.mergeDeep(overrides);
 
             willChange = oldCard !== card;
 

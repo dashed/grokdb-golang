@@ -1,15 +1,16 @@
 const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
-const _ = require('lodash');
+const once = require('react-prop-once');
+const minitrue = require('minitrue');
+const {Probe} = require('minitrue');
 
 const {flow} = require('store/utils');
-const {paths} = require('store/constants');
+const {paths, cards} = require('store/constants');
 const {applyCardArgs, saveCard} = require('store/cards');
-const {toCardProfile} = require('store/route');
+const {toCardProfileEdit, toCardProfile} = require('store/route');
 
-const CardVisual = require('./visual');
-const CardModify = require('./modify');
+const GenericCard = require('./generic');
 
 const saveCardState = flow(
     // cards
@@ -24,90 +25,89 @@ const CardProfile = React.createClass({
 
     propTypes: {
         store: React.PropTypes.object.isRequired,
+        isEditing: React.PropTypes.bool.isRequired,
         card: React.PropTypes.instanceOf(Immutable.Map).isRequired,
-        isEditing: React.PropTypes.bool.isRequired
+        localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
 
-    getInitialState() {
-
-        const {card} = this.props;
-        const sides = JSON.parse(card.get('sides'));
-
-        return {
-            title: card.get('title'),
-            description: card.get('description'),
-            sides: sides
-        };
+    componentWillMount() {
+        this.loadCard(this.props);
+        this.resolveEdit(this.props);
     },
 
-    onChangeTitle(newTitle) {
-        this.setState({
-            title: newTitle
+    componentWillReceiveProps(nextProps) {
+        this.resolveEdit(nextProps);
+    },
+
+    loadCard(props) {
+        const {localstate, card} = props;
+
+        localstate.cursor('card').update(Immutable.Map(), function(map) {
+
+            const parsed = JSON.parse(card.get('sides'));
+
+            const overrides = Immutable.fromJS({
+                title: card.get('title'),
+                description: card.get('description'),
+                front: parsed.front,
+                back: parsed.back
+            });
+
+            return map.mergeDeep(overrides);
         });
     },
 
-    onChangeDescription(newDescription) {
-        this.setState({
-            description: newDescription
+    resolveEdit(props) {
+        const {localstate, isEditing} = props;
+        localstate.cursor('editMode').update(function() {
+            return isEditing;
+        });
+
+        localstate.cursor('defaultMode').update(function() {
+            return isEditing ? cards.display.source : cards.display.render;
         });
     },
 
-    onChangeSides(patch) {
-        this.setState({
-            sides: _.assign(this.state.sides, patch)
-        });
+    onClickEdit() {
+
+        const {isEditing, store, card} = this.props;
+
+        if(isEditing) {
+            store.invoke(toCardProfile, {card, cardID: card.get('id')});
+            return;
+        }
+
+        store.invoke(toCardProfileEdit, {card: this.props.card});
     },
 
-    onClickSave(patchCard) {
+    onClickCancelEdit() {
 
-        const __patchCard = {
-            title: patchCard.title,
-            sides: JSON.stringify(patchCard.sides),
-            description: patchCard.description
-        };
+        const {store, card} = this.props;
 
-        this.props.store.invoke(saveCardState, {patchCard: __patchCard});
+        this.loadCard(this.props);
+        store.invoke(toCardProfile, {card, cardID: card.get('id')});
+    },
+
+    onClickSave(newCardRecord) {
+        this.props.store.invoke(saveCardState, {patchCard: newCardRecord});
     },
 
     render() {
 
-        // TODO: modify component
-
-        const {card, isEditing} = this.props;
-
-        if(!isEditing) {
-            return (
-                <CardVisual
-                    title={card.get('title')}
-                    description={card.get('description')}
-                    sides={JSON.parse(card.get('sides'))}
-                    review={card.get('review')}
-                    createdAt={card.get('created_at')}
-                    updatedAt={card.get('updated_at')}
-                />
-            );
-        }
+        const {localstate} = this.props;
 
         return (
-            <CardModify
+            <GenericCard
+                onClickCancelEdit={this.onClickCancelEdit}
+                onClickEdit={this.onClickEdit}
                 onCommit={this.onClickSave}
-
-                onChangeTitle={this.onChangeTitle}
-                title={this.state.title}
-
-                onChangeDescription={this.onChangeDescription}
-                description={this.state.description}
-
-                onChangeSides={this.onChangeSides}
-                sides={this.state.sides}
-
-                commitLabel={"Save Card"}
+                localstate={localstate}
             />
         );
     }
 });
 
-module.exports = orwell(CardProfile, {
+const OrwellWrappedCardProfile = orwell(CardProfile, {
     watchCursors(props, manual, context) {
         const state = context.store.state();
 
@@ -131,5 +131,22 @@ module.exports = orwell(CardProfile, {
     contextTypes: {
         store: React.PropTypes.object.isRequired
     }
+});
+
+// local state
+module.exports = once(OrwellWrappedCardProfile, function assignPropsOnMount() {
+
+    const localstate = minitrue({
+        showEditButton: true,
+        editMode: false,
+        hideMeta: false,
+        commitLabel: 'Save Card'
+    });
+
+    return {
+        localstate: localstate
+    };
+}, function cleanOnUnmount(cachedProps) {
+    cachedProps.localstate.removeListeners('any');
 });
 

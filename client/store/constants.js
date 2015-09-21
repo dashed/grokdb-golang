@@ -79,11 +79,19 @@ module.exports = {
         }
     },
 
-    // config settings used to get/post on REST API
-    configs: {
-        route: 'route',
-        currentDeck: 'currentDeck',
-        breadcrumb: 'breadcrumb'
+    cards: {
+
+        view: {
+            front: 'front',
+            back: 'back',
+            description: 'description',
+            meta: 'meta'
+        },
+
+        display: {
+            source: 'source',
+            render: 'render'
+        }
     },
 
     // magic constants
