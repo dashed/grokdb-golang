@@ -473,27 +473,133 @@ var COUNT_CARDS_BY_DECK_QUERY = (func() PipeInput {
     )
 }())
 
-// default sort by created_at from newest to oldest
-var FETCH_CARDS_BY_DECK_QUERY = (func() PipeInput {
-    const __FETCH_CARDS_BY_DECK_QUERY string = `
+// sort by created_at
+var FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY = func(sort string) PipeInput {
+    const __FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY_RAW string = `
         SELECT
         card_id, title, description, front, back, deck, created_at, updated_at FROM Cards
         WHERE oid NOT IN (
             SELECT oid FROM Cards
-            ORDER BY created_at DESC LIMIT :offset
+            ORDER BY created_at %s LIMIT :offset
         )
         AND deck = :deck_id
-        ORDER BY created_at DESC LIMIT :per_page;
+        ORDER BY created_at %s LIMIT :per_page;
     `
+
+    var __FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY_RAW, sort, sort)
 
     var requiredInputCols []string = []string{"deck_id", "offset", "per_page"}
 
     return composePipes(
-        MakeCtxMaker(__FETCH_CARDS_BY_DECK_QUERY),
+        MakeCtxMaker(__FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY),
         EnsureInputColsPipe(requiredInputCols),
         BuildQueryPipe,
     )
-}())
+}
+
+// sort by updated_at
+var FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY = func(sort string) PipeInput {
+    const __FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY_RAW string = `
+        SELECT
+        card_id, title, description, front, back, deck, created_at, updated_at FROM Cards
+        WHERE oid NOT IN (
+            SELECT oid FROM Cards
+            ORDER BY updated_at %s LIMIT :offset
+        )
+        AND deck = :deck_id
+        ORDER BY updated_at %s LIMIT :per_page;
+    `
+
+    var __FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY_RAW, sort, sort)
+
+    var requiredInputCols []string = []string{"deck_id", "offset", "per_page"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}
+
+// sort by title
+var FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY = func(sort string) PipeInput {
+    const __FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY_RAW string = `
+        SELECT
+        card_id, title, description, front, back, deck, created_at, updated_at FROM Cards
+        WHERE oid NOT IN (
+            SELECT oid FROM Cards
+            ORDER BY title %s LIMIT :offset
+        )
+        AND deck = :deck_id
+        ORDER BY title %s LIMIT :per_page;
+    `
+
+    var __FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY_RAW, sort, sort)
+
+    var requiredInputCols []string = []string{"deck_id", "offset", "per_page"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}
+
+// sort by reviewed date
+var FETCH_CARDS_BY_DECK_REVIEWED_DATE_QUERY = func(sort string) PipeInput {
+    const __FETCH_CARDS_BY_DECK_REVIEWED_DATE_QUERY_RAW string = `
+        SELECT
+        c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at FROM Cards AS c
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+        WHERE c.oid NOT IN (
+            SELECT c.oid FROM Cards AS c
+            INNER JOIN CardsScore AS cs
+            ON cs.card = c.card_id
+            ORDER BY cs.updated_at %s LIMIT :offset
+        )
+        AND deck = :deck_id
+        ORDER BY cs.updated_at %s LIMIT :per_page;
+    `
+
+    var __FETCH_CARDS_BY_DECK_REVIEWED_DATE_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_DECK_REVIEWED_DATE_QUERY_RAW, sort, sort)
+
+    var requiredInputCols []string = []string{"deck_id", "offset", "per_page"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARDS_BY_DECK_REVIEWED_DATE_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}
+
+// sort by times reviewed
+var FETCH_CARDS_BY_DECK_TIMES_REVIEWED_QUERY = func(sort string) PipeInput {
+    const __FETCH_CARDS_BY_DECK_TIMES_REVIEWED_QUERY_RAW string = `
+        SELECT
+        c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at FROM Cards AS c
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+        WHERE c.oid NOT IN (
+            SELECT c.oid FROM Cards AS c
+            INNER JOIN CardsScore AS cs
+            ON cs.card = c.card_id
+            ORDER BY cs.updated_at %s LIMIT :offset
+        )
+        AND deck = :deck_id
+        ORDER BY cs.updated_at %s LIMIT :per_page;
+    `
+
+    var __FETCH_CARDS_BY_DECK_TIMES_REVIEWED_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_DECK_TIMES_REVIEWED_QUERY_RAW, sort, sort)
+
+    var requiredInputCols []string = []string{"deck_id", "offset", "per_page"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARDS_BY_DECK_TIMES_REVIEWED_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}
 
 var FETCH_CARD_SCORE = (func() PipeInput {
     const __FETCH_CARD_SCORE string = `

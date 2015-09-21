@@ -567,7 +567,7 @@ func CountCardsByDeck(db *sqlx.DB, deckID uint) (uint, error) {
     return count, nil
 }
 
-func CardsByDeck(db *sqlx.DB, deckID uint, page uint, per_page uint) (*([]CardRow), error) {
+func CardsByDeck(db *sqlx.DB, queryTransform PipeInput, deckID uint, page uint, per_page uint) (*([]CardRow), error) {
 
     var (
         err   error
@@ -589,7 +589,7 @@ func CardsByDeck(db *sqlx.DB, deckID uint, page uint, per_page uint) (*([]CardRo
         return nil, ErrCardPageOutOfBounds
     }
 
-    query, args, err = QueryApply(FETCH_CARDS_BY_DECK_QUERY, &StringMap{
+    query, args, err = QueryApply(queryTransform, &StringMap{
         "deck_id":  deckID,
         "per_page": per_page,
         "offset":   offset,

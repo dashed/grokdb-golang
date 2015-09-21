@@ -151,7 +151,7 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
     }))
 }
 
-// GET /:id/children
+// GET /decks/:id/children
 //
 // shortcut to doing N GET /decks/:id requests for fetching children of a deck
 //
@@ -255,7 +255,7 @@ func DeckChildrenGET(db *sqlx.DB, ctx *gin.Context) {
     ctx.JSON(http.StatusOK, children)
 }
 
-// GET /:id/ancestors
+// GET /decks/:id/ancestors
 //
 // Params:
 // id: a unique, positive integer that is the identifier of the assocoated deck
@@ -367,7 +367,7 @@ func DeckAncestorsGET(db *sqlx.DB, ctx *gin.Context) {
     ctx.JSON(http.StatusOK, ancestors)
 }
 
-// GET /:id/cards
+// GET /decks/:id/cards
 //
 // Path params:
 // id: a unique, positive integer that is the identifier of the assocoated deck
@@ -419,6 +419,45 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
     }
     var per_page uint = uint(_per_page)
 
+    // parse sort order
+    var orderQueryString string = strings.ToUpper(ctx.DefaultQuery("order", "DESC"))
+
+    switch {
+    case orderQueryString == "DESC":
+    case orderQueryString == "ASC":
+    default:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "invalid order query",
+            "userMessage":      "invalid order query",
+        })
+        return
+    }
+
+    // parse sort metric query
+    var sortQueryString string = ctx.DefaultQuery("sort", "reviewed_at")
+
+    var query PipeInput
+    switch {
+    case sortQueryString == "created_at":
+        query = FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY(orderQueryString)
+    case sortQueryString == "updated_at":
+        query = FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY(orderQueryString)
+    case sortQueryString == "title":
+        query = FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY(orderQueryString)
+    case sortQueryString == "reviewed_at":
+        query = FETCH_CARDS_BY_DECK_REVIEWED_DATE_QUERY(orderQueryString)
+    case sortQueryString == "times_reviewed":
+        query = FETCH_CARDS_BY_DECK_TIMES_REVIEWED_QUERY(orderQueryString)
+    default:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "invalid sort query",
+            "userMessage":      "invalid sort query",
+        })
+        return
+    }
+
     // verify deck id exists
     _, err = GetDeck(db, deckID)
 
@@ -443,7 +482,7 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
 
     // fetch cards
     var cards *([]CardRow)
-    cards, err = CardsByDeck(db, deckID, page, per_page)
+    cards, err = CardsByDeck(db, query, deckID, page, per_page)
 
     switch {
     case err == ErrCardNoCardsByDeck:
@@ -499,7 +538,7 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
     ctx.JSON(http.StatusOK, response)
 }
 
-// GET /:id/cards/count
+// GET /decks/:id/cards/count
 //
 // Path params:
 // id: a unique, positive integer that is the identifier of the assocoated deck
