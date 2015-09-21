@@ -17,6 +17,7 @@ import (
 
 /* variables */
 var ErrCardHasNoScore = errors.New("cardscore: this card has no score record")
+var ErrCardHasNoCachedReviewCard = errors.New("review: no cached review card for deck")
 
 /* types */
 
@@ -27,6 +28,12 @@ type CardScoreRow struct {
     Card          uint  `db:"card"`
     TimesReviewed int64 `db:"times_reviewed"`
     UpdatedAt     int64 `db:"updated_at"`
+}
+
+type CachedReviewCardRow struct {
+    Card      uint  `db:"card"`
+    Deck      uint  `db:"deck"`
+    CreatedAt int64 `db:"created_at"`
 }
 
 /* REST Handlers */
@@ -345,6 +352,19 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
+    // remove card from reviewcache
+    err = DeleteCachedReviewCardByDeck(db, fetchedCardRow.Deck)
+
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to delete review cache",
+        })
+        ctx.Error(err)
+        return
+    }
+
     // refetch card's score
     fetchedCardScore, err = GetCardScoreRecord(db, fetchedCardRow.ID)
 
@@ -437,6 +457,17 @@ func GetNextReviewCard(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow,
         args    []interface{}
     )
 
+    var fetchedRow *CachedReviewCardRow
+    fetchedRow, err = GetCachedReviewCardByDeck(db, deckID)
+
+    switch {
+    case err == ErrCardHasNoCachedReviewCard:
+    case err != nil:
+        return nil, err
+    case fetchedRow != nil:
+        return GetCard(db, fetchedRow.Card)
+    }
+
     if _purgatory_size <= 0 {
         return nil, errors.New("invalid _purgatory_size")
     }
@@ -488,6 +519,13 @@ func GetNextReviewCard(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow,
     case err != nil:
         return nil, err
     default:
+
+        // cache card
+        err = SetCachedReviewCardByDeck(db, deckID, fetchedReviewCard.ID)
+        if err != nil {
+            return nil, err
+        }
+
         return fetchedReviewCard, nil
     }
 }
@@ -546,4 +584,88 @@ func CountReviewCardsByDeck(db *sqlx.DB, deckID uint) (int, error) {
     }
 
     return count, nil
+}
+
+func GetCachedReviewCardByDeck(db *sqlx.DB, deckID uint) (*CachedReviewCardRow, error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(GET_CACHED_REVIEWCARD_BY_DECK_QUERY, &StringMap{
+        "deck_id": deckID,
+    })
+    if err != nil {
+        return nil, err
+    }
+
+    var fetchedRow *CachedReviewCardRow = &CachedReviewCardRow{}
+
+    // ErrNoRows
+
+    err = db.QueryRowx(query, args...).StructScan(fetchedRow)
+    switch {
+    case err == sql.ErrNoRows:
+        return nil, ErrCardHasNoCachedReviewCard
+    case err != nil:
+        return nil, err
+    default:
+        return fetchedRow, nil
+    }
+}
+
+func SetCachedReviewCardByDeck(db *sqlx.DB, deckID uint, cardID uint) error {
+
+    var err error
+
+    err = DeleteCachedReviewCardByDeck(db, deckID)
+    if err != nil {
+        return err
+    }
+
+    // insert record into db
+
+    var (
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(INSERT_CACHED_REVIEWCARD_BY_DECK_QUERY,
+        &StringMap{
+            "deck_id": deckID,
+            "card_id": cardID,
+        })
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func DeleteCachedReviewCardByDeck(db *sqlx.DB, deckID uint) error {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DELETE_CACHED_REVIEWCARD_BY_DECK_QUERY, &StringMap{"deck_id": deckID})
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }

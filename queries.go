@@ -381,6 +381,17 @@ END;
 
 CREATE INDEX IF NOT EXISTS CardsScoreHistory_relation_Index ON CardsScoreHistory (card);
 CREATE INDEX IF NOT EXISTS CardsScoreHistory_date_Index ON CardsScoreHistory (occured_at DESC);
+
+CREATE TABLE IF NOT EXISTS ReviewCardCache (
+    deck INTEGER NOT NULL,
+    card INTEGER NOT NULL,
+    created_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
+
+    PRIMARY KEY(deck),
+
+    FOREIGN KEY (deck) REFERENCES Decks(deck_id) ON DELETE CASCADE,
+    FOREIGN KEY (card) REFERENCES Cards(card_id) ON DELETE CASCADE
+);
 `
 
 var CREATE_NEW_CARD_QUERY = (func() PipeInput {
@@ -593,6 +604,48 @@ var UPDATE_CARD_SCORE_QUERY = (func() PipeInput {
         MakeCtxMaker(__UPDATE_CARD_SCORE_QUERY),
         EnsureInputColsPipe(requiredInputCols),
         PatchFilterPipe(whiteListCols),
+        BuildQueryPipe,
+    )
+}())
+
+var GET_CACHED_REVIEWCARD_BY_DECK_QUERY = (func() PipeInput {
+    const __GET_CACHED_REVIEWCARD_BY_DECK_QUERY string = `
+        SELECT deck, card, created_at FROM ReviewCardCache
+        WHERE deck = :deck_id;
+    `
+
+    var requiredInputCols []string = []string{"deck_id"}
+
+    return composePipes(
+        MakeCtxMaker(__GET_CACHED_REVIEWCARD_BY_DECK_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var DELETE_CACHED_REVIEWCARD_BY_DECK_QUERY = (func() PipeInput {
+    const __DELETE_CACHED_REVIEWCARD_BY_DECK_QUERY string = `
+    DELETE FROM ReviewCardCache WHERE deck = :deck_id;
+    `
+
+    var requiredInputCols []string = []string{"deck_id"}
+
+    return composePipes(
+        MakeCtxMaker(__DELETE_CACHED_REVIEWCARD_BY_DECK_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var INSERT_CACHED_REVIEWCARD_BY_DECK_QUERY = (func() PipeInput {
+    const __INSERT_CACHED_REVIEWCARD_BY_DECK_QUERY string = `
+    INSERT INTO ReviewCardCache(deck, card) VALUES (:deck_id, :card_id);
+    `
+    var requiredInputCols []string = []string{"deck_id", "card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__INSERT_CACHED_REVIEWCARD_BY_DECK_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
         BuildQueryPipe,
     )
 }())
