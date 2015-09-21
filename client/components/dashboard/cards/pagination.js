@@ -15,7 +15,9 @@ const CardsPagination = React.createClass({
         numOfPages: React.PropTypes.number.isRequired,
         currentPage: React.PropTypes.number.isRequired,
         enablePrevious: React.PropTypes.bool.isRequired,
-        enableNext: React.PropTypes.bool.isRequired
+        enableNext: React.PropTypes.bool.isRequired,
+        sort: React.PropTypes.string.isRequired,
+        order: React.PropTypes.string.isRequired
     },
 
     onClickPrevious(event) {
@@ -28,9 +30,12 @@ const CardsPagination = React.createClass({
             return;
         }
 
-        const {store, currentPage} = this.props;
-        store.invoke(toDeckCards, {page: currentPage - 1});
-
+        const {store, currentPage, sort, order} = this.props;
+        store.invoke(toDeckCards, {
+            page: currentPage - 1,
+            sort,
+            order
+        });
     },
 
     onClickNext(event) {
@@ -43,8 +48,12 @@ const CardsPagination = React.createClass({
             return;
         }
 
-        const {store, currentPage} = this.props;
-        store.invoke(toDeckCards, {page: currentPage + 1});
+        const {store, currentPage, sort, order} = this.props;
+        store.invoke(toDeckCards, {
+            page: currentPage + 1,
+            sort,
+            order
+        });
     },
 
     onClickPage(requestedPage) {
@@ -156,7 +165,9 @@ module.exports = orwell(CardsPagination, {
             numOfPages: numOfPages,
             currentPage: currentPage,
             enablePrevious: currentPage != 1,
-            enableNext: currentPage < numOfPages
+            enableNext: currentPage < numOfPages,
+            sort: state.cursor(paths.dashboard.cards.order).deref('reviewed_at'),
+            order: state.cursor(paths.dashboard.cards.sort).deref('DESC')
         };
     }
 }).inject({

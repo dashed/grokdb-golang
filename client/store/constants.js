@@ -64,6 +64,8 @@ module.exports = {
 
                 // list
                 page: ['dashboard', 'cards', 'page'], // current page
+                sort: ['dashboard', 'cards', 'sort'], // sort metric
+                order: ['dashboard', 'cards', 'order'], // ASC or DESC
                 total: ['dashboard', 'cards', 'total'],
                 numOfPages: ['dashboard', 'cards', 'numOfPages'],
                 list: ['dashboard', 'cards', 'list']

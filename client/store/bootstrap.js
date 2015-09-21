@@ -1,3 +1,4 @@
+/*global localforage: true */
 const page = require('page');
 const co = require('co');
 const _ = require('lodash');
@@ -473,14 +474,98 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
 
     const queries = qs.parse(ctx.querystring);
 
+    let shouldredirect = false;
+
     // parse page query param
-    const pageNum = (function() {
+    const pageNum = yield co(function*() {
+
+        let _pageNum = 1;
+
         if(_.has(queries, 'page')) {
-            const _pageNum = filterInt(queries.page);
-            return _pageNum <= 0 ? 1 : _pageNum;
+            _pageNum = queries.page;
+        } else {
+            shouldredirect = true;
+            _pageNum = yield localforage.getItem('page');
         }
-        return 1;
-    }());
+
+        _pageNum = _.isNumber(_pageNum) ? _pageNum : 1;
+
+        _pageNum = filterInt(_pageNum);
+        if(_.isNaN(_pageNum)) {
+            _pageNum = 1;
+            shouldredirect = true;
+        }
+        _pageNum = _pageNum <= 0 ? 1 : _pageNum;
+
+        yield localforage.setItem('page', _pageNum);
+
+        return _pageNum;
+    });
+
+    const order = yield co(function*() {
+
+        let _order = 'DESC';
+
+        if(_.has(queries, 'order')) {
+            _order = queries.order;
+        } else {
+            shouldredirect = true;
+            _order = yield localforage.getItem('order');
+        }
+
+        _order = (_.isString(_order) && queries.order.length > 0) ? _order : 'DESC';
+        _order = _order.toUpperCase();
+
+        switch(_order) {
+        case 'DESC':
+        case 'ASC':
+            break;
+        default:
+            _order = 'DESC';
+        }
+
+        yield localforage.setItem('order', _order);
+        return _order;
+    });
+
+    const sort = yield co(function*() {
+
+        let _sort = 'reviewed_at';
+
+        if(_.has(queries, 'sort')) {
+            _sort = queries.sort;
+        } else {
+            shouldredirect = true;
+            _sort = yield localforage.getItem('sort');
+        }
+
+        _sort = (_.isString(_sort) && queries.order.length > 0) ? _sort : 'reviewed_at';
+        _sort = _sort.toLowerCase();
+
+        switch(_sort) {
+        case 'created_at':
+        case 'updated_at':
+        case 'title':
+        case 'reviewed_at':
+        case 'times_reviewed':
+            break;
+        default:
+            _sort = 'reviewed_at';
+        }
+
+        yield localforage.setItem('sort', _sort);
+        return _sort;
+    });
+
+    if(shouldredirect) {
+        const deckID = filterInt(ctx.params.id);
+        const slug = ctx.params.slug;
+
+        const params = qs.stringify({page: pageNum, order: order, sort: sort});
+        page.redirect(`/deck/${deckID}/${slug}/cards?${params}`);
+        return;
+
+    }
 
     // fetch deck id from transaction
 
@@ -499,7 +584,7 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
         return maybeDeck.get('id');
     }());
 
-    yield loadCardsList(rootCursor, deckID, pageNum);
+    yield loadCardsList(rootCursor, deckID, pageNum, sort, order);
 
     next();
     return;
@@ -591,8 +676,9 @@ const loadDeck = co.wrap(function*(deckID, defaultValue) {
     }
 });
 
+// TODO: needs to be refactored
 // note: not transaction safe
-const loadCardsList = co.wrap(function*(rootCursor, deckID, pageNum = 1) {
+const loadCardsList = co.wrap(function*(rootCursor, deckID, pageNum = 1, sort = 'reviewed_at', order = 'DESC') {
 
     // get page count
     const {cardsCount} = yield new Promise(function(resolve) {
@@ -640,6 +726,8 @@ const loadCardsList = co.wrap(function*(rootCursor, deckID, pageNum = 1) {
                 .get(`/decks/${deckID}/cards`)
                 .query({ 'page': _pageNum })
                 .query({ 'per_page': perPage })
+                .query({ 'sort': sort })
+                .query({ 'order': order })
                 .end(function(err, res){
                     resolve({cardsErr: err, cardsResponse: res});
                 });

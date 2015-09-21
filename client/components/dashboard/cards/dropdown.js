@@ -1,9 +1,18 @@
 const React = require('react');
 const classNames = require('classnames');
+const orwell = require('orwell');
+
+const {toDeckCards} = require('store/route');
+const {paths} = require('store/constants');
 
 // notes: https://github.com/facebook/react/issues/579#issuecomment-60841923
 
 const SortDropdown = React.createClass({
+
+    propTypes: {
+        store: React.PropTypes.object.isRequired,
+        currentPage: React.PropTypes.number.isRequired
+    },
 
     getInitialState() {
         return {
@@ -46,10 +55,15 @@ const SortDropdown = React.createClass({
         });
     },
 
-    onClickSort(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        console.log('sort');
+    onClickSort(sort, order) {
+
+        const {store, currentPage} = this.props;
+
+        return function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            store.invoke(toDeckCards, {page: currentPage, sort: sort, order: order});
+        }.bind(this);
     },
 
     render() {
@@ -70,16 +84,16 @@ const SortDropdown = React.createClass({
                         {"Sort By"}
                     </button>
                     <div className="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1" >
-                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort}>{"Recently Reviewed"}</a>
-                        <a className="dropdown-item sortbutton" href="#">{"Least Recently Reviewed"}</a>
-                        <a className="dropdown-item sortbutton" href="#">{"Most Frequently Reviewed"}</a>
-                        <a className="dropdown-item sortbutton" href="#">{"Least Frequently Reviewed"}</a>
-                        <a className="dropdown-item sortbutton" href="#">{"Card Title Ascending"}</a>
-                        <a className="dropdown-item sortbutton" href="#">{"Card Title Descending"}</a>
-                        <a className="dropdown-item sortbutton" href="#">{"Recently Created"}</a>
-                        <a className="dropdown-item sortbutton" href="#">{"Least Recently Created"}</a>
-                        <a className="dropdown-item sortbutton" href="#">{"Recently Updated"}</a>
-                        <a className="dropdown-item sortbutton" href="#">{"Least Recently Updated"}</a>
+                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort('reviewed_at', 'DESC')}>{"Recently Reviewed"}</a>
+                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort('reviewed_at', 'ASC')}>{"Least Recently Reviewed"}</a>
+                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort('times_reviewed', 'DESC')}>{"Most Frequently Reviewed"}</a>
+                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort('times_reviewed', 'ASC')}>{"Least Frequently Reviewed"}</a>
+                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort('title', 'ASC')}>{"Card Title Ascending"}</a>
+                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort('title', 'DESC')}>{"Card Title Descending"}</a>
+                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort('created_at', 'DESC')}>{"Recently Created"}</a>
+                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort('created_at', 'ASC')}>{"Least Recently Created"}</a>
+                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort('updated_at', 'DESC')}>{"Recently Updated"}</a>
+                        <a className="dropdown-item sortbutton" href="#" onClick={this.onClickSort('updated_at', 'ASC')}>{"Least Recently Updated"}</a>
                 </div>
                 </div>
             </div>
@@ -87,4 +101,19 @@ const SortDropdown = React.createClass({
     }
 });
 
-module.exports = SortDropdown;
+module.exports = orwell(SortDropdown, {
+    assignNewProps(props, context) {
+
+        const store = context.store;
+        const state = store.state();
+
+        return {
+            store: store,
+            currentPage: state.cursor(paths.dashboard.cards.page).deref(1)
+        };
+    }
+}).inject({
+    contextTypes: {
+        store: React.PropTypes.object.isRequired
+    }
+});

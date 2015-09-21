@@ -1,3 +1,4 @@
+const qs = require('qs');
 const page = require('page');
 
 const {paths} = require('store/constants');
@@ -26,17 +27,15 @@ const transforms = {
     toDeckCards(state, options = {}) {
 
         let {deck, deckID} = options;
-        const {page: _pageNum = void 0} = options;
+        const {page: _pageNum = 1, order: _order = 'DESC', sort: _sort = 'reviewed_at'} = options;
 
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 
         const slugged = generateSlug(deck.get('name'), deckID);
 
-        if(_pageNum) {
-            page(`/deck/${deckID}/${slugged}/cards?page=${_pageNum}`);
-            return;
-        }
-        page(`/deck/${deckID}/${slugged}/cards`);
+        const params = qs.stringify({page: _pageNum, order: _order, sort: _sort});
+
+        page(`/deck/${deckID}/${slugged}/cards?${params}`);
     },
 
     toDeckCardsNew(state, options = {}) {
