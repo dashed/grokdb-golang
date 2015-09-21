@@ -96,7 +96,7 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
     if count <= 0 {
         ctx.JSON(http.StatusNotFound, gin.H{
             "status":           http.StatusNotFound,
-            "developerMessage": err.Error(),
+            "developerMessage": "no review card available",
             "userMessage":      "no review card available",
         })
         ctx.Error(err)
