@@ -160,6 +160,7 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
 // Params:
 // action: one of: success, fail, reset, skip, forgot
 // value: amount to add to success or fail. must be positive non-zero int (optional. default: 1)
+// changelog: description of the patch
 func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
 
     // parse id param

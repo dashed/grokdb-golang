@@ -23,7 +23,6 @@ const ReviewDashboard = React.createClass({
         this.loadCard(this.props);
     },
 
-
     componentWillReceiveProps(nextProps) {
         const {revealCard, localstate} = nextProps;
 
@@ -34,6 +33,12 @@ const ReviewDashboard = React.createClass({
             localstate.cursor(['display', 'view']).update(function() {
                 return cards.view.back;
             });
+        }
+
+        const oldreviewCard = this.props.reviewCard;
+        const newreviewCard = nextProps.reviewCard;
+        if(oldreviewCard.get('id') != newreviewCard.get('id')) {
+            this.loadCard(nextProps);
         }
     },
 
@@ -135,22 +140,50 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
 });
 
 // local state
-module.exports = once(OrwellWrappedReviewDashboard, function assignPropsOnMount() {
+module.exports = once(OrwellWrappedReviewDashboard, {
+    contextTypes: {
+        store: React.PropTypes.object.isRequired
+    },
+    assignPropsOnMount(props, context) {
 
-    const localstate = minitrue({
-        showEditButton: false,
-        editMode: false,
-        hideMeta: false,
-        hideBack: true,
+        const {store} = context;
 
-        // review
-        revealCard: false,
-        difficulty: void 0
-    });
+        const DEFAULTS = {
+            showEditButton: false,
+            editMode: false,
+            hideMeta: false,
+            hideBack: true,
 
-    return {
-        localstate: localstate
-    };
-}, function cleanOnUnmount(cachedProps) {
-    cachedProps.localstate.removeListeners('any');
+            // review
+            revealCard: false,
+            difficulty: void 0
+        };
+
+        const localstate = minitrue(DEFAULTS);
+
+        const _unsub = store.state().cursor(paths.review.self).observe(function(newReview, oldReview) {
+            if(!Immutable.Map.isMap(newReview) || !Immutable.Map.isMap(oldReview)) {
+                return;
+            }
+
+            if(newReview.get('id') == oldReview.get('id')) {
+                return;
+            }
+
+            // reload
+            localstate.update(function() {
+                return Immutable.fromJS(DEFAULTS);
+            });
+
+        });
+
+        return {
+            localstate: localstate,
+            _unsub: _unsub
+        };
+    },
+
+    cleanOnUnmount(cachedProps) {
+        cachedProps.localstate.removeListeners('any');
+    }
 });

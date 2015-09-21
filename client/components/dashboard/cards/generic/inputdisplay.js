@@ -76,7 +76,8 @@ const GenericCardInputDisplay = React.createClass({
                 );
             }
 
-            const placeholder = view === cards.view.front ? 'Front entry' :
+            const placeholder = !editMode ? '' :
+                view === cards.view.front ? 'Front entry' :
                 view === cards.view.back ? 'Back entry' : 'Description';
 
             return (

@@ -73,19 +73,23 @@ const OrwellWrappedNewCard = orwell(CardNew, {
 });
 
 // local state
-module.exports = once(OrwellWrappedNewCard, function assignPropsOnMount() {
+module.exports = once(OrwellWrappedNewCard, {
+    assignPropsOnMount() {
 
-    const localstate = minitrue({
-        editMode: true,
-        hideMeta: true,
-        defaultMode: cards.display.source,
-        commitLabel: 'Add New Card'
-    });
+        const localstate = minitrue({
+            editMode: true,
+            hideMeta: true,
+            defaultMode: cards.display.source,
+            commitLabel: 'Add New Card'
+        });
 
-    return {
-        localstate: localstate
-    };
-}, function cleanOnUnmount(cachedProps) {
-    cachedProps.localstate.removeListeners('any');
+        return {
+            localstate: localstate
+        };
+    },
+
+    cleanOnUnmount(cachedProps) {
+        cachedProps.localstate.removeListeners('any');
+    }
 });
 
