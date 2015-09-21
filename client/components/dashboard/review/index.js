@@ -37,7 +37,8 @@ const ReviewDashboard = React.createClass({
 
         const oldreviewCard = this.props.reviewCard;
         const newreviewCard = nextProps.reviewCard;
-        if(oldreviewCard.get('id') != newreviewCard.get('id')) {
+
+        if(isNewReviewCard(oldreviewCard, newreviewCard)) {
             this.loadCard(nextProps);
         }
     },
@@ -47,13 +48,11 @@ const ReviewDashboard = React.createClass({
 
         localstate.cursor('card').update(Immutable.Map(), function(map) {
 
-            const parsed = JSON.parse(card.get('sides'));
-
             const overrides = Immutable.fromJS({
                 title: card.get('title'),
                 description: card.get('description'),
-                front: parsed.front,
-                back: parsed.back
+                front: card.get('front'),
+                back: card.get('back')
             });
 
             return map.mergeDeep(overrides);
@@ -166,7 +165,7 @@ module.exports = once(OrwellWrappedReviewDashboard, {
                 return;
             }
 
-            if(newReview.get('id') == oldReview.get('id')) {
+            if(!isNewReviewCard(newReview, oldReview)) {
                 return;
             }
 
@@ -185,5 +184,11 @@ module.exports = once(OrwellWrappedReviewDashboard, {
 
     cleanOnUnmount(cachedProps) {
         cachedProps.localstate.removeListeners('any');
+        cachedProps._unsub.call(void 0);
     }
 });
+
+const isNewReviewCard = function(newReview, oldReview) {
+    return (newReview.get('id') != oldReview.get('id') ||
+        newReview.getIn(['review', 'updated_at']) != oldReview.getIn(['review', 'updated_at']));
+};

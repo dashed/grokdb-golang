@@ -34,11 +34,6 @@ const transforms = {
 
         const {deckID, newCard} = options;
 
-        const marshalledSides = JSON.stringify({
-            front: newCard.front,
-            back: newCard.back
-        });
-
         return new Promise(function(resolve) {
             superhot
                 .post(`/cards`)
@@ -46,7 +41,8 @@ const transforms = {
                 .send({
                     title: newCard.title,
                     description: newCard.description,
-                    sides: marshalledSides,
+                    front: newCard.front,
+                    back: newCard.back,
                     deck: deckID
                 })
                 .end(function(err, res) {
@@ -80,13 +76,6 @@ const transforms = {
         state.cursor(paths.card.self).update(function(card) {
 
             const oldCard = card;
-
-            patchCard.sides = JSON.stringify({
-                front: patchCard.front,
-                back: patchCard.back
-            });
-            delete patchCard.front;
-            delete patchCard.back;
 
             const overrides = Immutable.fromJS(patchCard);
 

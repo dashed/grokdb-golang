@@ -44,13 +44,11 @@ const CardProfile = React.createClass({
 
         localstate.cursor('card').update(Immutable.Map(), function(map) {
 
-            const parsed = JSON.parse(card.get('sides'));
-
             const overrides = Immutable.fromJS({
                 title: card.get('title'),
                 description: card.get('description'),
-                front: parsed.front,
-                back: parsed.back
+                front: card.get('front'),
+                back: card.get('back')
             });
 
             return map.mergeDeep(overrides);

@@ -24,7 +24,8 @@ var ErrCardPageOutOfBounds = errors.New("cards: page is out of bounds")
 type CardProps struct {
     Title       string
     Description string
-    Sides       string
+    Front       string
+    Back        string
     Deck        uint
 }
 
@@ -32,7 +33,8 @@ type CardRow struct {
     ID          uint `db:"card_id"`
     Title       string
     Description string
-    Sides       string
+    Front       string
+    Back        string
     Deck        uint  `db:"deck"`
     CreatedAt   int64 `db:"created_at"`
     UpdatedAt   int64 `db:"updated_at"`
@@ -41,7 +43,8 @@ type CardRow struct {
 type CardPOSTRequest struct {
     Title       string `json:"title" binding:"required"`
     Description string `json:"description"`
-    Sides       string `json:"sides" binding:"required"`
+    Front       string `json:"front"`
+    Back        string `json:"back"`
     Deck        uint   `json:"deck" binding:"required,min=1"`
 }
 
@@ -163,7 +166,8 @@ func CardPOST(db *sqlx.DB, ctx *gin.Context) {
     newCardRow, err = CreateCard(db, &CardProps{
         Title:       jsonRequest.Title,
         Description: jsonRequest.Description,
-        Sides:       jsonRequest.Sides,
+        Front:       jsonRequest.Front,
+        Back:        jsonRequest.Back,
         Deck:        jsonRequest.Deck,
     })
     if err != nil {
@@ -434,7 +438,8 @@ func CardResponse(overrides *gin.H) gin.H {
         "id":          0,  // required
         "title":       "", // required
         "description": "",
-        "sides":       "", // required
+        "front":       "",
+        "back":        "",
         "deck":        0,  // required
         "created_at":  0,
         "updated_at":  0,
@@ -448,7 +453,8 @@ func CardRowToResponse(cardrow *CardRow) gin.H {
         "id":          cardrow.ID,
         "title":       cardrow.Title,
         "description": cardrow.Description,
-        "sides":       cardrow.Sides,
+        "front":       cardrow.Front,
+        "back":        cardrow.Back,
         "deck":        cardrow.Deck,
         "created_at":  cardrow.CreatedAt,
         "updated_at":  cardrow.UpdatedAt,
@@ -459,10 +465,6 @@ func ValidateCardProps(props *CardProps) error {
 
     if len(props.Title) <= 0 {
         return errors.New("Title must be non-empty string")
-    }
-
-    if len(props.Sides) <= 0 {
-        return errors.New("Sides must be non-empty string")
     }
 
     if props.Deck <= 0 {
@@ -519,7 +521,8 @@ func CreateCard(db *sqlx.DB, props *CardProps) (*CardRow, error) {
         &StringMap{
             "title":       props.Title,
             "description": props.Description,
-            "sides":       props.Sides,
+            "front":       props.Front,
+            "back":        props.Back,
             "deck":        props.Deck,
         })
     if err != nil {

@@ -312,18 +312,22 @@ CREATE TABLE IF NOT EXISTS Cards (
 
     title TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
-    sides TEXT NOT NULL,
+
+    front TEXT NOT NULL DEFAULT '',
+
+    back TEXT NOT NULL DEFAULT '',
 
     created_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
     updated_at INT NOT NULL DEFAULT (strftime('%s', 'now')), /* note: time when the card was modified. not when it was seen. */
 
     deck INTEGER NOT NULL,
 
-    CHECK (title <> '' AND sides <> ''), /* ensure not empty */
+    CHECK (title <> ''), /* ensure not empty */
     FOREIGN KEY (deck) REFERENCES Decks(deck_id) ON DELETE CASCADE
 );
 
-CREATE TRIGGER IF NOT EXISTS cards_updated_card AFTER UPDATE OF title, description, sides, deck
+CREATE TRIGGER IF NOT EXISTS cards_updated_card AFTER UPDATE OF
+title, description, front, back, deck
 ON Cards
 BEGIN
     UPDATE Cards SET updated_at = strftime('%s', 'now') WHERE card_id = NEW.card_id;
@@ -396,10 +400,16 @@ CREATE TABLE IF NOT EXISTS ReviewCardCache (
 
 var CREATE_NEW_CARD_QUERY = (func() PipeInput {
     const __CREATE_NEW_CARD_QUERY string = `
-    INSERT INTO Cards(title, description, sides, deck)
-    VALUES (:title, :description, :sides, :deck);
+    INSERT INTO Cards(title, description, front, back, deck)
+    VALUES (:title, :description, :front, :back, :deck);
     `
-    var requiredInputCols []string = []string{"title", "description", "sides", "deck"}
+    var requiredInputCols []string = []string{
+        "title",
+        "description",
+        "front",
+        "back",
+        "deck",
+    }
 
     return composePipes(
         MakeCtxMaker(__CREATE_NEW_CARD_QUERY),
@@ -410,7 +420,7 @@ var CREATE_NEW_CARD_QUERY = (func() PipeInput {
 
 var FETCH_CARD_QUERY = (func() PipeInput {
     const __FETCH_CARD_QUERY string = `
-    SELECT card_id, title, description, sides, deck, created_at, updated_at FROM Cards
+    SELECT card_id, title, description, front, back, deck, created_at, updated_at FROM Cards
     WHERE card_id = :card_id;
     `
 
@@ -432,7 +442,13 @@ var UPDATE_CARD_QUERY = (func() PipeInput {
     `
 
     var requiredInputCols []string = []string{"card_id"}
-    var whiteListCols []string = []string{"title", "description", "sides", "deck"}
+    var whiteListCols []string = []string{
+        "title",
+        "description",
+        "front",
+        "back",
+        "deck",
+    }
 
     return composePipes(
         MakeCtxMaker(__UPDATE_CARD_QUERY),
@@ -460,7 +476,8 @@ var COUNT_CARDS_BY_DECK_QUERY = (func() PipeInput {
 // default sort by created_at from newest to oldest
 var FETCH_CARDS_BY_DECK_QUERY = (func() PipeInput {
     const __FETCH_CARDS_BY_DECK_QUERY string = `
-        SELECT card_id, title, description, sides, deck, created_at, updated_at FROM Cards
+        SELECT
+        card_id, title, description, front, back, deck, created_at, updated_at FROM Cards
         WHERE oid NOT IN (
             SELECT oid FROM Cards
             ORDER BY created_at DESC LIMIT :offset
@@ -468,9 +485,6 @@ var FETCH_CARDS_BY_DECK_QUERY = (func() PipeInput {
         AND deck = :deck_id
         ORDER BY created_at DESC LIMIT :per_page;
     `
-
-    // SELECT card_id, title, description, sides, deck, created_at, updated_at FROM Cards
-    // WHERE deck = :deck_id;
 
     var requiredInputCols []string = []string{"deck_id", "offset", "per_page"}
 
@@ -524,7 +538,7 @@ var COUNT_REVIEW_CARDS_BY_DECK = (func() PipeInput {
 var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE = (func() PipeInput {
     const __FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE string = `
         SELECT
-        c.card_id, c.title, c.description, c.sides, c.deck, c.created_at, c.updated_at
+        c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
         FROM DecksClosure AS dc
 
         INNER JOIN Cards AS c
@@ -553,9 +567,11 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE = (func() PipeInput {
 
 var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE = (func() PipeInput {
     const __FETCH_NEXT_REVIEW_CARD_BY_DECK string = `
-        SELECT sub.card_id, sub.title, sub.description, sub.sides, sub.deck, sub.created_at, sub.updated_at FROM (
+        SELECT
+        sub.card_id, sub.title, sub.description, sub.front, sub.back, sub.deck, sub.created_at, sub.updated_at
+        FROM (
             SELECT
-            c.card_id, c.title, c.description, c.sides, c.deck, c.created_at, c.updated_at,
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at,
             cs.success, cs.fail, cs.updated_at AS cs_updated_at
             FROM DecksClosure AS dc
 

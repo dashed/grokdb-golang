@@ -11,14 +11,14 @@ const MarkdownPreview = React.createClass({
 
     propTypes: {
         text: React.PropTypes.string.isRequired,
-        onGenerateMarkdown: React.PropTypes.func
+        // onGenerateMarkdown: React.PropTypes.func
     },
 
-    getDefaultProps() {
-        return {
-            onGenerateMarkdown: () => void 0
-        };
-    },
+    // getDefaultProps() {
+    //     return {
+    //         onGenerateMarkdown: () => void 0
+    //     };
+    // },
 
     generateMarkdown(input) {
         return {

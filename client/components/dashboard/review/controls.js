@@ -64,7 +64,7 @@ const ReviewControls = React.createClass({
         const diff = localstate.cursor('difficulty').deref(NOT_SET);
 
         // TODO: error handling
-        if(diff === NOT_SET) {
+        if(!diff || diff === NOT_SET) {
             return;
         }
 
