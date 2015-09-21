@@ -335,6 +335,22 @@ END;
 
 CREATE INDEX IF NOT EXISTS Cards_Index ON Cards (deck);
 
+
+CREATE VIRTUAL TABLE IF NOT EXISTS CardsFTS USING fts3(title TEXT, description TEXT, front TEXT, back TEXT);
+
+CREATE TRIGGER IF NOT EXISTS first_index_card_fts AFTER INSERT
+ON Cards
+BEGIN
+    INSERT OR REPLACE INTO CardsFTS(docid, title, description, front, back) VALUES (NEW.card_id, NEW.title, NEW.description, NEW.front, NEW.back);
+END;
+
+CREATE TRIGGER IF NOT EXISTS not_first_index_card_fts AFTER UPDATE OF
+title, description, front, back, deck
+ON Cards
+BEGIN
+    INSERT OR REPLACE INTO CardsFTS(docid, title, description, front, back) VALUES (NEW.card_id, NEW.title, NEW.description, NEW.front, NEW.back);
+END;
+
 CREATE TABLE IF NOT EXISTS CardsScore (
     success INTEGER NOT NULL DEFAULT 0,
     fail INTEGER NOT NULL DEFAULT 0,
