@@ -31,6 +31,11 @@ func main() {
             Value: 8080,
             Usage: "Port number to serve",
         },
+        cli.StringFlag{
+            Name:  "mathjax",
+            Value: "",
+            Usage: "Alternative source folder of MathJax to serve",
+        },
     }
 
     cmd.Action = func(ctx *cli.Context) {
@@ -47,8 +52,9 @@ func main() {
         var profileName string = args.First()
 
         var portNum int = ctx.Int("port")
+        var mathJax string = ctx.String("mathjax")
 
-        app(profileName, portNum)
+        app(profileName, portNum, mathJax)
     }
 
     cmd.Run(os.Args)
@@ -61,7 +67,7 @@ func exitIfErr(err error, code int) {
     }
 }
 
-func app(profileName string, portNum int) {
+func app(profileName string, portNum int, mathJax string) {
     // adapted from: https://github.com/mattn/go-sqlite3/blob/master/_example/custom_func/main.go
     sql.Register("sqlite3_custom", &sqlite.SQLiteDriver{
         ConnectHook: func(conn *sqlite.SQLiteConn) error {
@@ -88,7 +94,7 @@ func app(profileName string, portNum int) {
 
     defer db.CleanUp()
 
-    bootAPI(db, portNum)
+    bootAPI(db, portNum, mathJax)
 }
 
 func norm_score(success int64, fail int64, age int64) float64 {

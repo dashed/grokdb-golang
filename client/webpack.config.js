@@ -46,7 +46,8 @@ module.exports = {
             'react-textarea-autosize',
             'qs',
             'moment',
-            'react-prop-once'
+            'react-prop-once',
+            'scriptjs',
             // 'intl',
             // 'between2',
             // 'pouchdb',
@@ -90,6 +91,10 @@ module.exports = {
         ]
     },
     plugins: [
+        new webpack.DefinePlugin({
+            __DEV__: JSON.stringify(JSON.parse(process.env.BUILD_DEV || 'true')),
+            __PRERELEASE__: JSON.stringify(JSON.parse(process.env.BUILD_PRERELEASE || 'false'))
+        }),
         new webpack.optimize.CommonsChunkPlugin(/* chunkName= */"vendor", /* filename= */"vendor.js")
     ],
     // postcss: function () {

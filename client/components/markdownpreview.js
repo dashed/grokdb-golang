@@ -27,14 +27,29 @@ const MarkdownPreview = React.createClass({
     },
 
     componentDidUpdate() {
+
+        if(!MathJax) {
+            return;
+        }
+
         MathJax.Hub.Queue(['Typeset', MathJax.Hub, React.findDOMNode(this.refs.output)]);
     },
 
     componentDidMount() {
+
+        if(!MathJax) {
+            return;
+        }
+
         MathJax.Hub.Queue(['Typeset', MathJax.Hub, React.findDOMNode(this.refs.output)]);
     },
 
     componentWillUnmount() {
+
+        if(!MathJax) {
+            return;
+        }
+
         _.each(MathJax.Hub.getAllJax(React.findDOMNode(this.refs.output)), function(jax) {
             jax.Remove();
         });

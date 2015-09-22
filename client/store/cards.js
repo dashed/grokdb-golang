@@ -18,6 +18,14 @@ const transforms = {
         return options;
     },
 
+    applySortArgs(state, options = {}) {
+
+    },
+
+    applySearchArgs(state, options = {}) {
+
+    },
+
     // passthroughs
 
     setCard: function(state, options) {

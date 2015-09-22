@@ -10,4 +10,37 @@ require('orwell').shouldComponentUpdate(function __shouldComponentUpdateShallow(
     return !shallowEqual(this.state.currentProps, nextState.currentProps);
 });
 
-require('./index.js');
+const scriptjs = require('scriptjs');
+const co = require('co');
+const superhot = require('store/superhot');
+const _ = require('lodash');
+
+co(function*() {
+    const response = yield new Promise(function(resolve) {
+        superhot.get('/env').end(function(err, res){
+            resolve(res);
+        });
+    });
+
+    const env = response.body;
+
+    let hasLocalMathJax = false;
+    if(_.has(env, 'local_mathjax') && env.local_mathjax) {
+
+        const response = yield new Promise(function(resolve) {
+            superhot.get('/mathjax/MathJax.js').end(function(err, res){
+                resolve(res);
+            });
+        });
+
+        hasLocalMathJax = response.status == 200;
+    }
+
+    const mjscript = hasLocalMathJax ? 'mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML' :
+        'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+
+    scriptjs(mjscript, function() {
+        require('./index.js');
+    });
+
+});
