@@ -87,7 +87,13 @@ const ReviewDashboard = React.createClass({
 const NoReviewCard = React.createClass({
     render() {
         return (
-            <div>no card</div>
+            <div className="card">
+                <div className="card-block text-center">
+                    <p className="card-text text-muted">
+                        {"No cards to review. To get started, you should create your first card for this deck."}
+                    </p>
+                </div>
+            </div>
         );
     }
 });
