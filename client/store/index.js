@@ -33,6 +33,8 @@ const SCHEMA = {
             page: 1,
             total: 0,
             numOfPages: 0,
+            sort: 'reviewed_at',
+            order: 'DESC',
             list: NOT_SET,
 
             creatingNew: false,

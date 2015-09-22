@@ -513,7 +513,7 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
             _order = yield localforage.getItem('order');
         }
 
-        _order = (_.isString(_order) && queries.order.length > 0) ? _order : 'DESC';
+        _order = (_.isString(_order) && _order.length > 0) ? _order : 'DESC';
         _order = _order.toUpperCase();
 
         switch(_order) {
@@ -539,7 +539,7 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
             _sort = yield localforage.getItem('sort');
         }
 
-        _sort = (_.isString(_sort) && queries.order.length > 0) ? _sort : 'reviewed_at';
+        _sort = (_.isString(_sort) && _sort.length > 0) ? _sort : 'reviewed_at';
         _sort = _sort.toLowerCase();
 
         switch(_sort) {
@@ -583,6 +583,16 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
 
         return maybeDeck.get('id');
     }());
+
+
+    // add to transaction
+    rootCursor.cursor(paths.transaction).update(function(map) {
+        return map.withMutations(function(__map) {
+            __map
+                .set(paths.dashboard.cards.sort, sort)
+                .set(paths.dashboard.cards.order, order);
+        });
+    });
 
     yield loadCardsList(rootCursor, deckID, pageNum, sort, order);
 
