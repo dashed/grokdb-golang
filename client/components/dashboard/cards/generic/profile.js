@@ -14,6 +14,7 @@ const GenericCardProfile = React.createClass({
         onCommit: React.PropTypes.func.isRequired,
         onClickEdit: React.PropTypes.func.isRequired,
         onClickCancelEdit: React.PropTypes.func.isRequired,
+        onClickDelete: React.PropTypes.func.isRequired,
 
         // localstate
         view: React.PropTypes.string.isRequired,
@@ -56,8 +57,15 @@ const GenericCardProfile = React.createClass({
         const ViewComponent = (function() {
 
             if(view === cards.view.meta) {
+
+                const {onClickDelete} = this.props;
+
                 return (
-                    <GenericCardMeta key="meta" localstate={localstate} />
+                    <GenericCardMeta
+                        key="meta"
+                        onClickDelete={onClickDelete}
+                        localstate={localstate}
+                    />
                 );
             }
 
@@ -66,7 +74,7 @@ const GenericCardProfile = React.createClass({
                     localstate={localstate}
                 />
             );
-        }());
+        }.call(this));
 
         const CommitButton = (function() {
 

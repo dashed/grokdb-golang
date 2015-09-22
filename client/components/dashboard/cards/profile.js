@@ -7,8 +7,8 @@ const {Probe} = require('minitrue');
 
 const {flow} = require('store/utils');
 const {paths, cards} = require('store/constants');
-const {applyCardArgs, saveCard} = require('store/cards');
-const {toCardProfileEdit, toCardProfile} = require('store/route');
+const {applyCardArgs, saveCard, deleteCard} = require('store/cards');
+const {toCardProfileEdit, toCardProfile, toDeckCards} = require('store/route');
 
 const GenericCard = require('./generic');
 
@@ -19,6 +19,15 @@ const saveCardState = flow(
 
     // route
     toCardProfile
+);
+
+const invokeDeleteCard = flow(
+    // cards
+    applyCardArgs,
+    deleteCard,
+
+    // route
+    toDeckCards
 );
 
 const CardProfile = React.createClass({
@@ -90,6 +99,10 @@ const CardProfile = React.createClass({
         this.props.store.invoke(saveCardState, {patchCard: newCardRecord});
     },
 
+    onClickDelete() {
+        this.props.store.invoke(invokeDeleteCard);
+    },
+
     render() {
 
         const {localstate} = this.props;
@@ -99,6 +112,7 @@ const CardProfile = React.createClass({
                 onClickCancelEdit={this.onClickCancelEdit}
                 onClickEdit={this.onClickEdit}
                 onCommit={this.onClickSave}
+                onClickDelete={this.onClickDelete}
                 localstate={localstate}
             />
         );
@@ -139,6 +153,7 @@ module.exports = once(OrwellWrappedCardProfile, {
             showEditButton: true,
             editMode: false,
             hideMeta: false,
+            showDelete: true,
             commitLabel: 'Save Card'
         });
 

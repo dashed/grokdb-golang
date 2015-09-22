@@ -1,23 +1,11 @@
 const React = require('react');
 const orwell = require('orwell');
+const either = require('react-either');
 
-const {flow} = require('store/utils');
-const {deleteCard, applyCardArgs} = require('store/cards');
-const {toDeckCards} = require('store/route');
-
-const invokeDeleteCard = flow(
-    // cards
-    applyCardArgs,
-    deleteCard,
-
-    // route
-    toDeckCards
-);
-
-const DeleteDeck = React.createClass({
+const DeleteCard = React.createClass({
 
     propTypes: {
-        store: React.PropTypes.object.isRequired
+        onClickDelete: React.PropTypes.func.isRequired
     },
 
     getInitialState() {
@@ -48,8 +36,8 @@ const DeleteDeck = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        const {store} = this.props;
-        store.invoke(invokeDeleteCard);
+        const {onClickDelete} = this.props;
+        onClickDelete.call(void 0);
     },
 
     render() {
@@ -89,9 +77,17 @@ const DeleteDeck = React.createClass({
     }
 });
 
-module.exports = orwell(DeleteDeck, {
+const DeleteCardOcclusion = either(DeleteCard, null, function(props) {
+    return props.showDelete;
+});
+
+module.exports = orwell(DeleteCardOcclusion, {
     assignNewProps(props, context) {
+
+        const {localstate} = props;
+
         return {
+            showDelete: localstate.cursor('showDelete').deref(false),
             store: context.store,
         };
     }

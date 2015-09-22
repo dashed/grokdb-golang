@@ -21,6 +21,7 @@ const DEFAULTS = {
 
     showEditButton: false,
     editMode: false,
+    showDelete: false,
 
     defaultMode: cards.display.render, // render or source
     hideMeta: false, // bool
@@ -43,6 +44,7 @@ const GenericCard = React.createClass({
         onCommit: React.PropTypes.func,
         onClickEdit: React.PropTypes.func,
         onClickCancelEdit: React.PropTypes.func,
+        onClickDelete: React.PropTypes.func,
 
         localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
@@ -53,7 +55,8 @@ const GenericCard = React.createClass({
             onClickCommit: nilop,
             onCommit: nilop,
             onClickEdit: nilop,
-            onClickCancelEdit: nilop
+            onClickCancelEdit: nilop,
+            onClickDelete: nilop
         };
     },
 
@@ -68,7 +71,14 @@ const GenericCard = React.createClass({
 
     render() {
 
-        const {localstate, onSwitchView, onCommit, onClickEdit, onClickCancelEdit} = this.props;
+        const {
+            localstate,
+            onSwitchView,
+            onCommit,
+            onClickEdit,
+            onClickCancelEdit,
+            onClickDelete
+        } = this.props;
 
         return (
             <div>
@@ -79,6 +89,7 @@ const GenericCard = React.createClass({
                             onClickEdit={onClickEdit}
                             onCommit={onCommit}
                             onSwitchView={onSwitchView}
+                            onClickDelete={onClickDelete}
                             localstate={localstate}
                         />
                     </div>
