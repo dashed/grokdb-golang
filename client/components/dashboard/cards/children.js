@@ -6,7 +6,6 @@ const Immutable = require('immutable');
 const {paths} = require('store/constants');
 
 const CardChild = require('./child');
-const SortDropdown = require('./dropdown');
 
 const CardsChildren = React.createClass({
 
@@ -52,17 +51,7 @@ const CardsChildren = React.createClass({
         }());
 
         return (
-            <div className="card m-y-0">
-                <div className="card-block p-a clearfix">
-                    <div className="row">
-                        <div className="col-sm-4">
-                            <input type="text" className="form-control form-control-sm" placeholder="Search" />
-                        </div>
-                        <div className="col-sm-8">
-                            <SortDropdown />
-                        </div>
-                    </div>
-                </div>
+            <div>
                 {display}
             </div>
         );
