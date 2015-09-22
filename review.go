@@ -466,7 +466,16 @@ func GetNextReviewCard(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow,
     case err != nil:
         return nil, err
     case fetchedRow != nil:
-        return GetCard(db, fetchedRow.Card)
+        var fetchedReviewCard *CardRow
+        fetchedReviewCard, err = GetCard(db, fetchedRow.Card)
+        switch {
+        case err == ErrCardNoSuchCard:
+            break
+        case err != nil:
+            return nil, err
+        default:
+            return fetchedReviewCard, nil
+        }
     }
 
     if _purgatory_size <= 0 {
