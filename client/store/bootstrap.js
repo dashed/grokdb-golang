@@ -557,15 +557,15 @@ const ensureCardsRoute = co.wrap(function* (store, ctx, next) {
         return _sort;
     });
 
-    if(shouldredirect) {
-        const deckID = filterInt(ctx.params.id);
-        const slug = ctx.params.slug;
+    // if(shouldredirect) {
+    //     const deckID = filterInt(ctx.params.id);
+    //     const slug = ctx.params.slug;
 
-        const params = qs.stringify({page: pageNum, order: order, sort: sort});
-        page.redirect(`/deck/${deckID}/${slug}/cards?${params}`);
-        return;
+    //     const params = qs.stringify({page: pageNum, order: order, sort: sort});
+    //     page.redirect(`/deck/${deckID}/${slug}/cards?${params}`);
+    //     return;
 
-    }
+    // }
 
     // fetch deck id from transaction
 
