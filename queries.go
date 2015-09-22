@@ -434,6 +434,20 @@ var CREATE_NEW_CARD_QUERY = (func() PipeInput {
     )
 }())
 
+var DELETE_CARD_QUERY = (func() PipeInput {
+    const __DELETE_CARD_QUERY string = `
+    DELETE FROM Cards WHERE card_id = :card_id;
+    `
+
+    var requiredInputCols []string = []string{"card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__DELETE_CARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 var FETCH_CARD_QUERY = (func() PipeInput {
     const __FETCH_CARD_QUERY string = `
     SELECT card_id, title, description, front, back, deck, created_at, updated_at FROM Cards

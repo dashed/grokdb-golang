@@ -58,10 +58,8 @@ func CardGET(db *sqlx.DB, ctx *gin.Context) {
 
     var err error
 
-    // parse id param
+    // parse and validate id param
     var cardIDString string = strings.ToLower(ctx.Param("id"))
-
-    // fetch card row from the db
 
     _cardID, err := strconv.ParseUint(cardIDString, 10, 32)
     if err != nil {
@@ -74,6 +72,8 @@ func CardGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
     var cardID uint = uint(_cardID)
+
+    // fetch card row from the db
 
     var fetchedCardRow *CardRow
     fetchedCardRow, err = GetCard(db, uint(_cardID))
@@ -113,6 +113,86 @@ func CardGET(db *sqlx.DB, ctx *gin.Context) {
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
     ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
+}
+
+// DELETE /cards/:id
+//
+func CardDELETE(db *sqlx.DB, ctx *gin.Context) {
+
+    var err error
+
+    // parse and validate id param
+    var cardIDString string = strings.ToLower(ctx.Param("id"))
+
+    _cardID, err := strconv.ParseUint(cardIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var cardID uint = uint(_cardID)
+
+    // fetch card row from the db
+
+    _, err = GetCard(db, cardID)
+    switch {
+    case err == ErrCardNoSuchCard:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find card by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // delete card
+    err = DeleteCard(db, cardID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to delete card",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // ensure card is deleted
+
+    _, err = GetCard(db, cardID)
+    switch {
+    case err == ErrCardNoSuchCard:
+        // success
+        ctx.Writer.WriteHeader(http.StatusNoContent)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to check if card is deleted",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    ctx.JSON(http.StatusInternalServerError, gin.H{
+        "status":           http.StatusInternalServerError,
+        "developerMessage": err.Error(),
+        "userMessage":      "unable to delete card",
+    })
 }
 
 // POST /cards
@@ -609,4 +689,25 @@ func CardsByDeck(db *sqlx.DB, queryTransform PipeInput, deckID uint, page uint, 
     }
 
     return &cards, nil
+}
+
+func DeleteCard(db *sqlx.DB, cardID uint) error {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DELETE_CARD_QUERY, &StringMap{"card_id": cardID})
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }

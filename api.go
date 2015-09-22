@@ -65,7 +65,7 @@ func bootAPI(db *Database) {
 
         cardsAPI.PATCH("/:id", injectDB(CardPATCH))
 
-        // cardsAPI.DELETE("/:id", injectDB(CardDELETE))
+        cardsAPI.DELETE("/:id", injectDB(CardDELETE))
 
         cardsAPI.PATCH("/:id/review", injectDB(ReviewCardPATCH))
 
