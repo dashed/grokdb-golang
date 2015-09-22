@@ -94,7 +94,7 @@ const AppContainer = React.createClass({
                 <OrwellWrapped {...this.props} />
                 <hr className="m-t-lg"/>
                 <footer className="m-b">
-                    <a href="https://github.com/dashed/butterstotch/issues" target="_blank">{'Bugs? Issues? Ideas?'}</a>
+                    <a href="https://github.com/dashed/butterfoo/issues" target="_blank">{'Bugs? Issues? Ideas?'}</a>
                 </footer>
             </div>
         );
