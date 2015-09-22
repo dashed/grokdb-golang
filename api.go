@@ -1,13 +1,15 @@
 package main
 
 import (
+    "fmt"
+
     // 3rd-party
     "github.com/gin-gonic/contrib/static"
     "github.com/gin-gonic/gin"
     "github.com/jmoiron/sqlx"
 )
 
-func bootAPI(db *Database) {
+func bootAPI(db *Database, portNum int) {
 
     var err error
 
@@ -78,7 +80,7 @@ func bootAPI(db *Database) {
         configsAPI.POST("/:setting", injectDB(ConfigPOST))
     }
 
-    api.Run(":3030")
+    api.Run(fmt.Sprintf(":%d", portNum))
 }
 
 /* helpers */
