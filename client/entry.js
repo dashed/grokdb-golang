@@ -27,13 +27,13 @@ co(function*() {
     let hasLocalMathJax = false;
     if(_.has(env, 'local_mathjax') && env.local_mathjax) {
 
-        const response = yield new Promise(function(resolve) {
+        const _response = yield new Promise(function(resolve) {
             superhot.get('/mathjax/MathJax.js').end(function(err, res){
                 resolve(res);
             });
         });
 
-        hasLocalMathJax = response.status == 200;
+        hasLocalMathJax = _response.status == 200;
     }
 
     const mjscript = hasLocalMathJax ? 'mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML' :
