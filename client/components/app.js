@@ -92,6 +92,10 @@ const AppContainer = React.createClass({
         return (
             <div className="container">
                 <OrwellWrapped {...this.props} />
+                <hr className="m-t-lg"/>
+                <footer className="m-b">
+                    <a href="https://github.com/dashed/butterstotch/issues" target="_blank">{'Bugs? Issues? Ideas?'}</a>
+                </footer>
             </div>
         );
     }
