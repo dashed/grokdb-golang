@@ -16,6 +16,14 @@ $ butterstotch
 
 Access the client from your favourite browser: [http://localhost:3030/](http://localhost:3030/)
 
+Development
+===========
+
+```sh
+webpack -p
+./buildassets.sh
+go build
+```
 License
 =======
 
