@@ -470,13 +470,28 @@ func GetNextReviewCard(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow,
         fetchedReviewCard, err = GetCard(db, fetchedRow.Card)
         switch {
         case err == ErrCardNoSuchCard:
+            // card may have been deleted
             break
         case err != nil:
             return nil, err
         default:
-            return fetchedReviewCard, nil
+
+            if fetchedReviewCard.Deck == deckID {
+                return fetchedReviewCard, nil
+            }
+
+            test, err := DeckHasDescendent(db, deckID, fetchedReviewCard.Deck)
+            if err != nil {
+                return nil, err
+            }
+
+            if test {
+                return fetchedReviewCard, nil
+            }
         }
     }
+
+    // no cached review card
 
     if _purgatory_size <= 0 {
         return nil, errors.New("invalid _purgatory_size")

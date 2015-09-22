@@ -266,6 +266,27 @@ var DECK_CHILDREN_QUERY = (func() PipeInput {
     )
 }())
 
+// test lineage
+var TEST_LINEAGE_QUERY = (func() PipeInput {
+    const __TEST_LINEAGE_QUERY string = `
+    SELECT COUNT(1)
+    FROM DecksClosure
+    WHERE
+    ancestor = :parent
+    AND
+    descendent = :descendent
+    LIMIT 1;
+    `
+
+    var requiredInputCols []string = []string{"parent", "descendent"}
+
+    return composePipes(
+        MakeCtxMaker(__TEST_LINEAGE_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 // fetch direct parent (if any)
 var DECK_PARENT_QUERY = (func() PipeInput {
     const __DECK_PARENT_QUERY string = `
@@ -342,6 +363,12 @@ CREATE TRIGGER IF NOT EXISTS first_index_card_fts AFTER INSERT
 ON Cards
 BEGIN
     INSERT OR REPLACE INTO CardsFTS(docid, title, description, front, back) VALUES (NEW.card_id, NEW.title, NEW.description, NEW.front, NEW.back);
+END;
+
+CREATE TRIGGER IF NOT EXISTS deleted_card_cardfts AFTER DELETE
+ON Cards
+BEGIN
+    DELETE FROM CardsFTS WHERE docid=OLD.card_id;
 END;
 
 CREATE TRIGGER IF NOT EXISTS not_first_index_card_fts AFTER UPDATE OF

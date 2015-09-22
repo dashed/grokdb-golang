@@ -745,7 +745,7 @@ func DeckDELETE(db *sqlx.DB, ctx *gin.Context) {
 
     // ensure deck is deleted
 
-    _, err = GetDeck(db, uint(_deckID))
+    _, err = GetDeck(db, deckID)
     switch {
     case err == ErrDeckNoSuchDeck:
         // success
@@ -1383,4 +1383,30 @@ func MoveDeck(db *sqlx.DB, child uint, newParent uint) error {
     }
 
     return nil
+}
+
+func DeckHasDescendent(db *sqlx.DB, parentID uint, childID uint) (bool, error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(TEST_LINEAGE_QUERY, &StringMap{
+        "deck_id":    parentID,
+        "descendent": childID,
+    })
+    if err != nil {
+        return false, err
+    }
+
+    var count int
+    err = db.QueryRowx(query, args...).Scan(&count)
+
+    if err != nil {
+        return false, err
+    }
+
+    return (count > 0), nil
 }
