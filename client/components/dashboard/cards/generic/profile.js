@@ -134,7 +134,8 @@ module.exports = orwell(GenericCardProfile, {
         return [
             localstate.cursor('editMode'),
             localstate.cursor(['card', 'title']),
-            localstate.cursor(['display', 'view'])
+            localstate.cursor(['display', 'view']),
+            localstate.cursor('commitLabel')
         ];
     },
     assignNewProps(props) {
