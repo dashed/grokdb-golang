@@ -12,7 +12,7 @@ import (
     "github.com/jmoiron/sqlx"
 )
 
-func bootAPI(db *Database, portNum int, mathjaxPath string) {
+func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
 
     var err error
 
@@ -26,9 +26,11 @@ func bootAPI(db *Database, portNum int, mathjaxPath string) {
 
     api := gin.Default()
 
-    // debug
-    api.Use(static.Serve("/", static.LocalFile("./assets/", true)))
-    // api.Use(static.Serve("/", BinaryFileSystem("assets")))
+    if len(appPath) > 0 {
+        api.Use(static.Serve("/", static.LocalFile(appPath, true)))
+    } else {
+        api.Use(static.Serve("/", BinaryFileSystem("assets")))
+    }
 
     var local_mathjax bool = len(mathjaxPath) > 0
 
