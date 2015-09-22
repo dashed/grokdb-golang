@@ -60,6 +60,19 @@ const transforms = {
         });
     }),
 
+    deleteCard: co.wrap(function*(state, options) {
+
+        const {cardID} = options;
+
+        return new Promise(function(resolve) {
+            superhot
+                .del(`/cards/${cardID}`)
+                .end(function() {
+                    resolve(options);
+                });
+        });
+    }),
+
     saveCard: co.wrap(function*(state, options) {
 
         const {patchCard} = options;
