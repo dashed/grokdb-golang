@@ -1,6 +1,7 @@
 const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
+const moment = require('moment');
 
 const {flow} = require('store/utils');
 const {setCard} = require('store/cards');
@@ -31,13 +32,37 @@ const CardChild = React.createClass({
         store.invoke(changeToCard, {card, cardID: card.get('id')});
     },
 
+    generateSummary() {
+
+        const {card} = this.props;
+
+        const timesReviewed = `Reviewed ${card.getIn(['review', 'times_reviewed'])} times.`;
+
+        const offset = new Date().getTimezoneOffset();
+        const lastReviewedDatetime = moment.unix(card.getIn(['review', 'updated_at'])).utcOffset(-offset);;
+
+        const createdAt = moment.unix(card.get('created_at')).utcOffset(-offset);
+        const wasReviewed = Math.abs(lastReviewedDatetime.diff(createdAt)) <= 250 ? false : true;
+
+        const lastReviewed = wasReviewed ? `Last reviewed ${lastReviewedDatetime.fromNow()}.` : `Hasn't been reviewed.`;
+
+        const score = `Score of ${card.getIn(['review', 'score']).toPrecision(5)}`;
+
+        return `${timesReviewed} ${lastReviewed} ${score}`;
+    },
+
     render() {
 
         const {card} = this.props;
         const title = card.get('title');
 
         return (
-            <a href="#" onClick={this.onClickCard}>{title}</a>
+            <a href="#" className="list-group-item carditem" onClick={this.onClickCard}>
+                <h4 className="list-group-item-heading">{title}</h4>
+                <p className="list-group-item-text">
+                    {this.generateSummary()}
+                </p>
+            </a>
         );
     }
 });

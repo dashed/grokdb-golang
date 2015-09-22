@@ -33,9 +33,7 @@ const CardsChildren = React.createClass({
 
             const currentChildrenRendered = listCursor.reduce(function(accumulator, childCursor) {
                 accumulator.push(
-                    <li className="list-group-item" key={childCursor.deref().get('id')}>
-                        <CardChild childCursor={childCursor} />
-                    </li>
+                    <CardChild key={childCursor.deref().get('id')} childCursor={childCursor} />
                 );
 
                 return accumulator;
