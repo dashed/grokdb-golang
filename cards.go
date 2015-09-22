@@ -109,7 +109,7 @@ func CardGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    var cardrow gin.H = CardRowToResponse(fetchedCardRow)
+    var cardrow gin.H = CardRowToResponse(db, fetchedCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
     ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
@@ -271,7 +271,7 @@ func CardPOST(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    var cardrow gin.H = CardRowToResponse(newCardRow)
+    var cardrow gin.H = CardRowToResponse(db, newCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
     ctx.JSON(http.StatusCreated, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
@@ -505,7 +505,7 @@ func CardPATCH(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    var cardrow gin.H = CardRowToResponse(fetchedCardRow)
+    var cardrow gin.H = CardRowToResponse(db, fetchedCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
     ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
@@ -523,12 +523,23 @@ func CardResponse(overrides *gin.H) gin.H {
         "deck":        0,  // required
         "created_at":  0,
         "updated_at":  0,
+        "deck_path":   []uint{},
     }
 
     return MergeResponse(defaultResponse, overrides)
 }
 
-func CardRowToResponse(cardrow *CardRow) gin.H {
+func CardRowToResponse(db *sqlx.DB, cardrow *CardRow) gin.H {
+
+    // construct deck_path
+    // var err error
+    var deck_path []uint
+    deck_path, _ = GetDeckAncestors(db, cardrow.Deck)
+    // swallow error
+    // TODO: error handling
+
+    deck_path = append(deck_path, cardrow.Deck)
+
     return CardResponse(&gin.H{
         "id":          cardrow.ID,
         "title":       cardrow.Title,
@@ -538,6 +549,7 @@ func CardRowToResponse(cardrow *CardRow) gin.H {
         "deck":        cardrow.Deck,
         "created_at":  cardrow.CreatedAt,
         "updated_at":  cardrow.UpdatedAt,
+        "deck_path":   deck_path,
     })
 }
 

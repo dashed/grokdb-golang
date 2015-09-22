@@ -149,7 +149,7 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    var cardrow gin.H = CardRowToResponse(fetchedReviewCardRow)
+    var cardrow gin.H = CardRowToResponse(db, fetchedReviewCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
     ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
@@ -379,7 +379,7 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    var cardrow gin.H = CardRowToResponse(fetchedCardRow)
+    var cardrow gin.H = CardRowToResponse(db, fetchedCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
     ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))

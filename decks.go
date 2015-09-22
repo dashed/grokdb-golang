@@ -528,7 +528,7 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
             return
         }
 
-        var cardrow gin.H = CardRowToResponse(&cr)
+        var cardrow gin.H = CardRowToResponse(db, &cr)
         var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
         foo := MergeResponse(&cardrow, &gin.H{"review": cardscore})
@@ -1302,25 +1302,26 @@ func GetDeckAncestors(db *sqlx.DB, childID uint) ([]uint, error) {
         args      []interface{}
         dr        DeckRelationship = DeckRelationship{}
         ancestors []uint           = []uint{}
+        empty     []uint           = []uint{}
     )
 
     query, args, err = QueryApply(DECK_ANCESTORS_QUERY, &StringMap{"child": childID})
     if err != nil {
-        return nil, err
+        return empty, err
     }
 
     rows, err = db.Queryx(query, args...)
     for rows.Next() {
         err := rows.StructScan(&dr)
         if err != nil {
-            return nil, err
+            return empty, err
         }
 
         ancestors = append(ancestors, dr.Ancestor)
     }
 
     if len(ancestors) <= 0 {
-        return nil, ErrDeckNoAncestors
+        return empty, ErrDeckNoAncestors
     }
 
     return ancestors, nil
