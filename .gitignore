@@ -3,3 +3,4 @@ node_modules
 modules
 *.log
 sandbox
+assets.go
