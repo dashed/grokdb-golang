@@ -100,7 +100,6 @@ const transforms = {
                 lst = lst.pop();
                 current = lst.last().get('id');
             }
-            lst = lst.pop();
 
             return lst;
         });
