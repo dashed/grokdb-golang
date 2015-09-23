@@ -60,8 +60,15 @@ const DeckChild = React.createClass({
 module.exports = orwell(DeckChild, {
     watchCursors(props, manual) {
 
-        manual(function(update) {
+        manual(function(update, isMounted) {
+
+
             const unsubscribe = props.childCursor.observe(function(newValue, oldValue) {
+
+                if(!isMounted.call(void 0)) {
+                    return unsubscribe();
+                }
+
                 if(newValue && oldValue && newValue.id === oldValue.id) {
                     return update();
                 }
