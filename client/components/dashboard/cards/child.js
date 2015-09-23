@@ -1,12 +1,15 @@
 const React = require('react');
+const either = require('react-either');
 const orwell = require('orwell');
 const Immutable = require('immutable');
 const moment = require('moment');
+const {Probe} = require('minitrue');
+const _ = require('lodash');
 
 const {flow} = require('store/utils');
 const {setCard} = require('store/cards');
-const {toCardProfile} = require('store/route');
-
+const {toCardProfile, toDeckCards} = require('store/route');
+const {setDeck, loadChildren, popFromBreadcrumb, pushManyOntoBreadcrumb} = require('store/decks');
 
 const changeToCard = flow(
 
@@ -17,11 +20,55 @@ const changeToCard = flow(
     toCardProfile
 );
 
+const navigateToParentDeck = flow(
+
+    // decks
+    setDeck,
+    popFromBreadcrumb,
+    loadChildren,
+
+    // route
+    toDeckCards
+);
+
+const navigateToChildDeck = flow(
+
+    // decks
+    setDeck,
+    loadChildren,
+    pushManyOntoBreadcrumb,
+
+    // route
+    toDeckCards
+);
+
 const CardChild = React.createClass({
 
     propTypes: {
         card: React.PropTypes.instanceOf(Immutable.Map).isRequired,
-        store: React.PropTypes.object.isRequired
+        store: React.PropTypes.object.isRequired,
+        localstate: React.PropTypes.instanceOf(Probe).isRequired,
+        deckPath: React.PropTypes.array.isRequired,
+        breadcrumbLength: React.PropTypes.number.isRequired
+    },
+
+    onClickDeck(deckPath, idx) {
+
+        const {store, breadcrumbLength} = this.props;
+        const currentDeckIdx = breadcrumbLength - 1;
+
+        const flowPath = idx < currentDeckIdx ? navigateToParentDeck : navigateToChildDeck;
+
+        return function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const deck = deckPath[idx];
+
+            const sliced = idx < currentDeckIdx ? [] : _.slice(deckPath, currentDeckIdx);
+
+            store.invoke(flowPath, {deck: deck, deckID: deck.get('id'), decks: sliced});
+        };
     },
 
     onClickCard(event) {
@@ -32,11 +79,51 @@ const CardChild = React.createClass({
         store.invoke(changeToCard, {card, cardID: card.get('id')});
     },
 
+    deckPathVisual() {
+
+        const {deckPath = [], breadcrumbLength} = this.props;
+
+        const currentDeckIdx = breadcrumbLength - 1;
+
+        // deck path
+        const list = _.reduce(deckPath, function(lst, deck) {
+            const name = deck.get('name');
+            lst.push(' / ');
+
+            const currIdx = ((lst.length-1)/2);
+
+            if(currIdx == currentDeckIdx) {
+                lst.push(
+                    `${name}`
+                );
+            } else {
+                lst.push(
+                    <a href="#" key={lst.length} onClick={this.onClickDeck(deckPath, currIdx)}>{name}</a>
+                );
+            }
+
+            return lst;
+        }, [], this);
+
+        return (
+            <p className="list-group-item-text">
+                <small>
+                    <strong>{`Deck: `}</strong>
+                    {list}
+                </small>
+            </p>
+        );
+    },
+
     generateSummary() {
 
         const {card} = this.props;
 
+        // count times reviewed
+
         const timesReviewed = `Reviewed ${card.getIn(['review', 'times_reviewed'])} times.`;
+
+        // datetime of when last reviewed
 
         const offset = new Date().getTimezoneOffset();
         const lastReviewedDatetime = moment.unix(card.getIn(['review', 'updated_at'])).utcOffset(-offset);;
@@ -46,9 +133,15 @@ const CardChild = React.createClass({
 
         const lastReviewed = wasReviewed ? `Last reviewed ${lastReviewedDatetime.fromNow()}.` : `Hasn't been reviewed.`;
 
+        // score
+
         const score = `Score of ${card.getIn(['review', 'score']).toPrecision(5)}`;
 
-        return `${timesReviewed} ${lastReviewed} ${score}`;
+        return (
+            <p className="list-group-item-text">
+                <small>{`${timesReviewed} ${lastReviewed} ${score}`}</small>
+            </p>
+        );
     },
 
     render() {
@@ -57,34 +150,54 @@ const CardChild = React.createClass({
         const title = card.get('title');
 
         return (
-            <a href="#" className="list-group-item carditem" onClick={this.onClickCard}>
-                <h4 className="list-group-item-heading">{title}</h4>
-                <p className="list-group-item-text">
-                    {this.generateSummary()}
-                </p>
-            </a>
+            <div className="list-group-item carditem">
+                <h4 className="list-group-item-heading"><a href="#" onClick={this.onClickCard}>{title}</a></h4>
+                {this.generateSummary()}
+                {this.deckPathVisual()}
+            </div>
         );
     }
 });
 
-module.exports = orwell(CardChild, {
-    // TODO: needs this fix: https://github.com/Dashed/orwell/issues/14
-    // watchCursors(props, manual) {
+const CardChildOcclusion = either(CardChild, null, function(props) {
 
-    //     manual(function(update) {
-    //         const unsubscribe = props.childCursor.observe(function(newValue, oldValue) {
-    //             if(newValue && oldValue && newValue.id === oldValue.id) {
-    //                 return update();
-    //             }
-    //         });
+    const {deckPath} = props;
 
-    //         return unsubscribe;
-    //     });
-    // },
+    if(!_.isArray(deckPath)) {
+        return false;
+    }
+
+    return true;
+});
+
+module.exports = orwell(CardChildOcclusion, {
+    watchCursors(props) {
+
+        const {localstate, childCursor} = props;
+
+        const card = childCursor.deref();
+
+        return localstate.cursor(['deckPaths', card.get('id')]);
+
+    },
     assignNewProps(props, context) {
+
+        const {localstate, childCursor} = props;
+
+        const card = childCursor.deref();
+
+        const cardID = card.get('id');
+        const deckPath = localstate.cursor(['deckPaths', cardID]).deref();
+
+        if(!_.isArray(deckPath)) {
+            const requestDeckPath = localstate.cursor('requestDeckPath').deref();
+            requestDeckPath.call(void 0, cardID, card.get('deck_path'));
+        }
+
         return {
-            card: props.childCursor.deref(),
-            store: context.store
+            card: card,
+            store: context.store,
+            deckPath: deckPath
         };
     }
 }).inject({

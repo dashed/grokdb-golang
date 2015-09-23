@@ -83,6 +83,17 @@ const transforms = {
         return options;
     },
 
+    pushManyOntoBreadcrumb(state, options) {
+
+        const {decks} = options;
+
+        state.cursor(paths.deck.breadcrumb).update(function(lst) {
+            return lst.concat(decks);
+        });
+
+        return options;
+    },
+
     popFromBreadcrumb(state, options) {
 
         const {deckID} = options;
