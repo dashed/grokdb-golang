@@ -1395,7 +1395,7 @@ func DeckHasDescendent(db *sqlx.DB, parentID uint, childID uint) (bool, error) {
     )
 
     query, args, err = QueryApply(TEST_LINEAGE_QUERY, &StringMap{
-        "deck_id":    parentID,
+        "parent":     parentID,
         "descendent": childID,
     })
     if err != nil {
