@@ -9,13 +9,7 @@ const {toDeck} = require('store/route');
 const changeToBreadcrumb = flow(
 
     // decks
-    applyDeckArgs,
     popFromBreadcrumb,
-    function(state, options) {
-        options.deck = options.toDeck;
-        options.deckID = options.toDeckID;
-        return options;
-    },
     setDeck,
     loadChildren,
 
@@ -42,7 +36,7 @@ const BreadcrumbChild = React.createClass({
         event.stopPropagation();
 
         const {store, deck} = this.props;
-        store.invoke(changeToBreadcrumb, {toDeck: deck, toDeckID: deck.get('id')});
+        store.invoke(changeToBreadcrumb, {deck: deck, deckID: deck.get('id')});
 
     },
 
