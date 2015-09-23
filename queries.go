@@ -683,9 +683,6 @@ var COUNT_REVIEW_CARDS_BY_DECK = (func() PipeInput {
         INNER JOIN Cards AS c
         ON c.deck = dc.descendent
 
-        INNER JOIN CardsScore AS cs
-        ON cs.card = c.card_id
-
         WHERE dc.ancestor = :deck_id;
     `
 
