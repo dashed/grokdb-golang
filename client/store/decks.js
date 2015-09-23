@@ -2,6 +2,7 @@ const Immutable = require('immutable');
 const co = require('co');
 const _ = require('lodash');
 
+const {fetchDeck} = require('store/stateless/decks');
 const {paths} = require('store/constants');
 const superhot = require('store/superhot');
 
@@ -21,29 +22,12 @@ const transforms = {
     // passthroughs
 
     loadDeck: co.wrap(function*(state, options) {
-
         const {deckID} = options;
+        const result = yield fetchDeck({deckID});
 
-        return new Promise(function(resolve, reject) {
-            superhot
-                .get(`/decks/${deckID}`)
-                .end(function(err, res){
-                    switch(res.status) {
-                    case 404:
-                        return reject(err);
-                        break;
-                    case 200:
-                        // good
-                        options.deck = Immutable.fromJS(res.body);
-                        options.deckID = res.body.id;
-                        return resolve(options);
-                        break;
-                    default:
-                        return reject(Error('http code not found'));
-                        // TODO: error handling
-                    }
-                });
-        });
+        options.deck = result.deck;
+        options.deckID = result.deckID;
+        return options;
     }),
 
     setDeck: function(state, options) {
