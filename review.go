@@ -3,6 +3,7 @@ package main
 import (
     "database/sql"
     "errors"
+    "fmt"
     "math"
     "math/rand"
     "net/http"
@@ -278,7 +279,7 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
 
     // fetch card's score
     var fetchedCardScore *CardScoreRow
-    fetchedCardScore, err = GetCardScoreRecord(db, fetchedCardRow.ID)
+    fetchedCardScore, err = GetCardScoreRecord(db, cardID)
 
     if err != nil {
         ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -341,7 +342,7 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
     }
 
     // update card review
-    err = UpdateCardScore(db, fetchedCardRow.ID, &patch)
+    err = UpdateCardScore(db, cardID, &patch)
 
     if err != nil {
         ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -354,7 +355,7 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
     }
 
     // remove card from reviewcache
-    err = DeleteCachedReviewCardByDeck(db, fetchedCardRow.Deck)
+    err = DeleteCachedReviewCard(db, cardID)
 
     if err != nil {
         ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -367,7 +368,7 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
     }
 
     // refetch card's score
-    fetchedCardScore, err = GetCardScoreRecord(db, fetchedCardRow.ID)
+    fetchedCardScore, err = GetCardScoreRecord(db, cardID)
 
     if err != nil {
         ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -604,6 +605,7 @@ func CountReviewCardsByDeck(db *sqlx.DB, deckID uint) (int, error) {
 
     var count int
     err = db.QueryRowx(query, args...).Scan(&count)
+    fmt.Println(count)
     if err != nil {
         return 0, err
     }
@@ -662,6 +664,27 @@ func SetCachedReviewCardByDeck(db *sqlx.DB, deckID uint, cardID uint) error {
             "deck_id": deckID,
             "card_id": cardID,
         })
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func DeleteCachedReviewCard(db *sqlx.DB, cardID uint) error {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DELETE_CACHED_REVIEWCARD_QUERY, &StringMap{"card_id": cardID})
     if err != nil {
         return err
     }

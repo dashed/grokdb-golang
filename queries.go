@@ -816,6 +816,20 @@ var DELETE_CACHED_REVIEWCARD_BY_DECK_QUERY = (func() PipeInput {
     )
 }())
 
+var DELETE_CACHED_REVIEWCARD_QUERY = (func() PipeInput {
+    const __DELETE_CACHED_REVIEWCARD_QUERY string = `
+    DELETE FROM ReviewCardCache WHERE card = :card_id;
+    `
+
+    var requiredInputCols []string = []string{"card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__DELETE_CACHED_REVIEWCARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 var INSERT_CACHED_REVIEWCARD_BY_DECK_QUERY = (func() PipeInput {
     const __INSERT_CACHED_REVIEWCARD_BY_DECK_QUERY string = `
     INSERT INTO ReviewCardCache(deck, card) VALUES (:deck_id, :card_id);
