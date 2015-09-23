@@ -24,6 +24,10 @@ webpack -p
 ./buildassets.sh
 go build
 ```
+
+Note that there are external dependencies used outside of npm:
+- localforage
+
 License
 =======
 
