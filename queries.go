@@ -842,6 +842,44 @@ var INSERT_CACHED_REVIEWCARD_BY_DECK_QUERY = (func() PipeInput {
     )
 }())
 
+/* review cards table */
+
+const BINS_TABLE_QUERY string = `
+
+CREATE TABLE IF NOT EXISTS Bins (
+    bin_id INTEGER PRIMARY KEY NOT NULL,
+
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+
+    created_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
+    updated_at INT NOT NULL DEFAULT (strftime('%s', 'now')), /* note: time when the bin was modified. not when it was reviewed. */
+
+    CHECK (title <> '') /* ensure not empty */
+);
+
+CREATE TABLE IF NOT EXISTS BinCards (
+
+    bin INTEGER NOT NULL,
+    card INTEGER NOT NULL,
+
+    added_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
+
+    PRIMARY KEY(bin, card),
+
+    FOREIGN KEY (bin) REFERENCES Bins(bin_id) ON DELETE CASCADE,
+    FOREIGN KEY (card) REFERENCES Cards(card_id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER IF NOT EXISTS bin_updated_trigger AFTER UPDATE OF
+title, description
+ON Bins
+BEGIN
+    UPDATE Bins SET updated_at = strftime('%s', 'now') WHERE bin_id = NEW.bin_id;
+END;
+
+`
+
 /* helpers */
 
 func JSON2Map(rawJSON []byte) (*StringMap, error) {
