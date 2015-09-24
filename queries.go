@@ -388,6 +388,8 @@ CREATE TABLE IF NOT EXISTS CardsScore (
 
     card INTEGER NOT NULL,
 
+    PRIMARY KEY(card),
+
     FOREIGN KEY (card) REFERENCES Cards(card_id) ON DELETE CASCADE
 );
 
