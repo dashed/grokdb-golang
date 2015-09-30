@@ -41,11 +41,11 @@ const CardProfile = React.createClass({
 
     componentWillMount() {
         this.loadCard(this.props);
-        this.resolveEdit(this.props);
+        this.resolveEdit(this.props, {});
     },
 
     componentWillReceiveProps(nextProps) {
-        this.resolveEdit(nextProps);
+        this.resolveEdit(nextProps, this.props);
     },
 
     loadCard(props) {
@@ -64,7 +64,7 @@ const CardProfile = React.createClass({
         });
     },
 
-    resolveEdit(props) {
+    resolveEdit(props, prevProps = {}) {
         const {localstate, isEditing} = props;
         localstate.cursor('editMode').update(function() {
             return isEditing;
@@ -72,6 +72,12 @@ const CardProfile = React.createClass({
 
         localstate.cursor('defaultMode').update(function() {
             return isEditing ? cards.display.source : cards.display.render;
+        });
+
+        const {isEditing: previsEditing = false} = prevProps;
+
+        localstate.cursor(['display', 'mode']).update(function(val) {
+            return previsEditing == isEditing ? val : Immutable.Map();
         });
     },
 

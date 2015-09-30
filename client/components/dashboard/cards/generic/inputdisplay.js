@@ -154,7 +154,8 @@ const GenericCardInputDisplayOrwell = orwell(GenericCardInputDisplay, {
         return [
             localstate.cursor(['display', 'mode', view]),
             localstate.cursor(['card', transformView(view)]),
-            localstate.cursor('editMode')
+            localstate.cursor('editMode'),
+            localstate.cursor('defaultMode')
         ];
     },
     shouldRewatchCursors(props) {
@@ -168,13 +169,15 @@ const GenericCardInputDisplayOrwell = orwell(GenericCardInputDisplay, {
 
         const {localstate, view} = props;
 
+        const editMode = localstate.cursor('editMode').deref(false);
+
         const defaultMode = localstate.cursor('defaultMode').deref(cards.display.render);
 
         return {
             view: view,
             mode: localstate.cursor(['display', 'mode', view]).deref(defaultMode),
             source: localstate.cursor(['card', transformView(view)]).deref(''),
-            editMode: localstate.cursor('editMode').deref(false)
+            editMode: editMode
         };
     }
 });
