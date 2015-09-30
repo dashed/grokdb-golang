@@ -36,7 +36,9 @@ const bootRouter = co.wrap(function* (store) {
                     // cards
                     .set(paths.dashboard.cards.creatingNew, false)
                     .set(paths.dashboard.cards.page, 1)
-                    .set(paths.dashboard.cards.viewingProfile, false);
+                    .set(paths.dashboard.cards.viewingProfile, false)
+                    .set(paths.review.self, NOT_SET);
+
             });
         });
 
