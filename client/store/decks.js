@@ -1,9 +1,7 @@
-const Immutable = require('immutable');
 const co = require('co');
 const _ = require('lodash');
 
-const {fetchDeck} = require('store/stateless/decks');
-const {paths} = require('store/constants');
+const {paths, NOT_SET} = require('store/constants');
 const superhot = require('store/superhot');
 
 const transforms = {
@@ -21,15 +19,6 @@ const transforms = {
 
     // passthroughs
 
-    loadDeck: co.wrap(function*(state, options) {
-        const {deckID} = options;
-        const result = yield fetchDeck({deckID});
-
-        options.deck = result.deck;
-        options.deckID = result.deckID;
-        return options;
-    }),
-
     setDeck: function(state, options) {
 
         const {deck} = options;
@@ -41,36 +30,27 @@ const transforms = {
         return options;
     },
 
-    loadChildren: co.wrap(function*(state, options) {
+    setRootDeck: function(state, options) {
 
         const {deckID} = options;
 
-        const children = yield new Promise(function(resolve, reject) {
-            superhot
-                .get(`/decks/${deckID}/children`)
-                .end(function(err, res){
-
-                    // no children
-                    if (res.status === 404) {
-                        return resolve(Immutable.List());
-                    }
-
-                    if (res.status === 200) {
-                        resolve(Immutable.fromJS(res.body));
-                    }
-
-                    // TODO: error handling
-                    reject(err);
-                });
+        state.cursor(paths.root).update(function() {
+            return deckID;
         });
+
+        return options;
+    },
+
+    setChildren(state, options) {
+
+        const {children} = options;
 
         state.cursor(paths.deck.children).update(function() {
             return children;
         });
 
         return options;
-    }),
-
+    },
 
     pushOntoBreadcrumb(state, options) {
 
@@ -202,7 +182,6 @@ const transforms = {
         });
     },
 
-
     deleteDeck: co.wrap(function*(state, options) {
 
         const {deck} = options;
@@ -233,7 +212,20 @@ const transforms = {
         options.deck = parentDeck;
 
         return options;
-    })
+    }),
+
+    isCurrentDeck(state, options) {
+
+        const {deckID} = options;
+
+        const deckCursor = state.cursor(paths.deck.self);
+        const deck = deckCursor.deref(NOT_SET);
+        const maybedeckID = deck === NOT_SET ? NOT_SET : deck.get('id', NOT_SET);
+
+        options.isCurrentDeck = (deckID == maybedeckID);
+
+        return options;
+    }
 };
 
 module.exports = transforms;

@@ -3,15 +3,19 @@ const orwell = require('orwell');
 const Immutable = require('immutable');
 
 const {NOT_SET} = require('store/constants');
-const {flow} = require('store/utils');
-const {setDeck, loadChildren, pushOntoBreadcrumb} = require('store/decks');
+const {flow, stateless} = require('store/utils');
+const {setDeck, pushOntoBreadcrumb, setChildren} = require('store/decks');
+const {fetchChildren} = require('store/stateless/decks');
 const {toDeck} = require('store/route');
 
 const navigateToChild = flow(
 
     // decks
     setDeck,
-    loadChildren,
+
+    stateless(fetchChildren),
+    setChildren,
+
     pushOntoBreadcrumb,
 
     // route

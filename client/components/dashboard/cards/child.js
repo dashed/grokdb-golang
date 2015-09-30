@@ -6,10 +6,11 @@ const moment = require('moment');
 const {Probe} = require('minitrue');
 const _ = require('lodash');
 
-const {flow} = require('store/utils');
+const {flow, stateless} = require('store/utils');
 const {setCard} = require('store/cards');
 const {toCardProfile, toDeckCards} = require('store/route');
-const {setDeck, loadChildren, popFromBreadcrumb, pushManyOntoBreadcrumb} = require('store/decks');
+const {setDeck, popFromBreadcrumb, pushManyOntoBreadcrumb, setChildren} = require('store/decks');
+const {fetchChildren} = require('store/stateless/decks');
 
 const changeToCard = flow(
 
@@ -25,7 +26,9 @@ const navigateToParentDeck = flow(
     // decks
     setDeck,
     popFromBreadcrumb,
-    loadChildren,
+
+    stateless(fetchChildren),
+    setChildren,
 
     // route
     toDeckCards
@@ -35,7 +38,10 @@ const navigateToChildDeck = flow(
 
     // decks
     setDeck,
-    loadChildren,
+
+    stateless(fetchChildren),
+    setChildren,
+
     pushManyOntoBreadcrumb,
 
     // route

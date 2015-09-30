@@ -3,7 +3,7 @@ const _ = require('lodash');
 const Immutable = require('immutable');
 
 const superhot = require('store/superhot');
-const {paths} = require('store/constants');
+const {paths, NOT_SET} = require('store/constants');
 
 const transforms = {
 
@@ -18,13 +18,13 @@ const transforms = {
         return options;
     },
 
-    applySortArgs(state, options = {}) {
+    // applySortArgs(state, options = {}) {
 
-    },
+    // },
 
-    applySearchArgs(state, options = {}) {
+    // applySearchArgs(state, options = {}) {
 
-    },
+    // },
 
     // passthroughs
 
@@ -139,8 +139,29 @@ const transforms = {
         });
 
         return options;
-    })
+    }),
 
+    setCardsList(state, options) {
+        const {cardsList} = options;
+
+        state.cursor(paths.dashboard.cards.list).update(function() {
+            return cardsList;
+        });
+
+        return options;
+    },
+
+    isCurrentCard(state, options) {
+        const {cardID} = options;
+
+        const cardCursor = state.cursor(paths.card.self);
+        const card = cardCursor.deref(NOT_SET);
+        const maybecardID = card === NOT_SET ? NOT_SET : card.get('id', NOT_SET);
+
+        options.isCurrentCard = (cardID == maybecardID);
+
+        return options;
+    }
 };
 
 module.exports = transforms;

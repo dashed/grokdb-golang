@@ -54,7 +54,7 @@ const DecksDashboardOcclusion = either(DecksDashboard, null, function(props) {
         return false;
     }
 
-    if(NOT_SET === props.currentChildrenCursor.deref()) {
+    if(NOT_SET === props.currentChildrenCursor.deref(NOT_SET)) {
         return false;
     }
 

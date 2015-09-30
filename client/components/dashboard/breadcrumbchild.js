@@ -2,8 +2,9 @@ const React = require('react');
 const orwell = require('orwell');
 const Immutable = require('immutable');
 
-const {flow} = require('store/utils');
-const {setDeck, loadChildren, popFromBreadcrumb, applyDeckArgs} = require('store/decks');
+const {flow, stateless} = require('store/utils');
+const {setDeck, popFromBreadcrumb, setChildren} = require('store/decks');
+const {fetchChildren} = require('store/stateless/decks');
 const {toDeck} = require('store/route');
 
 const changeToBreadcrumb = flow(
@@ -11,7 +12,9 @@ const changeToBreadcrumb = flow(
     // decks
     popFromBreadcrumb,
     setDeck,
-    loadChildren,
+
+    stateless(fetchChildren),
+    setChildren,
 
     // route
     toDeck

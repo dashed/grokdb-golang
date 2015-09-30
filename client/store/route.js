@@ -5,6 +5,19 @@ const {paths} = require('store/constants');
 const {generateSlug} = require('store/utils');
 
 const transforms = {
+
+    validDeckSlug(state, options) {
+
+        let {slug, deck, deckID} = options;
+        ({deck, deckID} = resolveDeck(state, deck, deckID));
+
+        const slugged = generateSlug(deck.get('name'), deckID);
+
+        options.validDeckSlug = slugged == slug;
+
+        return options;
+    },
+
     toDeck(state, options = {}) {
 
         let {deck, deckID} = options;
@@ -12,6 +25,15 @@ const transforms = {
 
         const slugged = generateSlug(deck.get('name'), deckID);
         page(`/deck/${deckID}/${slugged}`);
+    },
+
+    redirectToDeck(state, options = {}) {
+
+        let {deck, deckID} = options;
+        ({deck, deckID} = resolveDeck(state, deck, deckID));
+
+        const slugged = generateSlug(deck.get('name'), deckID);
+        page.redirect(`/deck/${deckID}/${slugged}`);
     },
 
     toDeckSettings(state, options = {}) {
@@ -46,16 +68,6 @@ const transforms = {
 
         const slugged = generateSlug(deck.get('name'), deckID);
         page(`/deck/${deckID}/${slugged}/cards/new`);
-    },
-
-    redirectToDeck(state, options = {}) {
-
-        let {deck, deckID} = options;
-
-        ({deck, deckID} = resolveDeck(state, deck, deckID));
-
-        const slugged = generateSlug(deck.get('name'), deckID);
-        page.redirect(`/deck/${deckID}/${slugged}`);
     },
 
     toCardProfile(state, options = {}) {

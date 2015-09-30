@@ -45,5 +45,32 @@ module.exports = {
             });
         };
 
+    },
+
+    detour(predicate) {
+        return function(state, options) {
+            const result = predicate.call(void 0, state, options);
+
+            if(!result) {
+                return options;
+            }
+
+            return result.call(void 0, state, options);
+        };
+    },
+
+    stateless(transform) {
+        return co.wrap(function*(state, options) {
+            const result = yield transform.call(void 0, options);
+            return _.assign(options, result);
+        });
+    },
+
+    // parse value to an integer
+    filterInt(value) {
+        if(/^(\-|\+)?([0-9]+|Infinity)$/.test(value)) {
+            return Number(value);
+        }
+        return NaN;
     }
 };

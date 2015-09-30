@@ -1,12 +1,14 @@
 const React = require('react');
 const orwell = require('orwell');
 const _ = require('lodash');
+const co = require('co');
 
 const {paths, keypress} = require('store/constants');
-const {createNewDeck, loadDeck, applyDeckArgs, loadChildren} = require('store/decks');
+const {createNewDeck, applyDeckArgs} = require('store/decks');
 const {setNewDeck} = require('store/dashboard');
 const {toDeckSettings, toDeck} = require('store/route');
 const {flow} = require('store/utils');
+const {fetchDeck, fetchChildren} = require('store/stateless/decks');
 
 const makeNewDeck = flow(
 
@@ -14,15 +16,23 @@ const makeNewDeck = flow(
     applyDeckArgs,
     createNewDeck,
     applyDeckArgs,
-    function(state, ...args) {
+    co.wrap(function*(state, options) {
 
-        return Promise.settle([
-            Promise.resolve(loadDeck(state, ...args)),
-            Promise.resolve(loadChildren(state, ...args))
-        ]).then(function() {
-            return Promise.resolve(args);
-        });
-    },
+        const {deckID} = options;
+
+        const results = yield [
+            fetchDeck({deckID}),
+            fetchChildren({deckID})
+        ];
+
+        const {deck} = results[0];
+        const {children} = results[1];
+
+        options.deck = deck;
+        options.children = children;
+
+        return options;
+    }),
 
     // dashboard
     setNewDeck
