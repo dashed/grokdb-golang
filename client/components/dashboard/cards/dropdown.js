@@ -168,7 +168,6 @@ const SortDropdown = React.createClass({
 module.exports = orwell(SortDropdown, {
     watchCursors(props, manual, context) {
         const state = context.store.state();
-
         return state.cursor(paths.dashboard.cards.sort);
     },
     assignNewProps(props, context) {

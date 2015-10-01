@@ -189,8 +189,8 @@ module.exports = once(OrwellWrappedReviewDashboard, {
     },
 
     cleanOnUnmount(cachedProps) {
-        cachedProps.localstate.removeListeners('any');
         cachedProps._unsub.call(void 0);
+        cachedProps.localstate.removeListeners('any');
     }
 });
 

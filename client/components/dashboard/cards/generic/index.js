@@ -98,23 +98,4 @@ const GenericCard = React.createClass({
 
 });
 
-module.exports = orwell(GenericCard, {
-    // watchCursors(props) {
-    //     const {localstate} = props;
-
-    //     return [
-    //         localstate.cursor('showControls'),
-    //         localstate.cursor('controls')
-    //     ];
-    // },
-    assignNewProps() {
-
-        return {};
-        // const {localstate} = props;
-
-        // return {
-        //     showControls: localstate.cursor('showControls').deref(true),
-        //     currentControl: localstate.cursor('controls').deref(cards.controls.card)
-        // };
-    }
-});
+module.exports = GenericCard;
