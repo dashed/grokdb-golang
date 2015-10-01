@@ -201,23 +201,44 @@ const bootDecks = co.wrap(function* (store) {
 
         // TODO: error handling
         let {ancestors: breadcrumb} = yield fetchAncestors({deckID: deckID});
-
         breadcrumb = breadcrumb.push(currentDeck);
 
         const breadcrumbCursor = state.cursor(paths.deck.breadcrumb);
 
         // update tail as necessary
         deckCursor.observe(function(updatedDeck) {
-            breadcrumbCursor.update(function(lst) {
+
+            let shouldReload = false;
+            const _deckID = updatedDeck.get('id');
+
+            breadcrumbCursor.update(Immutable.List(), function(lst) {
 
                 if(lst.size <= 0) {
                     return lst;
                 }
 
-                if(lst.last().get('id') == updatedDeck.get('id')) {
+                if(lst.last().get('id') == _deckID) {
                     return lst.set(-1, updatedDeck);
                 }
+
+                shouldReload = true;
                 return lst;
+            });
+
+            if(!shouldReload) {
+                return;
+            }
+
+            co(function*() {
+
+                // reload breadcrumb
+                // TODO: error handling
+                let {ancestors: _breadcrumb} = yield fetchAncestors({deckID: _deckID});
+                _breadcrumb = _breadcrumb.push(updatedDeck);
+
+                breadcrumbCursor.update(function() {
+                    return _breadcrumb;
+                });
             });
         });
 
@@ -313,6 +334,7 @@ const ensureLoadDeckChildren = detour(function(/*state*/) {
         stateless(fetchChildren),
         setTransactions(function(_state, options) {
             const {children} = options;
+
             return [
                 {
                     path: paths.deck.children,

@@ -21,10 +21,10 @@ const Breadcrumb = React.createClass({
 
         const breadCrumbRendered = breadcrumb.reduce(function(accumulator, deck, index) {
 
-            // console.log(deck + '');
+            const key = `${deck.get('id')}-${index}`;
 
             accumulator.push(
-                <BreadcrumbChild key={deck.get('id')} deck={deck} active={index === lastIdx} />
+                <BreadcrumbChild key={key} deck={deck} active={index === lastIdx} />
             );
 
             return accumulator;
