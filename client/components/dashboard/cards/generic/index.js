@@ -1,5 +1,4 @@
 const React = require('react');
-const orwell = require('orwell');
 const {Probe} = require('minitrue');
 const Immutable = require('immutable');
 

@@ -11,7 +11,7 @@ const {Probe} = minitrue;
 const {flow, stateless} = require('store/utils');
 const {setDeck, pushOntoBreadcrumb, setChildren, applyDeckArgs, createNewDeck, saveDeck} = require('store/decks');
 const {fetchChildren, fetchDeck} = require('store/stateless/decks');
-const {toDeck} = require('store/route');
+const {toDeck, toDeckEdit} = require('store/route');
 const {NOT_SET, paths, decks} = require('store/constants');
 
 // components
@@ -73,6 +73,7 @@ const saveDeckState = flow(
 const DecksDashboard = React.createClass({
 
     propTypes: {
+        isEditing: React.PropTypes.bool.isRequired,
         store: React.PropTypes.object.isRequired,
         deck: React.PropTypes.instanceOf(Immutable.Map).isRequired,
         editingDeck: React.PropTypes.bool.isRequired,
@@ -82,7 +83,7 @@ const DecksDashboard = React.createClass({
 
     componentWillMount() {
         this.loadDeck(this.props);
-        // this.resolveEdit(this.props, {});
+        this.resolveEdit(this.props, {});
     },
 
     componentWillReceiveProps(nextProps) {
@@ -109,7 +110,32 @@ const DecksDashboard = React.createClass({
             return children;
         });
 
-        // this.resolveEdit(nextProps, this.props);
+        this.resolveEdit(nextProps, this.props);
+    },
+
+    resolveEdit(props, prevProps = {}) {
+
+        const {localstate, isEditing} = props;
+        localstate.cursor('editMode').update(function() {
+            return isEditing;
+        });
+
+        // going into edit mode
+        if(isEditing && isEditing != prevProps.isEditing) {
+            localstate.cursor(['display', 'mode', decks.view.description]).update(function() {
+                return decks.display.source;
+            });
+            localstate.cursor(['display', 'view']).update(function() {
+                return decks.view.description;
+            });
+        }
+
+        // going out of edit mode
+        if(!isEditing && isEditing != prevProps.isEditing) {
+            localstate.cursor(['display', 'mode', decks.view.description]).update(function() {
+                return decks.display.render;
+            });
+        }
     },
 
     loadDeck(props) {
@@ -154,49 +180,23 @@ const DecksDashboard = React.createClass({
     },
 
     onClickEdit() {
-
-        const {localstate} = this.props;
-
-        localstate.cursor(['display', 'mode', decks.view.description]).update(function() {
-            return decks.display.source;
-        });
-
-        localstate.cursor('editMode').update(function() {
-            return true;
-        });
-
-        localstate.cursor(['display', 'view']).update(function() {
-            return decks.view.description;
-        });
+        const {store} = this.props;
+        store.invoke(flow(applyDeckArgs, toDeckEdit));
     },
 
     onClickCancelEdit() {
-        const {localstate, deck} = this.props;
-
-        localstate.cursor('editMode').update(function() {
-            return false;
-        });
+        const {localstate, deck, store} = this.props;
 
         localstate.cursor(['deck', 'description']).update(function() {
             return deck.get('description');
         });
 
-        localstate.cursor(['display', 'mode', decks.view.description]).update(function() {
-            return decks.display.render;
-        });
+        store.invoke(flow(applyDeckArgs, toDeck));
     },
 
     onSaveDeck(newDeck) {
-
-        const {store, localstate} = this.props;
-
+        const {store} = this.props;
         store.invoke(saveDeckState, {patchDeck: newDeck});
-        localstate.cursor('editMode').update(function() {
-            return false;
-        });
-        localstate.cursor(['display', 'mode', decks.view.description]).update(function() {
-            return decks.display.render;
-        });
     },
 
     render() {
@@ -249,7 +249,8 @@ const OrwellWrappedDeckProfile = orwell(DecksDashboardOcclusion, {
             store: context.store,
             deck: state.cursor(paths.deck.self).deref(),
             children: state.cursor(paths.deck.children).deref(Immutable.List()),
-            editingDeck: state.cursor(paths.dashboard.decks.editing).deref()
+            editingDeck: state.cursor(paths.dashboard.decks.editing).deref(),
+            isEditing: state.cursor(paths.dashboard.decks.editing).deref(false)
         };
     }
 }).inject({

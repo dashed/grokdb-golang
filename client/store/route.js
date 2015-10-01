@@ -36,14 +36,14 @@ const transforms = {
         page.redirect(`/deck/${deckID}/${slugged}`);
     },
 
-    toDeckSettings(state, options = {}) {
+    toDeckEdit(state, options = {}) {
 
         let {deck, deckID} = options;
 
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 
         const slugged = generateSlug(deck.get('name'), deckID);
-        page(`/deck/${deckID}/${slugged}/settings`);
+        page(`/deck/${deckID}/${slugged}/edit`);
     },
 
     toDeckCards(state, options = {}) {

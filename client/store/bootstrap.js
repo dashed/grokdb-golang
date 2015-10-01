@@ -30,7 +30,6 @@ const bootRouter = co.wrap(function* (store) {
                 map
                     // decks
                     .set(paths.dashboard.decks.editing, false)
-                    .set(paths.dashboard.decks.creatingNew, false)
                     .set(paths.dashboard.decks.finishEditing, NOT_SET)
                     .set(paths.deck.children, Immutable.List())
 
@@ -90,7 +89,7 @@ const bootRouter = co.wrap(function* (store) {
         return next();
     }, __commitStateTransaction);
 
-    page('/deck/:id/:slug/settings', __ensureDeckRoute, function(ctx, next) {
+    page('/deck/:id/:slug/edit', __ensureDeckRoute, function(ctx, next) {
         state.cursor(paths.transaction).update(function(map) {
             return map.withMutations(function(__map) {
                 __map
