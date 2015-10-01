@@ -42,6 +42,16 @@ const GenericDeckSubDecks = React.createClass({
             return accumulator;
         }, []);
 
+        if(ChildrenRendered.length <= 0) {
+            return (
+                <div className="card-block text-center">
+                    <p className="card-text text-muted">
+                        {"No decks to display. To get started, you should create your first child deck for this deck."}
+                    </p>
+                </div>
+            );
+        }
+
         return (
             <ul className="list-group list-group-flush m-t">
                 {ChildrenRendered}
