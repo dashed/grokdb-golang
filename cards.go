@@ -520,7 +520,7 @@ func CardResponse(overrides *gin.H) gin.H {
         "description": "",
         "front":       "",
         "back":        "",
-        "deck":        0,  // required
+        "deck":        0, // required
         "created_at":  0,
         "updated_at":  0,
         "deck_path":   []uint{},
@@ -675,6 +675,10 @@ func CardsByDeck(db *sqlx.DB, queryTransform PipeInput, deckID uint, page uint, 
     count, err = CountCardsByDeck(db, deckID)
     if err != nil {
         return nil, err
+    }
+
+    if count <= 0 {
+        return nil, ErrCardNoCardsByDeck
     }
 
     if offset >= count {
