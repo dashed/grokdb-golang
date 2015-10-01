@@ -60,6 +60,20 @@ const transforms = {
         page(`/deck/${deckID}/${slugged}/cards?${params}`);
     },
 
+    redirectToDeckCards(state, options = {}) {
+
+        let {deck, deckID} = options;
+        const {page: _pageNum = 1, order: _order = 'DESC', sort: _sort = 'reviewed_at'} = options;
+
+        ({deck, deckID} = resolveDeck(state, deck, deckID));
+
+        const slugged = generateSlug(deck.get('name'), deckID);
+
+        const params = qs.stringify({page: _pageNum, order: _order, sort: _sort});
+
+        page.redirect(`/deck/${deckID}/${slugged}/cards?${params}`);
+    },
+
     toDeckCardsNew(state, options = {}) {
 
         let {deck, deckID} = options;

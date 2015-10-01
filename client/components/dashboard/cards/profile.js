@@ -6,9 +6,9 @@ const minitrue = require('minitrue');
 const {Probe} = require('minitrue');
 
 const {flow} = require('store/utils');
-const {paths, cards} = require('store/constants');
-const {applyCardArgs, saveCard, deleteCard} = require('store/cards');
-const {toCardProfileEdit, toCardProfile, toDeckCards} = require('store/route');
+const {paths, cards, NOT_SET} = require('store/constants');
+const {applyCardArgs, saveCard, deleteCard, setCard} = require('store/cards');
+const {toCardProfileEdit, toCardProfile, redirectToDeckCards} = require('store/route');
 
 const GenericCard = require('./generic');
 
@@ -25,9 +25,14 @@ const invokeDeleteCard = flow(
     // cards
     applyCardArgs,
     deleteCard,
+    function(state, options) {
+        options.card = NOT_SET;
+        return options;
+    },
+    setCard,
 
     // route
-    toDeckCards
+    redirectToDeckCards
 );
 
 const CardProfile = React.createClass({
