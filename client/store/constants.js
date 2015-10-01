@@ -96,6 +96,18 @@ module.exports = {
         }
     },
 
+    decks: {
+        view: {
+            subdecks: 'subdecks',
+            description: 'description'
+        },
+
+        display: {
+            source: 'source',
+            render: 'render'
+        }
+    },
+
     // magic constants
     keypress: {
         enter: 13

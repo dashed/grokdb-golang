@@ -81,18 +81,16 @@ const GenericCard = React.createClass({
         } = this.props;
 
         return (
-            <div>
-                <div className="row">
-                    <div className="col-sm-12">
-                        <GenericCardProfile
-                            onClickCancelEdit={onClickCancelEdit}
-                            onClickEdit={onClickEdit}
-                            onCommit={onCommit}
-                            onSwitchView={onSwitchView}
-                            onClickDelete={onClickDelete}
-                            localstate={localstate}
-                        />
-                    </div>
+            <div className="row">
+                <div className="col-sm-12">
+                    <GenericCardProfile
+                        onClickCancelEdit={onClickCancelEdit}
+                        onClickEdit={onClickEdit}
+                        onCommit={onCommit}
+                        onSwitchView={onSwitchView}
+                        onClickDelete={onClickDelete}
+                        localstate={localstate}
+                    />
                 </div>
             </div>
         );

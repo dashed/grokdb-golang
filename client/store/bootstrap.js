@@ -32,6 +32,7 @@ const bootRouter = co.wrap(function* (store) {
                     .set(paths.dashboard.decks.editing, false)
                     .set(paths.dashboard.decks.creatingNew, false)
                     .set(paths.dashboard.decks.finishEditing, NOT_SET)
+                    .set(paths.deck.children, Immutable.List())
 
                     // cards
                     .set(paths.dashboard.cards.creatingNew, false)
@@ -493,6 +494,7 @@ const parseCardID = flow(
                 })
             );
         } else {
+            // load current card
             return applyCardArgs;
         }
     }),

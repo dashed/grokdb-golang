@@ -31,13 +31,13 @@ const transforms = {
     commitTransaction(state, options) {
         const transaction = state.cursor(paths.transaction).deref(Immutable.Map());
 
-        transaction.forEach(function(value, path) {
-
-            state.cursor(path).update(function() {
-                return value;
+        state.update(function(map) {
+            return map.withMutations(function(_map) {
+                transaction.forEach(function(value, path) {
+                    _map = _map.setIn(path, value);
+                });
             });
         });
-
         return options;
     }
 };

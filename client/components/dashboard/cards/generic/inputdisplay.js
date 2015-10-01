@@ -49,13 +49,13 @@ const GenericCardInputDisplay = React.createClass({
 
     onChange(event) {
 
-        const {localstate, view} = this.props;
-
         const {editMode} = this.props;
 
         if(!editMode) {
             return;
         }
+
+        const {localstate, view} = this.props;
 
         localstate.cursor(['card', transformView(view)]).update(function() {
             return event.target.value;
