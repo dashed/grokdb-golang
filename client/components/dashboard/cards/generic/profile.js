@@ -18,6 +18,7 @@ const GenericCardProfile = React.createClass({
 
         // localstate
         view: React.PropTypes.string.isRequired,
+        cardID: React.PropTypes.number.isRequired,
         title: React.PropTypes.string.isRequired,
         editMode: React.PropTypes.bool.isRequired,
         commitLabel: React.PropTypes.string.isRequired,
@@ -98,7 +99,7 @@ const GenericCardProfile = React.createClass({
                 <div className="card-block">
                     {(function() {
 
-                        const {title} = this.props;
+                        const {title, cardID} = this.props;
 
                         if(editMode) {
                             return (
@@ -107,7 +108,7 @@ const GenericCardProfile = React.createClass({
                                         type="text"
                                         className="form-control"
                                         id="cardTitle"
-                                        placeholder="Title"
+                                        placeholder={`Title for card #${cardID}`}
                                         value={title}
                                         onChange={this.onChangeTitle}
                                     />
@@ -116,7 +117,11 @@ const GenericCardProfile = React.createClass({
                         }
 
                         return (
-                            <h4 className="card-title m-y-0">{title}</h4>
+                            <h4 className="card-title m-y-0">
+                                <span className="text-muted lead">{`#${cardID}`}</span>
+                                {` `}
+                                {title}
+                            </h4>
                         );
 
                     }.call(this))}
@@ -151,6 +156,7 @@ module.exports = orwell(GenericCardProfile, {
         const {localstate} = props;
 
         return {
+            cardID: localstate.cursor(['card', 'id']).deref(0),
             title: localstate.cursor(['card', 'title']).deref(''),
             editMode: localstate.cursor('editMode').deref(false),
             view: localstate.cursor(['display', 'view']).deref(cards.view.front),

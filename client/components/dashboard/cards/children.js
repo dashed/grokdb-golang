@@ -112,6 +112,9 @@ module.exports = once(OrwellWrappedCardsChildren, {
             deckPaths: {} // map card id to array of decks
         });
 
+        // TODO: this is a hack and need a better way
+        // TODO: move this somewhere
+
         const requestDeckPath = co.wrap(function*(cardID, deckPathIterator) {
 
             let deckPathBuild = deckPathIterator.reduce(function(_deckPathBuild, deckID) {

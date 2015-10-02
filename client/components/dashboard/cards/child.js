@@ -146,6 +146,8 @@ const CardChild = React.createClass({
 
         return (
             <p className="list-group-item-text">
+                <small className="text-muted">{`#${card.get('id')}`}</small>
+                {` `}
                 <small>{`${timesReviewed} ${lastReviewed} ${score}`}</small>
             </p>
         );
