@@ -24,9 +24,8 @@ const changeToCard = flow(
 const navigateToParentDeck = flow(
 
     // decks
-    setDeck,
     popFromBreadcrumb,
-
+    setDeck,
     stateless(fetchChildren),
     setChildren,
 
@@ -37,12 +36,10 @@ const navigateToParentDeck = flow(
 const navigateToChildDeck = flow(
 
     // decks
+    pushManyOntoBreadcrumb,
     setDeck,
-
     stateless(fetchChildren),
     setChildren,
-
-    pushManyOntoBreadcrumb,
 
     // route
     toDeckCards
@@ -71,9 +68,13 @@ const CardChild = React.createClass({
 
             const deck = deckPath[idx];
 
-            const sliced = idx < currentDeckIdx ? [] : _.slice(deckPath, currentDeckIdx);
+            const sliced = idx < currentDeckIdx ? [] : _.slice(deckPath, currentDeckIdx + 1, idx + 1);
 
-            store.invoke(flowPath, {deck: deck, deckID: deck.get('id'), decks: sliced});
+            store.invoke(flowPath, {
+                deck: deck,
+                deckID: deck.get('id'),
+                decks: sliced // for pushManyOntoBreadcrumb
+            });
         };
     },
 

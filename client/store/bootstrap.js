@@ -181,6 +181,7 @@ const bootRouter = co.wrap(function* (store) {
     //     return next();
     // }, __commitStateTransaction);
 
+
     page.start({
         hashbang: true,
         click: false
