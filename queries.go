@@ -519,8 +519,14 @@ var UPDATE_CARD_QUERY = (func() PipeInput {
 
 var COUNT_CARDS_BY_DECK_QUERY = (func() PipeInput {
     const __COUNT_CARDS_BY_DECK_QUERY string = `
-        SELECT COUNT(1) FROM Cards
-        WHERE deck = :deck_id;
+        SELECT
+            COUNT(1)
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        WHERE dc.ancestor = :deck_id;
     `
 
     var requiredInputCols []string = []string{"deck_id"}
@@ -536,13 +542,27 @@ var COUNT_CARDS_BY_DECK_QUERY = (func() PipeInput {
 var FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY = func(sort string) PipeInput {
     const __FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY_RAW string = `
         SELECT
-        card_id, title, description, front, back, deck, created_at, updated_at FROM Cards
-        WHERE oid NOT IN (
-            SELECT oid FROM Cards
-            ORDER BY created_at %s LIMIT :offset
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        WHERE
+        c.oid NOT IN (
+            SELECT
+                c.oid
+            FROM DecksClosure AS dc
+
+            INNER JOIN Cards AS c
+            ON c.deck = dc.descendent
+
+            WHERE dc.ancestor = :deck_id
+            ORDER BY c.created_at %s LIMIT :offset
         )
-        AND deck = :deck_id
-        ORDER BY created_at %s LIMIT :per_page;
+        AND
+        dc.ancestor = :deck_id
+        ORDER BY c.created_at %s LIMIT :per_page;
     `
 
     var __FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY_RAW, sort, sort)
@@ -560,13 +580,27 @@ var FETCH_CARDS_BY_DECK_SORT_CREATED_QUERY = func(sort string) PipeInput {
 var FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY = func(sort string) PipeInput {
     const __FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY_RAW string = `
         SELECT
-        card_id, title, description, front, back, deck, created_at, updated_at FROM Cards
-        WHERE oid NOT IN (
-            SELECT oid FROM Cards
-            ORDER BY updated_at %s LIMIT :offset
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        WHERE
+        c.oid NOT IN (
+            SELECT
+                c.oid
+            FROM DecksClosure AS dc
+
+            INNER JOIN Cards AS c
+            ON c.deck = dc.descendent
+
+            WHERE dc.ancestor = :deck_id
+            ORDER BY c.updated_at %s LIMIT :offset
         )
-        AND deck = :deck_id
-        ORDER BY updated_at %s LIMIT :per_page;
+        AND
+        dc.ancestor = :deck_id
+        ORDER BY c.updated_at %s LIMIT :per_page;
     `
 
     var __FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY_RAW, sort, sort)
@@ -584,13 +618,27 @@ var FETCH_CARDS_BY_DECK_SORT_UPDATED_QUERY = func(sort string) PipeInput {
 var FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY = func(sort string) PipeInput {
     const __FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY_RAW string = `
         SELECT
-        card_id, title, description, front, back, deck, created_at, updated_at FROM Cards
-        WHERE oid NOT IN (
-            SELECT oid FROM Cards
-            ORDER BY title %s LIMIT :offset
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        WHERE
+        c.oid NOT IN (
+            SELECT
+                c.oid
+            FROM DecksClosure AS dc
+
+            INNER JOIN Cards AS c
+            ON c.deck = dc.descendent
+
+            WHERE dc.ancestor = :deck_id
+            ORDER BY c.title %s LIMIT :offset
         )
-        AND deck = :deck_id
-        ORDER BY title %s LIMIT :per_page;
+        AND
+        dc.ancestor = :deck_id
+        ORDER BY c.title %s LIMIT :per_page;
     `
 
     var __FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY_RAW, sort, sort)
@@ -608,16 +656,32 @@ var FETCH_CARDS_BY_DECK_SORT_TITLE_QUERY = func(sort string) PipeInput {
 var FETCH_CARDS_BY_DECK_REVIEWED_DATE_QUERY = func(sort string) PipeInput {
     const __FETCH_CARDS_BY_DECK_REVIEWED_DATE_QUERY_RAW string = `
         SELECT
-        c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at FROM Cards AS c
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
         INNER JOIN CardsScore AS cs
         ON cs.card = c.card_id
-        WHERE c.oid NOT IN (
-            SELECT c.oid FROM Cards AS c
+
+        WHERE
+        c.oid NOT IN (
+            SELECT
+                c.oid
+            FROM DecksClosure AS dc
+
+            INNER JOIN Cards AS c
+            ON c.deck = dc.descendent
+
             INNER JOIN CardsScore AS cs
             ON cs.card = c.card_id
+
+            WHERE dc.ancestor = :deck_id
             ORDER BY cs.updated_at %s LIMIT :offset
         )
-        AND deck = :deck_id
+        AND
+        dc.ancestor = :deck_id
         ORDER BY cs.updated_at %s LIMIT :per_page;
     `
 
@@ -636,17 +700,33 @@ var FETCH_CARDS_BY_DECK_REVIEWED_DATE_QUERY = func(sort string) PipeInput {
 var FETCH_CARDS_BY_DECK_TIMES_REVIEWED_QUERY = func(sort string) PipeInput {
     const __FETCH_CARDS_BY_DECK_TIMES_REVIEWED_QUERY_RAW string = `
         SELECT
-        c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at FROM Cards AS c
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
         INNER JOIN CardsScore AS cs
         ON cs.card = c.card_id
-        WHERE c.oid NOT IN (
-            SELECT c.oid FROM Cards AS c
+
+        WHERE
+        c.oid NOT IN (
+            SELECT
+                c.oid
+            FROM DecksClosure AS dc
+
+            INNER JOIN Cards AS c
+            ON c.deck = dc.descendent
+
             INNER JOIN CardsScore AS cs
             ON cs.card = c.card_id
-            ORDER BY cs.updated_at %s LIMIT :offset
+
+            WHERE dc.ancestor = :deck_id
+            ORDER BY cs.times_reviewed %s LIMIT :offset
         )
-        AND deck = :deck_id
-        ORDER BY cs.updated_at %s LIMIT :per_page;
+        AND
+        dc.ancestor = :deck_id
+        ORDER BY cs.times_reviewed %s LIMIT :per_page;
     `
 
     var __FETCH_CARDS_BY_DECK_TIMES_REVIEWED_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_DECK_TIMES_REVIEWED_QUERY_RAW, sort, sort)
