@@ -938,6 +938,8 @@ CREATE TABLE IF NOT EXISTS Bins (
     CHECK (title <> '') /* ensure not empty */
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS unique_bin_title ON Bins (title);
+
 CREATE TABLE IF NOT EXISTS BinCards (
 
     bin INTEGER NOT NULL,
@@ -957,7 +959,6 @@ ON Bins
 BEGIN
     UPDATE Bins SET updated_at = strftime('%s', 'now') WHERE bin_id = NEW.bin_id;
 END;
-
 `
 
 /* helpers */
