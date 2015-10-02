@@ -924,40 +924,40 @@ var INSERT_CACHED_REVIEWCARD_BY_DECK_QUERY = (func() PipeInput {
 
 /* review cards table */
 
-const BINS_TABLE_QUERY string = `
+const STASHES_TABLE_QUERY string = `
 
-CREATE TABLE IF NOT EXISTS Bins (
-    bin_id INTEGER PRIMARY KEY NOT NULL,
+CREATE TABLE IF NOT EXISTS Stashes (
+    stash_id INTEGER PRIMARY KEY NOT NULL,
 
     title TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
 
     created_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
-    updated_at INT NOT NULL DEFAULT (strftime('%s', 'now')), /* note: time when the bin was modified. not when it was reviewed. */
+    updated_at INT NOT NULL DEFAULT (strftime('%s', 'now')), /* note: time when the stash was modified. not when it was reviewed. */
 
     CHECK (title <> '') /* ensure not empty */
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS unique_bin_title ON Bins (title);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_stash_title ON Stashes (title);
 
-CREATE TABLE IF NOT EXISTS BinCards (
+CREATE TABLE IF NOT EXISTS StashCards (
 
-    bin INTEGER NOT NULL,
+    stash INTEGER NOT NULL,
     card INTEGER NOT NULL,
 
     added_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
 
-    PRIMARY KEY(bin, card),
+    PRIMARY KEY(stash, card),
 
-    FOREIGN KEY (bin) REFERENCES Bins(bin_id) ON DELETE CASCADE,
+    FOREIGN KEY (stash) REFERENCES Stashes(stash_id) ON DELETE CASCADE,
     FOREIGN KEY (card) REFERENCES Cards(card_id) ON DELETE CASCADE
 );
 
-CREATE TRIGGER IF NOT EXISTS bin_updated_trigger AFTER UPDATE OF
+CREATE TRIGGER IF NOT EXISTS stash_updated_trigger AFTER UPDATE OF
 title, description
-ON Bins
+ON Stashes
 BEGIN
-    UPDATE Bins SET updated_at = strftime('%s', 'now') WHERE bin_id = NEW.bin_id;
+    UPDATE Stashes SET updated_at = strftime('%s', 'now') WHERE stash_id = NEW.stash_id;
 END;
 `
 

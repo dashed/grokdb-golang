@@ -62,6 +62,7 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
 
         decksAPI.GET("/:id/cards/count", injectDB(DeckCardsCountGET))
 
+        // TODO: needed?
         // decksAPI.GET("/:id/cards/stats", injectDB(DeckCardsstatsGET))
 
         decksAPI.PATCH("/:id", injectDB(DeckPATCH))
@@ -91,6 +92,17 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
         cardsAPI.PATCH("/:id/review", injectDB(ReviewCardPATCH))
 
     }
+
+    // stashesAPI := api.Group("/stashes")
+    // {
+    //     stashesAPI.POST("/", injectDB(StashPOST))
+
+    //     stashesAPI.GET("/:id", injectDB(StashGET))
+
+    //     stashesAPI.DELETE("/:id", injectDB(StashDELETE))
+
+    //     stashesAPI.GET("/:id/review", injectDB(ReviewStashGET))
+    // }
 
     configsAPI := api.Group("/configs")
     {
