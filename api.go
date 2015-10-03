@@ -90,16 +90,21 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
         cardsAPI.DELETE("/:id", injectDB(CardDELETE))
 
         cardsAPI.PATCH("/:id/review", injectDB(ReviewCardPATCH))
-
     }
 
     stashesAPI := api.Group("/stashes")
     {
         stashesAPI.POST("/", injectDB(StashPOST))
 
-        // stashesAPI.GET("/:id", injectDB(StashGET))
+        stashesAPI.GET("/:id", injectDB(StashGET))
 
         // stashesAPI.DELETE("/:id", injectDB(StashDELETE))
+
+        // stashesAPI.PATCH("/:id", injectDB(StashPATCH))
+
+        // stashesAPI.PUT("/:id", injectDB(StashPUT))
+
+        // stashesAPI.GET("/:id/cards", injectDB(StashCardsGET))
 
         // stashesAPI.GET("/:id/review", injectDB(ReviewStashGET))
     }

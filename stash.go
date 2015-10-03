@@ -4,6 +4,7 @@ import (
     "database/sql"
     "errors"
     "net/http"
+    "strconv"
     "strings"
 
     // 3rd-party
@@ -35,6 +36,51 @@ type StashPOSTRequest struct {
 }
 
 /* REST Handlers */
+
+func StashGET(db *sqlx.DB, ctx *gin.Context) {
+
+    var err error
+
+    // parse and validate id param
+    var stashIDString string = strings.ToLower(ctx.Param("id"))
+
+    _stashID, err := strconv.ParseUint(stashIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var stashID uint = uint(_stashID)
+
+    // fetch stash row from the db
+
+    var fetchedStashRow *StashRow
+    fetchedStashRow, err = GetStash(db, stashID)
+    switch {
+    case err == ErrStashNoSuchStash:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find stash by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    ctx.JSON(http.StatusCreated, StashRowToResponse(fetchedStashRow))
+}
 
 func StashPOST(db *sqlx.DB, ctx *gin.Context) {
 
@@ -70,6 +116,7 @@ func StashPOST(db *sqlx.DB, ctx *gin.Context) {
             "userMessage":      "unable to create new stash",
         })
         ctx.Error(err)
+        return
     }
 
     ctx.JSON(http.StatusCreated, StashRowToResponse(newStashRow))
