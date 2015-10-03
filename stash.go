@@ -122,6 +122,84 @@ func StashPOST(db *sqlx.DB, ctx *gin.Context) {
     ctx.JSON(http.StatusCreated, StashRowToResponse(newStashRow))
 }
 
+func StashDELETE(db *sqlx.DB, ctx *gin.Context) {
+
+    var err error
+
+    // parse and validate id param
+    var stashIDString string = strings.ToLower(ctx.Param("id"))
+
+    _stashID, err := strconv.ParseUint(stashIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var stashID uint = uint(_stashID)
+
+    // fetch stash row from the db
+
+    _, err = GetStash(db, stashID)
+    switch {
+    case err == ErrStashNoSuchStash:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find stash by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // delete stash
+    err = DeleteStash(db, stashID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to delete stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // ensure stash is deleted
+
+    _, err = GetStash(db, stashID)
+    switch {
+    case err == ErrStashNoSuchStash:
+        // success
+        ctx.Writer.WriteHeader(http.StatusNoContent)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    ctx.JSON(http.StatusInternalServerError, gin.H{
+        "status":           http.StatusInternalServerError,
+        "developerMessage": err.Error(),
+        "userMessage":      "unable to delete stash",
+    })
+}
+
 /* helpers */
 
 func StashResponse(overrides *gin.H) gin.H {
@@ -144,6 +222,15 @@ func StashRowToResponse(stashRow *StashRow) gin.H {
         "created_at":  stashRow.CreatedAt,
         "updated_at":  stashRow.UpdatedAt,
     })
+}
+
+func ValidateStashProps(props *StashProps) error {
+
+    if len(strings.TrimSpace(props.Name)) <= 0 {
+        return errors.New("Name must be non-empty string")
+    }
+
+    return nil
 }
 
 func CreateStash(db *sqlx.DB, props *StashProps) (*StashRow, error) {
@@ -212,10 +299,22 @@ func GetStash(db *sqlx.DB, stashID uint) (*StashRow, error) {
     }
 }
 
-func ValidateStashProps(props *StashProps) error {
+func DeleteStash(db *sqlx.DB, stashID uint) error {
 
-    if len(strings.TrimSpace(props.Name)) <= 0 {
-        return errors.New("Name must be non-empty string")
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DELETE_STASH_QUERY, &StringMap{"stash_id": stashID})
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
     }
 
     return nil
