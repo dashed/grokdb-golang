@@ -963,6 +963,39 @@ BEGIN
 END;
 `
 
+var UPDATE_STASH_QUERY = (func() PipeInput {
+    const __UPDATE_STASH_QUERY string = `
+    UPDATE Stashes
+    SET
+    %s
+    WHERE stash_id = :stash_id
+    `
+
+    var requiredInputCols []string = []string{"stash_id"}
+    var whiteListCols []string = []string{"name", "description"}
+
+    return composePipes(
+        MakeCtxMaker(__UPDATE_STASH_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        PatchFilterPipe(whiteListCols),
+        BuildQueryPipe,
+    )
+}())
+
+var DELETE_STASH_QUERY = (func() PipeInput {
+    const __DELETE_STASH_QUERY string = `
+    DELETE FROM Stashes WHERE stash_id = :stash_id;
+    `
+
+    var requiredInputCols []string = []string{"stash_id"}
+
+    return composePipes(
+        MakeCtxMaker(__DELETE_STASH_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 var COUNT_CARDS_BY_STASH_QUERY = (func() PipeInput {
     const __COUNT_CARDS_BY_STASH_QUERY string = `
         SELECT
