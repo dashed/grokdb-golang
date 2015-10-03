@@ -76,7 +76,7 @@ func CardGET(db *sqlx.DB, ctx *gin.Context) {
     // fetch card row from the db
 
     var fetchedCardRow *CardRow
-    fetchedCardRow, err = GetCard(db, uint(_cardID))
+    fetchedCardRow, err = GetCard(db, cardID)
     switch {
     case err == ErrCardNoSuchCard:
         ctx.JSON(http.StatusNotFound, gin.H{
