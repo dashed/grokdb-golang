@@ -826,6 +826,7 @@ func DeckPATCH(db *sqlx.DB, ctx *gin.Context) {
             "developerMessage": "no JSON input",
             "userMessage":      "no JSON input",
         })
+        return
     }
 
     // TODO: validate patch

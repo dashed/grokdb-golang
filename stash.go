@@ -200,6 +200,197 @@ func StashDELETE(db *sqlx.DB, ctx *gin.Context) {
     })
 }
 
+func StashPATCH(db *sqlx.DB, ctx *gin.Context) {
+
+    var err error
+
+    // parse and validate id param
+    var stashIDString string = strings.ToLower(ctx.Param("id"))
+
+    _stashID, err := strconv.ParseUint(stashIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var stashID uint = uint(_stashID)
+
+    // parse request body
+    var patch *StringMap = &StringMap{}
+    err = ctx.BindJSON(patch)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "bad JSON input",
+        })
+        ctx.Error(err)
+        return
+    }
+    if len(*patch) <= 0 {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "no JSON input",
+            "userMessage":      "no JSON input",
+        })
+        return
+    }
+
+    // ensure name, if given, is non-empty string
+    if _, hasNameKey := (*patch)["name"]; hasNameKey == true {
+
+        _, err = (func() (string, error) {
+            switch _stashName := (*patch)["name"].(type) {
+            case string:
+                if len(strings.TrimSpace(_stashName)) > 0 {
+                    return _stashName, nil
+                }
+
+            }
+            return "", errors.New("new stash name is invalid")
+        }())
+
+        if err != nil {
+            ctx.JSON(http.StatusBadRequest, gin.H{
+                "status":           http.StatusBadRequest,
+                "developerMessage": err.Error(),
+                "userMessage":      err.Error(),
+            })
+            ctx.Error(err)
+            return
+        }
+    }
+
+    // ensure description, if given, is non-empty string
+    if _, hasDescriptionKey := (*patch)["description"]; hasDescriptionKey == true {
+
+        _, err = (func() (string, error) {
+            switch _stashDescription := (*patch)["description"].(type) {
+            case string:
+                return _stashDescription, nil
+            }
+            return "", errors.New("new stash description is invalid")
+        }())
+
+        if err != nil {
+            ctx.JSON(http.StatusBadRequest, gin.H{
+                "status":           http.StatusBadRequest,
+                "developerMessage": err.Error(),
+                "userMessage":      err.Error(),
+            })
+            ctx.Error(err)
+            return
+        }
+    }
+
+    var (
+        fetchedStashRow *StashRow = nil
+    )
+
+    // check requested stash exists and fetch it
+
+    fetchedStashRow, err = GetStash(db, stashID)
+    switch {
+    case err == ErrStashNoSuchStash:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find stash by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // generate SQL to patch stash
+    var (
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(UPDATE_STASH_QUERY, &StringMap{"stash_id": stashID}, patch)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to generate patch stash SQL",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var res sql.Result
+    res, err = db.Exec(query, args...)
+    if err != nil {
+        // TODO: transaction rollback
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to patch stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // ensure stash is patched
+    num, err := res.RowsAffected()
+    if err != nil {
+        // TODO: transaction rollback
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to patch stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    if num <= 0 {
+        // TODO: transaction rollback
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "given JSON is invalid",
+            "userMessage":      "given JSON is invalid",
+        })
+        return
+    }
+
+    // fetch stash row from the db
+
+    fetchedStashRow, err = GetStash(db, stashID)
+    switch {
+    case err == ErrStashNoSuchStash:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find stash by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    ctx.JSON(http.StatusCreated, StashRowToResponse(fetchedStashRow))
+}
+
 /* helpers */
 
 func StashResponse(overrides *gin.H) gin.H {

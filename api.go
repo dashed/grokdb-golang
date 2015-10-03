@@ -100,7 +100,7 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
 
         stashesAPI.DELETE("/:id", injectDB(StashDELETE))
 
-        // stashesAPI.PATCH("/:id", injectDB(StashPATCH))
+        stashesAPI.PATCH("/:id", injectDB(StashPATCH))
 
         // stashesAPI.PUT("/:id", injectDB(StashPUT))
 
