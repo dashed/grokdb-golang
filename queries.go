@@ -963,6 +963,47 @@ BEGIN
 END;
 `
 
+var CREATE_NEW_STASH_QUERY = (func() PipeInput {
+    const __CREATE_NEW_STASH_QUERY string = `
+    INSERT INTO Stashes(name, description) VALUES (:name, :description);
+    `
+    var requiredInputCols []string = []string{"name", "description"}
+
+    return composePipes(
+        MakeCtxMaker(__CREATE_NEW_STASH_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var FETCH_STASH_QUERY = (func() PipeInput {
+    const __FETCH_STASH_QUERY string = `
+    SELECT stash_id, name, description FROM Stashes WHERE stash_id = :stash_id;
+    `
+
+    var requiredInputCols []string = []string{"stash_id"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_STASH_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var FETCH_ALL_STASHES_QUERY = (func() PipeInput {
+    const __FETCH_ALL_STASHES_QUERY string = `
+    SELECT stash_id, name, description FROM Stashes;
+    `
+
+    var requiredInputCols []string = []string{"stash_id"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_ALL_STASHES_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 var UPDATE_STASH_QUERY = (func() PipeInput {
     const __UPDATE_STASH_QUERY string = `
     UPDATE Stashes
