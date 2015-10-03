@@ -963,6 +963,226 @@ BEGIN
 END;
 `
 
+var COUNT_CARDS_BY_STASH_QUERY = (func() PipeInput {
+    const __COUNT_CARDS_BY_STASH_QUERY string = `
+        SELECT
+            COUNT(1)
+        FROM StashCards AS sc
+
+        WHERE sc.stash = :stash_id;
+    `
+
+    var requiredInputCols []string = []string{"stash_id"}
+
+    return composePipes(
+        MakeCtxMaker(__COUNT_CARDS_BY_STASH_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+// sort by created_at
+var FETCH_CARDS_BY_STASH_SORT_CREATED_QUERY = func(sort string) PipeInput {
+    const __FETCH_CARDS_BY_STASH_SORT_CREATED_QUERY_RAW string = `
+        SELECT
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM StashCards AS sc
+
+        INNER JOIN Cards AS c
+        ON c.card_id = sc.card
+
+        WHERE
+        c.oid NOT IN (
+            SELECT
+                sc.card
+            FROM StashCards AS sc
+
+            INNER JOIN Cards AS c
+            ON c.card_id = sc.card
+
+            WHERE sc.stash = :stash_id
+            ORDER BY c.created_at %s LIMIT :offset
+        )
+        AND
+        sc.stash = :stash_id
+        ORDER BY c.created_at %s LIMIT :per_page;
+    `
+
+    var __FETCH_CARDS_BY_STASH_SORT_CREATED_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_STASH_SORT_CREATED_QUERY_RAW, sort, sort)
+
+    var requiredInputCols []string = []string{"stash_id", "offset", "per_page"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARDS_BY_STASH_SORT_CREATED_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}
+
+// sort by updated_at
+var FETCH_CARDS_BY_STASH_SORT_UPDATED_QUERY = func(sort string) PipeInput {
+    const __FETCH_CARDS_BY_STASH_SORT_UPDATED_QUERY_RAW string = `
+        SELECT
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM StashCards AS sc
+
+        INNER JOIN Cards AS c
+        ON c.card_id = sc.card
+
+        WHERE
+        c.oid NOT IN (
+            SELECT
+                sc.card
+            FROM StashCards AS sc
+
+            INNER JOIN Cards AS c
+            ON c.card_id = sc.card
+
+            WHERE sc.stash = :stash_id
+            ORDER BY c.updated_at %s LIMIT :offset
+        )
+        AND
+        sc.stash = :stash_id
+        ORDER BY c.updated_at %s LIMIT :per_page;
+    `
+
+    var __FETCH_CARDS_BY_STASH_SORT_UPDATED_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_STASH_SORT_UPDATED_QUERY_RAW, sort, sort)
+
+    var requiredInputCols []string = []string{"stash_id", "offset", "per_page"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARDS_BY_STASH_SORT_UPDATED_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}
+
+// sort by title
+var FETCH_CARDS_BY_STASH_SORT_TITLE_QUERY = func(sort string) PipeInput {
+    const __FETCH_CARDS_BY_STASH_SORT_TITLE_QUERY_RAW string = `
+        SELECT
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM StashCards AS sc
+
+        INNER JOIN Cards AS c
+        ON c.card_id = sc.card
+
+        WHERE
+        c.oid NOT IN (
+            SELECT
+                sc.card
+            FROM StashCards AS sc
+
+            INNER JOIN Cards AS c
+            ON c.card_id = sc.card
+
+            WHERE sc.stash = :stash_id
+            ORDER BY c.title %s LIMIT :offset
+        )
+        AND
+        sc.stash = :stash_id
+        ORDER BY c.title %s LIMIT :per_page;
+    `
+
+    var __FETCH_CARDS_BY_STASH_SORT_TITLE_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_STASH_SORT_TITLE_QUERY_RAW, sort, sort)
+
+    var requiredInputCols []string = []string{"stash_id", "offset", "per_page"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARDS_BY_STASH_SORT_TITLE_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}
+
+// sort by reviewed date
+var FETCH_CARDS_BY_STASH_REVIEWED_DATE_QUERY = func(sort string) PipeInput {
+    const __FETCH_CARDS_BY_STASH_REVIEWED_DATE_QUERY_RAW string = `
+        SELECT
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM StashCards AS sc
+
+        INNER JOIN Cards AS c
+        ON c.card_id = sc.card
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+        c.oid NOT IN (
+            SELECT
+                sc.card
+            FROM StashCards AS sc
+
+            INNER JOIN Cards AS c
+            ON c.card_id = sc.card
+
+            INNER JOIN CardsScore AS cs
+            ON cs.card = c.card_id
+
+            WHERE sc.stash = :stash_id
+            ORDER BY cs.updated_at %s LIMIT :offset
+        )
+        AND
+        sc.stash = :stash_id
+        ORDER BY cs.updated_at %s LIMIT :per_page;
+    `
+
+    var __FETCH_CARDS_BY_STASH_REVIEWED_DATE_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_STASH_REVIEWED_DATE_QUERY_RAW, sort, sort)
+
+    var requiredInputCols []string = []string{"stash_id", "offset", "per_page"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARDS_BY_STASH_REVIEWED_DATE_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}
+
+// sort by times reviewed
+var FETCH_CARDS_BY_STASH_TIMES_REVIEWED_QUERY = func(sort string) PipeInput {
+    const __FETCH_CARDS_BY_STASH_TIMES_REVIEWED_QUERY_RAW string = `
+        SELECT
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM StashCards AS sc
+
+        INNER JOIN Cards AS c
+        ON c.card_id = sc.card
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+        c.oid NOT IN (
+            SELECT
+                sc.card
+            FROM StashCards AS sc
+
+            INNER JOIN Cards AS c
+            ON c.card_id = sc.card
+
+            INNER JOIN CardsScore AS cs
+            ON cs.card = c.card_id
+
+            WHERE sc.stash = :stash_id
+            ORDER BY cs.times_reviewed %s LIMIT :offset
+        )
+        AND
+        sc.stash = :stash_id
+        ORDER BY cs.times_reviewed %s LIMIT :per_page;
+    `
+
+    var __FETCH_CARDS_BY_STASH_TIMES_REVIEWED_QUERY string = fmt.Sprintf(__FETCH_CARDS_BY_STASH_TIMES_REVIEWED_QUERY_RAW, sort, sort)
+
+    var requiredInputCols []string = []string{"stash_id", "offset", "per_page"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_CARDS_BY_STASH_TIMES_REVIEWED_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}
+
 /* helpers */
 
 func JSON2Map(rawJSON []byte) (*StringMap, error) {
