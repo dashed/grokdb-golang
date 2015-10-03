@@ -47,15 +47,7 @@ const ReviewDashboard = React.createClass({
         const {localstate, reviewCard: card} = props;
 
         localstate.cursor('card').update(Immutable.Map(), function(map) {
-
-            const overrides = Immutable.fromJS({
-                title: card.get('title'),
-                description: card.get('description'),
-                front: card.get('front'),
-                back: card.get('back')
-            });
-
-            return map.mergeDeep(overrides);
+            return map.mergeDeep(card);
         });
     },
 

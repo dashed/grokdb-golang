@@ -57,16 +57,7 @@ const CardProfile = React.createClass({
         const {localstate, card} = props;
 
         localstate.cursor('card').update(Immutable.Map(), function(map) {
-
-            const overrides = Immutable.fromJS({
-                id: card.get('id'),
-                title: card.get('title'),
-                description: card.get('description'),
-                front: card.get('front'),
-                back: card.get('back')
-            });
-
-            return map.mergeDeep(overrides);
+            return map.mergeDeep(card);
         });
     },
 
