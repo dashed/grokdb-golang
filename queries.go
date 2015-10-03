@@ -1331,6 +1331,54 @@ var FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_NORM_SCORE = (func() PipeInput {
     )
 }())
 
+var STASH_HAS_CARD_QUERY = (func() PipeInput {
+    const __STASH_HAS_CARD_QUERY string = `
+    SELECT COUNT(1)
+    FROM StashCards
+    WHERE
+    stash = :stash_id
+    AND
+    card = :card_id
+    LIMIT 1;
+    `
+
+    var requiredInputCols []string = []string{"stash_id", "card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__STASH_HAS_CARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var CONNECT_STASH_TO_CARD_QUERY = (func() PipeInput {
+    const __CONNECT_STASH_TO_CARD_QUERY string = `
+    INSERT OR REPLACE INTO StashCards(stash, card) VALUES (:stash_id, :card_id);
+    `
+
+    var requiredInputCols []string = []string{"stash_id", "card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__CONNECT_STASH_TO_CARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var DISCONNECT_STASH_FROM_CARD_QUERY = (func() PipeInput {
+    const __DISCONNECT_STASH_FROM_CARD_QUERY string = `
+    DELETE FROM StashCards WHERE stash = :stash_id AND card = :card_id;
+    `
+
+    var requiredInputCols []string = []string{"stash_id", "card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__DISCONNECT_STASH_FROM_CARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 /* helpers */
 
 func JSON2Map(rawJSON []byte) (*StringMap, error) {

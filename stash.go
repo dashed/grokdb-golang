@@ -35,6 +35,11 @@ type StashPOSTRequest struct {
     Description string `json:"description"`
 }
 
+type StashPUTRequest struct {
+    Action string `json:"action" binding:"required"`
+    CardID uint   `json:"card_id" binding:"required"`
+}
+
 /* REST Handlers */
 
 func StashGET(db *sqlx.DB, ctx *gin.Context) {
@@ -287,13 +292,9 @@ func StashPATCH(db *sqlx.DB, ctx *gin.Context) {
         }
     }
 
-    var (
-        fetchedStashRow *StashRow = nil
-    )
+    // check requested stash exists
 
-    // check requested stash exists and fetch it
-
-    fetchedStashRow, err = GetStash(db, stashID)
+    _, err = GetStash(db, stashID)
     switch {
     case err == ErrStashNoSuchStash:
         ctx.JSON(http.StatusNotFound, gin.H{
@@ -366,6 +367,10 @@ func StashPATCH(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
+    var (
+        fetchedStashRow *StashRow = nil
+    )
+
     // fetch stash row from the db
 
     fetchedStashRow, err = GetStash(db, stashID)
@@ -389,6 +394,112 @@ func StashPATCH(db *sqlx.DB, ctx *gin.Context) {
     }
 
     ctx.JSON(http.StatusCreated, StashRowToResponse(fetchedStashRow))
+}
+
+func StashPUT(db *sqlx.DB, ctx *gin.Context) {
+
+    var err error
+
+    // parse and validate id param
+    var stashIDString string = strings.ToLower(ctx.Param("id"))
+
+    _stashID, err := strconv.ParseUint(stashIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var stashID uint = uint(_stashID)
+
+    var jsonRequest StashPUTRequest
+    err = ctx.BindJSON(&jsonRequest)
+    if err != nil {
+
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "bad JSON input",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // validate action
+    jsonRequest.Action = strings.ToLower(jsonRequest.Action)
+    switch jsonRequest.Action {
+    case "add":
+    case "remove":
+    default:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "given action is invalid",
+            "userMessage":      "given action is invalid",
+        })
+        return
+    }
+
+    // ensure stash exists
+
+    _, err = GetStash(db, stashID)
+    switch {
+    case err == ErrStashNoSuchStash:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find stash by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // ensure card id exists
+
+    _, err = GetCard(db, jsonRequest.CardID)
+    switch {
+    case err == ErrCardNoSuchCard:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find card by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    err = ProcessCardWithStash(db, stashID, jsonRequest.Action, jsonRequest.CardID)
+
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to process card with stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // success
+    ctx.Writer.WriteHeader(http.StatusNoContent)
 }
 
 /* helpers */
@@ -499,6 +610,122 @@ func DeleteStash(db *sqlx.DB, stashID uint) error {
     )
 
     query, args, err = QueryApply(DELETE_STASH_QUERY, &StringMap{"stash_id": stashID})
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func ProcessCardWithStash(db *sqlx.DB, stashID uint, action string, cardID uint) error {
+
+    var (
+        err       error
+        connected bool = false
+    )
+
+    action = strings.ToLower(action)
+    switch action {
+    case "add":
+    case "remove":
+    default:
+        return errors.New("unknown given action for ProcessCardWithStash")
+    }
+
+    // check if card is connected with stash
+    connected, err = CardConnectedWithStash(db, stashID, cardID)
+
+    if err != nil {
+        return err
+    }
+
+    switch action {
+    case "add":
+        // noop
+        if connected {
+            return nil
+        }
+
+        err = ConnectCardToStash(db, stashID, cardID)
+        if err != nil {
+            return err
+        }
+    case "remove":
+        // noop
+        if !connected {
+            return nil
+        }
+
+        err = DisconnectCardFromStash(db, stashID, cardID)
+        if err != nil {
+            return err
+        }
+    }
+
+    return nil
+}
+
+func CardConnectedWithStash(db *sqlx.DB, stashID uint, cardID uint) (bool, error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(STASH_HAS_CARD_QUERY, &StringMap{
+        "stash_id": stashID,
+        "card_id":  cardID,
+    })
+    if err != nil {
+        return false, err
+    }
+
+    var count int
+    err = db.QueryRowx(query, args...).Scan(&count)
+
+    if err != nil {
+        return false, err
+    }
+
+    return (count > 0), nil
+}
+
+func ConnectCardToStash(db *sqlx.DB, stashID uint, cardID uint) error {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(CONNECT_STASH_TO_CARD_QUERY, &StringMap{"stash_id": stashID, "card_id": cardID})
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func DisconnectCardFromStash(db *sqlx.DB, stashID uint, cardID uint) error {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DISCONNECT_STASH_FROM_CARD_QUERY, &StringMap{"stash_id": stashID, "card_id": cardID})
     if err != nil {
         return err
     }
