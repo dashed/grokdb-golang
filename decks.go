@@ -626,6 +626,16 @@ func DeckPOST(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
+    // ensure stash name is valid
+    if len(strings.TrimSpace(jsonRequest.Name)) <= 0 {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "given deck name must be non-empty",
+            "userMessage":      "given deck name must be non-empty",
+        })
+        return
+    }
+
     // fetch parent
     var parentDeckRow *DeckRow
     parentDeckRow, err = GetDeck(db, jsonRequest.Parent)
