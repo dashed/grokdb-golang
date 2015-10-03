@@ -457,9 +457,9 @@ const __RANDOM = 0.15
 
 // randomly select method for choosing next card based on probability distribution given above.
 // available methods are as follows: oldest card, card with the highest norm score, and random
-// for each method, order the cards and select last N cards; where is N is the purgatory size.
+// for each method, order the cards and select top N oldest reviewed cards; where is N is the purgatory size.
 // given purgatory size may be overidden depending on the method.
-// depending on the method, among the N cards, a single card is selected for review.
+// among the N cards, a single card is selected for review depending on the method.
 func GetNextReviewCard(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow, error) {
 
     var (
@@ -530,14 +530,14 @@ func GetNextReviewCard(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow,
     case pin > (__OLDEST + __HIGHEST_NORM_SCORE):
 
         queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE // more efficient
-        purgatory_size = _purgatory_size
+        purgatory_size = 1
         purgatory_index = rand.Intn(_purgatory_size) // returns int from [0, _purgatory_size)
     }
 
     var query string
     query, args, err = QueryApply(queryfn, &StringMap{
         "deck_id":         deckID,
-        "purgatory_size":  1,
+        "purgatory_size":  purgatory_size,
         "purgatory_index": purgatory_index,
     })
 

@@ -814,7 +814,7 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE = (func() PipeInput {
         FROM (
             SELECT
             c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at,
-            norm_score(cs.success, cs.fail, strftime('%s','now') - cs.updated_at) AS gen_score
+            cs.success, cs.fail, cs.updated_at AS cs_updated_at
             FROM DecksClosure AS dc
 
             INNER JOIN Cards AS c
@@ -826,12 +826,12 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE = (func() PipeInput {
             WHERE
                 dc.ancestor = :deck_id
             ORDER BY
-                gen_score ASC
+                (strftime('%s','now') - cs.updated_at) DESC
             LIMIT :purgatory_size
         )
         AS sub
         ORDER BY
-            sub.gen_score DESC
+            norm_score(sub.success, sub.fail, strftime('%s','now') - sub.cs_updated_at) DESC
         LIMIT 1
         OFFSET :purgatory_index;
     `
@@ -1248,8 +1248,8 @@ var FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_AGE = (func() PipeInput {
     )
 }())
 
-var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE = (func() PipeInput {
-    const __FETCH_NEXT_REVIEW_CARD_BY_DECK string = `
+var FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_NORM_SCORE = (func() PipeInput {
+    const __FETCH_NEXT_REVIEW_CARD_BY_STASH string = `
         SELECT
 
         sub.card_id, sub.title, sub.description, sub.front, sub.back, sub.deck, sub.created_at, sub.updated_at
@@ -1284,7 +1284,7 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE = (func() PipeInput {
     var requiredInputCols []string = []string{"stash_id", "purgatory_size", "purgatory_index"}
 
     return composePipes(
-        MakeCtxMaker(__FETCH_NEXT_REVIEW_CARD_BY_DECK),
+        MakeCtxMaker(__FETCH_NEXT_REVIEW_CARD_BY_STASH),
         EnsureInputColsPipe(requiredInputCols),
         BuildQueryPipe,
     )
