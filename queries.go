@@ -944,8 +944,6 @@ CREATE TABLE IF NOT EXISTS Stashes (
     CHECK (name <> '') /* ensure not empty */
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS unique_stash_name ON Stashes (name);
-
 CREATE TABLE IF NOT EXISTS StashCards (
 
     stash INTEGER NOT NULL,
