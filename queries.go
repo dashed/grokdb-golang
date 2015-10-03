@@ -814,7 +814,7 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE = (func() PipeInput {
         FROM (
             SELECT
             c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at,
-            cs.success, cs.fail, cs.updated_at AS cs_updated_at
+            norm_score(cs.success, cs.fail, strftime('%s','now') - cs.updated_at) AS gen_score
             FROM DecksClosure AS dc
 
             INNER JOIN Cards AS c
@@ -826,10 +826,12 @@ var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE = (func() PipeInput {
             WHERE
                 dc.ancestor = :deck_id
             ORDER BY
-                (strftime('%s','now') - cs.updated_at) DESC
+                gen_score ASC
             LIMIT :purgatory_size
         )
         AS sub
+        ORDER BY
+            sub.gen_score DESC
         LIMIT 1
         OFFSET :purgatory_index;
     `
