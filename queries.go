@@ -1183,6 +1183,80 @@ var FETCH_CARDS_BY_STASH_TIMES_REVIEWED_QUERY = func(sort string) PipeInput {
     )
 }
 
+var FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_AGE = (func() PipeInput {
+    const __FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_AGE string = `
+        SELECT
+
+        c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+
+        FROM StashCards AS sc
+
+        INNER JOIN Cards AS c
+        ON c.card_id = sc.card
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+            sc.stash = :stash_id
+        ORDER BY
+            (strftime('%s','now') - cs.updated_at) DESC
+        LIMIT :purgatory_size
+        OFFSET :purgatory_index;
+    `
+    /* should range from 0 to purgatory_size-1 */
+
+    var requiredInputCols []string = []string{"stash_id", "purgatory_size", "purgatory_index"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_AGE),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE = (func() PipeInput {
+    const __FETCH_NEXT_REVIEW_CARD_BY_DECK string = `
+        SELECT
+
+        sub.card_id, sub.title, sub.description, sub.front, sub.back, sub.deck, sub.created_at, sub.updated_at
+
+        FROM (
+            SELECT
+            c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at,
+            norm_score(cs.success, cs.fail, strftime('%s','now') - cs.updated_at) AS gen_score
+
+            FROM StashCards AS sc
+
+            INNER JOIN Cards AS c
+            ON c.card_id = sc.card
+
+            INNER JOIN CardsScore AS cs
+            ON cs.card = c.card_id
+
+            WHERE
+                sc.stash = :stash_id
+            ORDER BY
+                gen_score ASC
+            LIMIT :purgatory_size
+        )
+        AS sub
+        ORDER BY
+            sub.gen_score DESC
+        LIMIT 1
+        OFFSET :purgatory_index;
+    `
+    /* should range from 0 to purgatory_size-1 */
+
+    var requiredInputCols []string = []string{"stash_id", "purgatory_size", "purgatory_index"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_NEXT_REVIEW_CARD_BY_DECK),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 /* helpers */
 
 func JSON2Map(rawJSON []byte) (*StringMap, error) {
