@@ -106,9 +106,9 @@ END;
 
 var CREATE_NEW_DECK_QUERY = (func() PipeInput {
     const __CREATE_NEW_DECK_QUERY string = `
-    INSERT INTO Decks(name) VALUES (:name);
+    INSERT INTO Decks(name, description) VALUES (:name, :description);
     `
-    var requiredInputCols []string = []string{"name"}
+    var requiredInputCols []string = []string{"name", "description"}
 
     return composePipes(
         MakeCtxMaker(__CREATE_NEW_DECK_QUERY),

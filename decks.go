@@ -25,7 +25,8 @@ var ErrDeckNoAncestors = errors.New("decks: deck has no ancestors")
 /* types */
 
 type DeckProps struct {
-    Name string
+    Name        string
+    Description string
 }
 
 type DeckRow struct {
@@ -41,8 +42,9 @@ type DeckRelationship struct {
 }
 
 type DeckPOSTRequest struct {
-    Name   string `json:"name" binding:"required"`
-    Parent uint   `json:"parent" binding:"required,min=1"`
+    Name        string `json:"name" binding:"required"`
+    Description string `json:"description"`
+    Parent      uint   `json:"parent" binding:"required,min=1"`
 }
 
 /* REST Handlers */
@@ -650,7 +652,8 @@ func DeckPOST(db *sqlx.DB, ctx *gin.Context) {
     var newDeckRow *DeckRow
 
     newDeckRow, err = CreateDeck(db, &DeckProps{
-        Name: jsonRequest.Name,
+        Name:        jsonRequest.Name,
+        Description: jsonRequest.Description,
     })
     if err != nil {
         ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -1111,7 +1114,10 @@ func CreateDeck(db *sqlx.DB, props *DeckProps) (*DeckRow, error) {
         args  []interface{}
     )
 
-    query, args, err = QueryApply(CREATE_NEW_DECK_QUERY, &StringMap{"name": props.Name})
+    query, args, err = QueryApply(CREATE_NEW_DECK_QUERY, &StringMap{
+        "name":        props.Name,
+        "description": props.Description,
+    })
     if err != nil {
         return nil, err
     }
@@ -1143,7 +1149,8 @@ func GetRootDeck(db *sqlx.DB) (*DeckRow, error) {
         // create a new root deck
         var rootDeck *DeckRow
         rootDeck, err = CreateDeck(db, &DeckProps{
-            Name: "Library",
+            Name:        "Library",
+            Description: "",
         })
 
         if err != nil {
