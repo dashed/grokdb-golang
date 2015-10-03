@@ -980,7 +980,7 @@ var CREATE_NEW_STASH_QUERY = (func() PipeInput {
 
 var FETCH_STASH_QUERY = (func() PipeInput {
     const __FETCH_STASH_QUERY string = `
-    SELECT stash_id, name, description FROM Stashes WHERE stash_id = :stash_id;
+    SELECT stash_id, name, description, created_at, updated_at FROM Stashes WHERE stash_id = :stash_id;
     `
 
     var requiredInputCols []string = []string{"stash_id"}

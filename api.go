@@ -93,16 +93,16 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
 
     }
 
-    // stashesAPI := api.Group("/stashes")
-    // {
-    //     stashesAPI.POST("/", injectDB(StashPOST))
+    stashesAPI := api.Group("/stashes")
+    {
+        stashesAPI.POST("/", injectDB(StashPOST))
 
-    //     stashesAPI.GET("/:id", injectDB(StashGET))
+        // stashesAPI.GET("/:id", injectDB(StashGET))
 
-    //     stashesAPI.DELETE("/:id", injectDB(StashDELETE))
+        // stashesAPI.DELETE("/:id", injectDB(StashDELETE))
 
-    //     stashesAPI.GET("/:id/review", injectDB(ReviewStashGET))
-    // }
+        // stashesAPI.GET("/:id/review", injectDB(ReviewStashGET))
+    }
 
     configsAPI := api.Group("/configs")
     {
