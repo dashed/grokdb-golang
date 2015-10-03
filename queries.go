@@ -931,16 +931,16 @@ const STASHES_TABLE_QUERY string = `
 CREATE TABLE IF NOT EXISTS Stashes (
     stash_id INTEGER PRIMARY KEY NOT NULL,
 
-    title TEXT NOT NULL,
+    name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
 
     created_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
     updated_at INT NOT NULL DEFAULT (strftime('%s', 'now')), /* note: time when the stash was modified. not when it was reviewed. */
 
-    CHECK (title <> '') /* ensure not empty */
+    CHECK (name <> '') /* ensure not empty */
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS unique_stash_title ON Stashes (title);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_stash_name ON Stashes (name);
 
 CREATE TABLE IF NOT EXISTS StashCards (
 
@@ -956,7 +956,7 @@ CREATE TABLE IF NOT EXISTS StashCards (
 );
 
 CREATE TRIGGER IF NOT EXISTS stash_updated_trigger AFTER UPDATE OF
-title, description
+name, description
 ON Stashes
 BEGIN
     UPDATE Stashes SET updated_at = strftime('%s', 'now') WHERE stash_id = NEW.stash_id;
