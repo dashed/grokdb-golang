@@ -995,11 +995,8 @@ var FETCH_ALL_STASHES_QUERY = (func() PipeInput {
     SELECT stash_id, name, description FROM Stashes;
     `
 
-    var requiredInputCols []string = []string{"stash_id"}
-
     return composePipes(
         MakeCtxMaker(__FETCH_ALL_STASHES_QUERY),
-        EnsureInputColsPipe(requiredInputCols),
         BuildQueryPipe,
     )
 }())
