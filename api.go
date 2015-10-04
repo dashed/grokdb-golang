@@ -108,6 +108,8 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
 
         stashesAPI.GET("/:id/cards", injectDB(StashCardsGET))
 
+        stashesAPI.GET("/:id/cards/count", injectDB(StashCardsCountGET))
+
         stashesAPI.GET("/:id/review", injectDB(ReviewStashGET))
     }
 
