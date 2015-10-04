@@ -109,7 +109,7 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
 
     // fetch review card
     var fetchedReviewCardRow *CardRow
-    fetchedReviewCardRow, err = GetNextReviewCard(db, deckID, purgatory_size)
+    fetchedReviewCardRow, err = GetNextReviewCardOfDeck(db, deckID, purgatory_size)
 
     switch {
     case err == ErrCardNoSuchCard:
@@ -438,19 +438,12 @@ func GetCardScoreRecord(db *sqlx.DB, cardID uint) (*CardScoreRow, error) {
     }
 }
 
-// alias method:
-// - ref: http://stackoverflow.com/questions/5027757/data-structure-for-loaded-dice
-// - ref: http://www.keithschwarz.com/darts-dice-coins/
-const __OLDEST = 0.1
-const __HIGHEST_NORM_SCORE = 0.75
-const __RANDOM = 0.15
-
 // randomly select method for choosing next card based on probability distribution given above.
 // available methods are as follows: oldest card, card with the highest norm score, and random
 // for each method, order the cards and select top N oldest reviewed cards; where is N is the purgatory size.
 // given purgatory size may be overidden depending on the method.
 // among the N cards, a single card is selected for review depending on the method.
-func GetNextReviewCard(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow, error) {
+func GetNextReviewCardOfDeck(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow, error) {
 
     var (
         err     error
@@ -500,24 +493,22 @@ func GetNextReviewCard(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow,
     var purgatory_size int = 10
     var purgatory_index int = 0
 
-    var pin float64 = rand.Float64()
+    var chosenmethod reviewmethod = ChooseMethod()
 
-    // alias method
-    // TODO: needs refactor
-    switch {
-    case pin <= __OLDEST:
+    switch chosenmethod {
+    case OLDEST:
 
         queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE
         purgatory_size = 1
         purgatory_index = 0
 
-    case pin > __OLDEST && pin <= (__OLDEST+__HIGHEST_NORM_SCORE):
+    case HIGHEST_NORM_SCORE:
 
         queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE
         purgatory_size = _purgatory_size
         purgatory_index = 0
 
-    case pin > (__OLDEST + __HIGHEST_NORM_SCORE):
+    case RANDOM_CARD:
 
         queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE // more efficient
         purgatory_size = 1
@@ -723,7 +714,39 @@ func GetPurgatorySize(cardsCount int) int {
     // Do this to allow [learned] cards to stay in purgatory for [quite] a while;
     // but still have a change of being selected.
 
-    purgatory_size = int(math.Ceil(0.2 * float64(cardsCount)))
+    var purgatory_size int = int(math.Ceil(0.2 * float64(cardsCount)))
 
     return purgatory_size
+}
+
+type reviewmethod int
+
+const (
+    OLDEST reviewmethod = iota
+    HIGHEST_NORM_SCORE
+    RANDOM_CARD
+)
+
+// alias method:
+// - ref: http://stackoverflow.com/questions/5027757/data-structure-for-loaded-dice
+// - ref: http://www.keithschwarz.com/darts-dice-coins/
+const __OLDEST = 0.1
+const __HIGHEST_NORM_SCORE = 0.75
+const __RANDOM = 0.15
+
+func ChooseMethod() reviewmethod {
+
+    var pin float64 = rand.Float64()
+
+    // alias method
+    switch {
+    case pin <= __OLDEST:
+        return OLDEST
+    case pin > __OLDEST && pin <= (__OLDEST+__HIGHEST_NORM_SCORE):
+        return HIGHEST_NORM_SCORE
+    default:
+        // case pin > (__OLDEST + __HIGHEST_NORM_SCORE):
+        return RANDOM_CARD
+    }
+
 }
