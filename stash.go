@@ -95,7 +95,7 @@ func StashGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    ctx.JSON(http.StatusCreated, StashRowToResponse(fetchedStashRow))
+    ctx.JSON(http.StatusOK, StashRowToResponse(fetchedStashRow))
 }
 
 func StashListGET(db *sqlx.DB, ctx *gin.Context) {
@@ -438,7 +438,7 @@ func StashPATCH(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    ctx.JSON(http.StatusCreated, StashRowToResponse(fetchedStashRow))
+    ctx.JSON(http.StatusOk, StashRowToResponse(fetchedStashRow))
 }
 
 func StashPUT(db *sqlx.DB, ctx *gin.Context) {
