@@ -31,7 +31,7 @@ type CardScoreRow struct {
     UpdatedAt     int64 `db:"updated_at"`
 }
 
-type CachedReviewCardRow struct {
+type CachedDeckReviewCardRow struct {
     Card      uint  `db:"card"`
     Deck      uint  `db:"deck"`
     CreatedAt int64 `db:"created_at"`
@@ -451,7 +451,7 @@ func GetNextReviewCardOfDeck(db *sqlx.DB, deckID uint, _purgatory_size int) (*Ca
         args    []interface{}
     )
 
-    var fetchedRow *CachedReviewCardRow
+    var fetchedRow *CachedDeckReviewCardRow
     fetchedRow, err = GetCachedReviewCardByDeck(db, deckID)
 
     switch {
@@ -603,7 +603,7 @@ func CountReviewCardsByDeck(db *sqlx.DB, deckID uint) (int, error) {
     return count, nil
 }
 
-func GetCachedReviewCardByDeck(db *sqlx.DB, deckID uint) (*CachedReviewCardRow, error) {
+func GetCachedReviewCardByDeck(db *sqlx.DB, deckID uint) (*CachedDeckReviewCardRow, error) {
 
     var (
         err   error
@@ -618,7 +618,7 @@ func GetCachedReviewCardByDeck(db *sqlx.DB, deckID uint) (*CachedReviewCardRow, 
         return nil, err
     }
 
-    var fetchedRow *CachedReviewCardRow = &CachedReviewCardRow{}
+    var fetchedRow *CachedDeckReviewCardRow = &CachedDeckReviewCardRow{}
 
     // ErrNoRows
 
