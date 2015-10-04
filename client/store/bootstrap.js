@@ -10,10 +10,11 @@ const {fetchRootDeck, fetchDeck, fetchChildren, fetchAncestors} = require('store
 const {setRootDeck, isCurrentDeck} = require('store/decks');
 const {setTransactions, commitTransaction} = require('store/meta');
 const {redirectToDeck, validDeckSlug} = require('store/route');
-
 const {fetchPageNum, fetchOrder, fetchSort, fetchCardsCount, fetchCardsList, fetchCard} = require('store/stateless/cards');
 const {setCardsList, isCurrentCard, applyCardArgs} = require('store/cards');
 const {fetchReviewCardByDeck} = require('store/stateless/review');
+const {fetchStashList, fetchStash} = require('store/stateless/stashes');
+const {setStashList} = require('store/stashes');
 
 // route handler components
 const Dashboard = require('components/dashboard');
@@ -37,8 +38,12 @@ const bootRouter = co.wrap(function* (store) {
                     .set(paths.dashboard.cards.creatingNew, false)
                     .set(paths.dashboard.cards.page, 1)
                     .set(paths.dashboard.cards.viewingProfile, false)
-                    .set(paths.review.self, NOT_SET);
+                    .set(paths.review.self, NOT_SET)
 
+                    // stashes
+                    .set(paths.dashboard.stashes.creatingNew, false)
+                    .set(paths.dashboard.stashes.viewingProfile, false)
+                    .set(paths.stash.self, NOT_SET);
             });
         });
 
@@ -55,6 +60,8 @@ const bootRouter = co.wrap(function* (store) {
     const __ensureCardsRoute = _.bind(ensureCardsRoute, void 0, store);
     const __ensureCurrentCardRoute = _.bind(ensureCurrentCardRoute, void 0, store);
     const __ensureDeckReviewRoute = _.bind(ensureDeckReviewRoute, void 0, store);
+    const __ensureStashesRoute = _.bind(ensureStashesRoute, void 0, store);
+    const __ensureCurrentStashRoute = _.bind(ensureCurrentStashRoute, void 0, store);
 
     page('/deck/:id', __ensureDeckRoute, function() {
 
@@ -94,8 +101,8 @@ const bootRouter = co.wrap(function* (store) {
             return map.withMutations(function(__map) {
                 __map
                     .set(paths.dashboard.view, dashboard.view.decks)
-                    .set(paths.route.handler, Dashboard)
-                    .set(paths.dashboard.decks.editing, true);
+                    .set(paths.dashboard.decks.editing, true)
+                    .set(paths.route.handler, Dashboard);
             });
         });
 
@@ -119,8 +126,8 @@ const bootRouter = co.wrap(function* (store) {
             return map.withMutations(function(__map) {
                 __map
                     .set(paths.dashboard.cards.creatingNew, true)
-                    .set(paths.route.handler, Dashboard)
-                    .set(paths.dashboard.view, dashboard.view.cards);
+                    .set(paths.dashboard.view, dashboard.view.cards)
+                    .set(paths.route.handler, Dashboard);
             });
         });
 
@@ -132,9 +139,9 @@ const bootRouter = co.wrap(function* (store) {
             return map.withMutations(function(__map) {
                 __map
                     .set(paths.card.editing, false)
-                    .set(paths.route.handler, Dashboard)
                     .set(paths.dashboard.cards.viewingProfile, true)
-                    .set(paths.dashboard.view, dashboard.view.cards);
+                    .set(paths.dashboard.view, dashboard.view.cards)
+                    .set(paths.route.handler, Dashboard);
             });
         });
 
@@ -146,9 +153,9 @@ const bootRouter = co.wrap(function* (store) {
             return map.withMutations(function(__map) {
                 __map
                     .set(paths.card.editing, true)
-                    .set(paths.route.handler, Dashboard)
                     .set(paths.dashboard.cards.viewingProfile, true)
-                    .set(paths.dashboard.view, dashboard.view.cards);
+                    .set(paths.dashboard.view, dashboard.view.cards)
+                    .set(paths.route.handler, Dashboard);
             });
         });
 
@@ -159,14 +166,57 @@ const bootRouter = co.wrap(function* (store) {
         state.cursor(paths.transaction).update(function(map) {
             return map.withMutations(function(__map) {
                 __map
-                    .set(paths.route.handler, Dashboard)
-                    .set(paths.dashboard.view, dashboard.view.review);
+                    .set(paths.dashboard.view, dashboard.view.review)
+                    .set(paths.route.handler, Dashboard);
             });
         });
 
         return next();
     }, __commitStateTransaction);
 
+    page('/stashes', __ensureStashesRoute, function(ctx, next) {
+
+        state.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.dashboard.stashes.viewingProfile, false)
+                    .set(paths.dashboard.view, dashboard.view.stash)
+                    .set(paths.route.handler, Dashboard);
+            });
+        });
+
+        return next();
+    }, __commitStateTransaction);
+
+    page('/stashes/:id', __ensureCurrentStashRoute, function(ctx, next) {
+
+        state.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.stash.editing, false)
+                    .set(paths.dashboard.stashes.viewingProfile, true)
+                    .set(paths.dashboard.view, dashboard.view.stash)
+                    .set(paths.route.handler, Dashboard);
+            });
+        });
+
+        return next();
+    }, __commitStateTransaction);
+
+    // page('/stashes/:id/edit', __ensureStashesRoute, function(ctx, next) {
+
+    //     state.cursor(paths.transaction).update(function(map) {
+    //         return map.withMutations(function(__map) {
+    //             __map
+    //                 .set(paths.stash.editing, true)
+    //                 .set(paths.dashboard.stashes.viewingProfile, true)
+    //                 .set(paths.dashboard.view, dashboard.view.stash)
+    //                 .set(paths.route.handler, Dashboard);
+    //         });
+    //     });
+
+    //     return next();
+    // }, __commitStateTransaction);
 
     // page('/review/card/:id', function(ctx, next) {
 
@@ -288,22 +338,21 @@ module.exports = function(store) {
 
 /* helpers */
 
+const defaultRouteHandler = function(rootID) {
+    page.redirect(`/deck/${rootID}`);
+};
+
 const defaultRoute = function(state) {
     const cursor = state.cursor(paths.root);
 
-    // TODO: factor this out as a constant
-    const handler = function(rootID) {
-        page.redirect(`/deck/${rootID}`);
-    };
-
     if(cursor.deref(NOT_SET) === NOT_SET) {
         cursor.once('any', function(rootID) {
-            handler(rootID);
+            defaultRouteHandler(rootID);
         });
         return;
     }
 
-    handler(cursor.deref());
+    defaultRouteHandler(cursor.deref());
 };
 
 // pipes for ensureDeckRoute
@@ -347,9 +396,6 @@ const ensureLoadDeckChildren = detour(function(/*state*/) {
 });
 
 const parseDeckID = flow(
-    function(state, options) {
-        return options;
-    },
     isCurrentDeck,
     ensureLoadDeck,
     ensureLoadDeckChildren,
@@ -576,6 +622,117 @@ const ensureDeckReviewRoute = co.wrap(function*(store, ctx, next) {
         return;
     }
 
+    next();
+    return;
+});
+
+const loadRoot = function(rootID) {
+    return flow(
+        function(state, options) {
+            options.deckID = rootID;
+            return options;
+        },
+        stateless(fetchDeck),
+        setTransactions(function(_state, _options) {
+
+            const {deck} = _options;
+            return [
+                {
+                    path: paths.deck.self,
+                    value: deck
+                }
+            ];
+        }),
+        stateless(fetchChildren),
+        setTransactions(function(_state, options) {
+            const {children} = options;
+
+            return [
+                {
+                    path: paths.deck.children,
+                    value: children
+                }
+            ];
+        })
+    );
+};
+
+const defaultDeck = detour(function(state/*, options = {}*/) {
+    const deckcursor = state.cursor(paths.deck.self);
+
+    if(!Immutable.Map.isMap(deckcursor.deref())) {
+
+        return new Promise(function(resolve) {
+            const cursor = state.cursor(paths.root);
+
+            if(cursor.deref(NOT_SET) === NOT_SET) {
+                cursor.once('any', function(rootID) {
+                    resolve(loadRoot(rootID));
+                });
+                return;
+            }
+
+            resolve(loadRoot(cursor.deref()));
+        });
+
+    }
+});
+
+const loadStashList = flow(
+    defaultDeck,
+    stateless(fetchStashList),
+    setStashList
+);
+
+const ensureStashesRoute = co.wrap(function*(store, ctx, next) {
+
+    const state = store.state();
+
+    try {
+        yield loadStashList(state, {});
+    } catch(err) {
+        defaultRoute(state);
+        return;
+    }
+
+    next();
+    return;
+});
+
+const parseStashID = flow(
+    defaultDeck,
+    stateless(fetchStash),
+    setTransactions(function(_state, _options) {
+        const {stash} = _options;
+        return [
+            {
+                path: paths.stash.self,
+                value: stash
+            }
+        ];
+    })
+);
+
+const ensureCurrentStashRoute = co.wrap(function*(store, ctx, next) {
+
+    const state = store.state();
+
+    if(!_.has(ctx.params, 'id')) {
+        throw Error('ensureCurrentStashRoute used incorrectly');
+    }
+
+    if(notValidID(ctx.params.id)) {
+        defaultRoute(state);
+        return;
+    }
+
+    try {
+        // parse and validate card id; and load it as necessary
+        yield parseStashID(state, {stashID: ctx.params.id});
+    } catch(err) {
+        defaultRoute(state);
+        return;
+    }
     next();
     return;
 });

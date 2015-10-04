@@ -49,6 +49,11 @@ module.exports = {
             self: ['review', 'self']
         },
 
+        stash: {
+            editing: ['stash', 'editing'],
+            self: ['stash', 'self']
+        },
+
         // ui flags
         dashboard: {
             view: ['dashboard', 'view'],
@@ -69,6 +74,11 @@ module.exports = {
                 total: ['dashboard', 'cards', 'total'],
                 numOfPages: ['dashboard', 'cards', 'numOfPages'],
                 list: ['dashboard', 'cards', 'list']
+            },
+            stashes: {
+                creatingNew: ['dashboard', 'stashes', 'creatingNew'],
+                viewingProfile: ['dashboard', 'stashes', 'viewingProfile'],
+                list: ['dashboard', 'stashes', 'list']
             }
         }
     },
@@ -77,7 +87,8 @@ module.exports = {
         view: {
             decks: 'decks',
             cards: 'cards',
-            review: 'review'
+            review: 'review',
+            stash: 'stash'
         }
     },
 
@@ -99,7 +110,21 @@ module.exports = {
     decks: {
         view: {
             subdecks: 'subdecks',
-            description: 'description'
+            description: 'description',
+            meta: 'meta'
+        },
+
+        display: {
+            source: 'source',
+            render: 'render'
+        }
+    },
+
+    stash: {
+        view: {
+            cards: 'cards',
+            description: 'description',
+            meta: 'meta'
         },
 
         display: {

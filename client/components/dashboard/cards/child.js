@@ -168,6 +168,7 @@ const CardChild = React.createClass({
     }
 });
 
+// hide until data deps are satisfied
 const CardChildOcclusion = either(CardChild, null, function(props) {
 
     const {deckPath} = props;
@@ -186,7 +187,10 @@ module.exports = orwell(CardChildOcclusion, {
 
         const card = childCursor.deref();
 
-        return localstate.cursor(['deckPaths', card.get('id')]);
+        return [
+            localstate.cursor(['deckPaths', card.get('id')]),
+            childCursor
+        ];
 
     },
     assignNewProps(props, context) {

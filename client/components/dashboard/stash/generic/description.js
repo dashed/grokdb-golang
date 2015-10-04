@@ -1,33 +1,17 @@
 const React = require('react');
 const orwell = require('orwell');
-const classNames = require('classnames');
-const TextareaAutosize = require('react-textarea-autosize');
 const {Probe} = require('minitrue');
+const TextareaAutosize = require('react-textarea-autosize');
 const _ = require('lodash');
+const classNames = require('classnames');
 
-const {tabSize, cards} = require('store/constants');
+const {stash, tabSize} = require('store/constants');
 const Preview = require('components/markdownpreview');
 
-const transformView = function(view) {
-    switch(view) {
-    case cards.view.front:
-        return 'front';
-    case cards.view.back:
-        return 'back';
-    case cards.view.description:
-        return 'description';
-    }
-
-    console.log(view);
-
-    throw Error('invariant violation');
-};
-
-const GenericCardInputDisplay = React.createClass({
+const GenericStashDescription = React.createClass({
 
     propTypes: {
         localstate: React.PropTypes.instanceOf(Probe).isRequired,
-        view: React.PropTypes.string.isRequired,
         mode: React.PropTypes.string.isRequired,
         source: React.PropTypes.string.isRequired,
         editMode: React.PropTypes.bool.isRequired
@@ -41,9 +25,7 @@ const GenericCardInputDisplay = React.createClass({
             event.preventDefault();
             event.stopPropagation();
 
-            const {view} = this.props;
-
-            localstate.cursor(['display', 'mode', view]).update(function() {
+            localstate.cursor(['display', 'mode', stash.view.description]).update(function() {
                 return mode;
             });
         };
@@ -57,19 +39,20 @@ const GenericCardInputDisplay = React.createClass({
             return;
         }
 
-        const {localstate, view} = this.props;
+        const {localstate} = this.props;
 
-        localstate.cursor(['card', transformView(view)]).update(function() {
+
+        localstate.cursor(['stash', 'description']).update(function() {
             return event.target.value;
         });
     },
 
     render() {
 
-        const {mode, source, view, editMode} = this.props;
+        const {mode, source, editMode} = this.props;
 
         const Visual = (function() {
-            if(mode === cards.display.render) {
+            if(mode === stash.display.render) {
                 return (
                     <div>
                         <Preview key="preview" text={source} />
@@ -78,9 +61,7 @@ const GenericCardInputDisplay = React.createClass({
                 );
             }
 
-            const placeholder = !editMode ? '' :
-                view === cards.view.front ? 'Front entry' :
-                view === cards.view.back ? 'Back entry' : 'Description';
+            const placeholder = !editMode ? '' : 'Description';
 
             return (
                 <TextareaAutosize
@@ -89,7 +70,7 @@ const GenericCardInputDisplay = React.createClass({
                     minRows={6}
                     maxRows={10}
                     className="form-control"
-                    id="deckSide"
+                    id="stashDescription"
                     placeholder={placeholder}
                     onChange={this.onChange}
                     value={source}
@@ -102,27 +83,25 @@ const GenericCardInputDisplay = React.createClass({
 
         if(editMode) {
             arry.push({
-                mode: cards.display.source,
+                mode: stash.display.source,
                 label: 'Write'
             });
 
             arry.push({
-                mode: cards.display.render,
+                mode: stash.display.render,
                 label: 'Preview'
             });
         } else {
             arry.push({
-                mode: cards.display.render,
+                mode: stash.display.render,
                 label: 'Render'
             });
 
             arry.push({
-                mode: cards.display.source,
+                mode: stash.display.source,
                 label: 'Source'
             });
         }
-
-
 
         const Tabs = _.map(arry, function(obj, idx) {
             return (
@@ -139,7 +118,7 @@ const GenericCardInputDisplay = React.createClass({
         }, this);
 
         return (
-            <div className="card-block">
+            <div key="description" className="card-block">
                     <ul style={tabSize} className="nav nav-tabs m-b">
                         {Tabs}
                     </ul>
@@ -149,59 +128,24 @@ const GenericCardInputDisplay = React.createClass({
     }
 });
 
-const GenericCardInputDisplayOrwell = orwell(GenericCardInputDisplay, {
+module.exports = orwell(GenericStashDescription, {
     watchCursors(props) {
-        const {localstate, view} = props;
+        const {localstate} = props;
 
         return [
-            localstate.cursor(['display', 'mode', view]),
-            localstate.cursor(['card', transformView(view)]),
             localstate.cursor('editMode'),
-            localstate.cursor('defaultMode')
-        ];
-    },
-    shouldRewatchCursors(props) {
-        const {view} = props;
-
-        if(view != this.currentProps.view) {
-            return true;
-        }
-    },
-    assignNewProps(props) {
-
-        const {localstate, view} = props;
-
-        const editMode = localstate.cursor('editMode').deref(false);
-
-        const defaultMode = localstate.cursor('defaultMode').deref(cards.display.render);
-
-        return {
-            view: view,
-            mode: localstate.cursor(['display', 'mode', view]).deref(defaultMode),
-            source: localstate.cursor(['card', transformView(view)]).deref(''),
-            editMode: editMode
-        };
-    }
-});
-
-module.exports = orwell(GenericCardInputDisplayOrwell, {
-    watchCursors(props) {
-        const {localstate} = props;
-
-        return [
-            localstate.cursor(['display', 'view'])
+            localstate.cursor(['display', 'mode', stash.view.description]),
+            localstate.cursor(['stash', 'description']),
         ];
     },
     assignNewProps(props) {
+
         const {localstate} = props;
 
-        const view = localstate.cursor(['display', 'view']).deref(cards.view.front);
-
         return {
-            view: view
+            mode: localstate.cursor(['display', 'mode', stash.view.description]).deref(stash.display.render),
+            source: localstate.cursor(['stash', 'description']).deref(''),
+            editMode: localstate.cursor('editMode').deref(false),
         };
     }
 });
-
-
-

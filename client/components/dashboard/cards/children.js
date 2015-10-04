@@ -28,10 +28,12 @@ const CardsChildren = React.createClass({
 
             if(list.size <= 0) {
                 return (
-                    <div className="card-block text-center">
-                        <p className="card-text text-muted">
-                            {"No cards to display. To get started, you should create your first card for this deck."}
-                        </p>
+                    <div className="card">
+                        <div className="card-block text-center">
+                            <p className="card-text text-muted">
+                                {"No cards to display. To get started, you should create your first card for this deck."}
+                            </p>
+                        </div>
                     </div>
                 );
             }
@@ -54,11 +56,9 @@ const CardsChildren = React.createClass({
             }, []);
 
             return (
-                <div className="card-block p-a-0">
-                    <ul className="list-group">
-                        {currentChildrenRendered}
-                    </ul>
-                </div>
+                <ul className="list-group">
+                    {currentChildrenRendered}
+                </ul>
             );
         }.call(this));
 

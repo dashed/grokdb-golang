@@ -73,7 +73,7 @@ const CardProfile = React.createClass({
 
         const {isEditing: previsEditing = false} = prevProps;
 
-        localstate.cursor(['display', 'mode']).update(function(val) {
+        localstate.cursor(['display', 'mode']).update(Immutable.Map(), function(val) {
             return previsEditing == isEditing ? val : Immutable.Map();
         });
     },

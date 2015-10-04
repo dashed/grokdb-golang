@@ -2,40 +2,35 @@ const React = require('react');
 const {Probe} = require('minitrue');
 const Immutable = require('immutable');
 
-const {cards} = require('store/constants');
-const GenericCardProfile = require('./profile');
+const {stash} = require('store/constants');
+const GenericStashProfile = require('./profile');
 
 const noop = x => x;
 const nilop = () => void 0;
 
 // structure of localstate
 const DEFAULTS = {
-    card: {
+    stash: {
         // all strings
-        title: '',
-        description: '',
-        front : '',
-        back: ''
+        name: '',
+        description: ''
     },
 
-    showEditButton: false,
-    editMode: false,
-    showDelete: false,
+    hideMeta: false,
+    showEditButton: true,
 
-    defaultMode: cards.display.render, // render or source
-    hideMeta: false, // bool
-    commitLabel: 'Save', // string
+    defaultMode: stash.display.render, // render or source
+    commitLabel: 'Save Stash', // string
     display: {
-        view: cards.view.front, // string
+        view: stash.view.cards, // string
         mode: {
-            // cards.view.front etc
+            // stash.view.cards etc
         }
     }
 };
 const overrides = Immutable.fromJS(DEFAULTS);
 
-const GenericCard = React.createClass({
-
+const GenericStash = React.createClass({
     propTypes: {
         // static
         onSwitchView: React.PropTypes.func,
@@ -80,7 +75,7 @@ const GenericCard = React.createClass({
         return (
             <div className="row">
                 <div className="col-sm-12">
-                    <GenericCardProfile
+                    <GenericStashProfile
                         onClickCancelEdit={onClickCancelEdit}
                         onClickEdit={onClickEdit}
                         onCommit={onCommit}
@@ -92,7 +87,6 @@ const GenericCard = React.createClass({
             </div>
         );
     }
-
 });
 
-module.exports = GenericCard;
+module.exports = GenericStash;

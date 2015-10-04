@@ -3,8 +3,7 @@ const orwell = require('orwell');
 const classNames = require('classnames');
 
 const {dashboard, paths} = require('store/constants');
-// const {applyDeckArgs} = require('store/decks');
-const {toDeckCards, toDeck, toReview} = require('store/route');
+const {toDeckCards, toDeck, toReview, toStash} = require('store/route');
 
 const SubNav = React.createClass({
 
@@ -12,7 +11,8 @@ const SubNav = React.createClass({
         store: React.PropTypes.object.isRequired,
         isCard: React.PropTypes.bool.isRequired,
         isDeck: React.PropTypes.bool.isRequired,
-        isReview: React.PropTypes.bool.isRequired
+        isReview: React.PropTypes.bool.isRequired,
+        isStash: React.PropTypes.bool.isRequired
     },
 
     onClickDecks(event) {
@@ -36,9 +36,16 @@ const SubNav = React.createClass({
         this.props.store.invoke(toReview);
     },
 
+    onClickStashes(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        this.props.store.invoke(toStash);
+    },
+
     render() {
 
-        const {isCard, isDeck, isReview} = this.props;
+        const {isCard, isDeck, isReview, isStash} = this.props;
 
         return (
             <div className="row">
@@ -60,9 +67,10 @@ const SubNav = React.createClass({
                 </div>
                 <div className="col-sm-6">
                     <div className="btn-group p-b pull-right" role="group" aria-label="Basic example">
-                      <button type="button" className="btn btn-secondary">{"Stashes"}</button>
-                      <button type="button" className="btn btn-secondary">{"Labels"}</button>
-                      <button type="button" className="btn btn-secondary">{"Settings"}</button>
+                      <button
+                        type="button"
+                        className={classNames('btn', {'btn-primary': isStash, 'btn-secondary': !isStash})}
+                        onClick={this.onClickStashes}>{"Stashes"}</button>
                     </div>
                 </div>
             </div>
@@ -91,12 +99,14 @@ module.exports = orwell(SubNav, {
         const isCard = currentView === dashboard.view.cards;
         const isDeck = currentView === dashboard.view.decks;
         const isReview = currentView === dashboard.view.review;
+        const isStash = currentView === dashboard.view.stash;
 
         return {
             store: store,
             isCard: isCard,
             isDeck: isDeck,
-            isReview: isReview
+            isReview: isReview,
+            isStash: isStash
         };
     }
 

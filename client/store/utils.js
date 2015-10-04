@@ -48,15 +48,15 @@ module.exports = {
     },
 
     detour(predicate) {
-        return function(state, options) {
-            const result = predicate.call(void 0, state, options);
+        return co.wrap(function*(state, options) {
+            const result = yield Promise.resolve(predicate.call(void 0, state, options));
 
             if(!result) {
                 return options;
             }
 
             return result.call(void 0, state, options);
-        };
+        });
     },
 
     stateless(transform) {

@@ -1,7 +1,6 @@
 const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
-const Immutable = require('immutable');
 
 const {NOT_SET, paths} = require('store/constants');
 const {toDeckCards, toDeckCardsNew} = require('store/route');
@@ -17,7 +16,6 @@ const CardsDashboard = React.createClass({
         viewingProfile: React.PropTypes.bool.isRequired,
         creatingNew: React.PropTypes.bool.isRequired,
         store: React.PropTypes.object.isRequired,
-        card: React.PropTypes.instanceOf(Immutable.Map).isRequired
     },
 
     onClickBack(event) {
@@ -129,7 +127,6 @@ module.exports = orwell(CardsDashboardOcclusion, {
         const state = context.store.state();
 
         return [
-            state.cursor(paths.card.editing),
             state.cursor(paths.deck.self),
             state.cursor(paths.dashboard.cards.creatingNew),
             state.cursor(paths.dashboard.cards.viewingProfile),
@@ -140,12 +137,9 @@ module.exports = orwell(CardsDashboardOcclusion, {
 
         const state = context.store.state();
 
-        const card = state.cursor(paths.card.self).deref(NOT_SET);
-
         return {
             store: context.store,
             deck: state.cursor(paths.deck.self).deref(), // used for react-either
-            card: card === NOT_SET || !Immutable.Map.isMap(card) ? Immutable.Map() : card,
             creatingNew: state.cursor(paths.dashboard.cards.creatingNew).deref(),
             viewingProfile: state.cursor(paths.dashboard.cards.viewingProfile).deref()
         };

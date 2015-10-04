@@ -39,6 +39,13 @@ const SCHEMA = {
 
             creatingNew: false,
             viewingProfile: false
+        },
+
+        stashes: {
+            list: NOT_SET,
+
+            creatingNew: false,
+            viewingProfile: false
         }
     },
 
@@ -59,6 +66,12 @@ const SCHEMA = {
 
     review: {
         self: NOT_SET
+    },
+
+    stash: {
+        // stash profile
+        editing: false,
+        self: NOT_SET // currently viewed stash
     }
 };
 
@@ -75,15 +88,6 @@ Store.prototype.state = function() {
 
 Store.prototype.invoke = function(transformer, ...args) {
     transformer.bind(void 0, this._state).apply(null, args);
-};
-
-Store.prototype.dispatch = function(transformer, ...args) {
-    throw Error('use invoke');
-    const ctx = {
-        store: this
-    };
-
-    transformer.bind(ctx, this._state).apply(null, args);
 };
 
 module.exports = bootstrap(new Store());

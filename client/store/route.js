@@ -109,6 +109,34 @@ const transforms = {
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 
         page(`/review/deck/${deckID}`);
+    },
+
+    toStash(state, options = {}) {
+        page(`/stashes`);
+        return options;
+    },
+
+    toStashNew(state, options = {}) {
+        page(`/stashes/new`);
+        return options;
+    },
+
+    toStashProfile(state, options = {}) {
+
+        let {stash, stashID} = options;
+
+        ({stash, stashID} = resolveStash(state, stash, stashID));
+
+        page(`/stashes/${stashID}`);
+    },
+
+    toStashProfileEdit(state, options = {}) {
+
+        let {stash, stashID} = options;
+
+        ({stash, stashID} = resolveStash(state, stash, stashID));
+
+        page(`/stashes/${stashID}/edit`);
     }
 };
 
@@ -140,4 +168,17 @@ const resolveCard = function(state, card = void 0, cardID = void 0) {
     }
 
     return {card, cardID};
+};
+
+const resolveStash = function(state, stash = void 0, stashID = void 0) {
+    state.cursor(paths.stash.self).update(function(_stash) {
+        stash = stash || _stash;
+        return stash;
+    });
+
+    if(!stashID) {
+        stashID = stash.get('id');
+    }
+
+    return {stash, stashID};
 };
