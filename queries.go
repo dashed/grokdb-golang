@@ -1065,6 +1065,32 @@ var COUNT_CARDS_BY_STASH_QUERY = (func() PipeInput {
     )
 }())
 
+var COUNT_STASHES_QUERY = (func() PipeInput {
+    const __COUNT_STASHES_QUERY string = `
+        SELECT
+            COUNT(1)
+        FROM Stashes;
+    `
+
+    return composePipes(
+        MakeCtxMaker(__COUNT_STASHES_QUERY),
+        BuildQueryPipe,
+    )
+}())
+
+var FETCH_STASHES_QUERY = (func() PipeInput {
+    const __FETCH_STASHES_QUERY string = `
+        SELECT
+            stash_id, name, description, created_at, updated_at
+        FROM Stashes;
+    `
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_STASHES_QUERY),
+        BuildQueryPipe,
+    )
+}())
+
 // sort by created_at
 var FETCH_CARDS_BY_STASH_SORT_CREATED_QUERY = func(sort string) PipeInput {
     const __FETCH_CARDS_BY_STASH_SORT_CREATED_QUERY_RAW string = `

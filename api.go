@@ -96,6 +96,8 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
     {
         stashesAPI.POST("/", injectDB(StashPOST))
 
+        stashesAPI.GET("/", injectDB(StashListGET))
+
         stashesAPI.GET("/:id", injectDB(StashGET))
 
         stashesAPI.DELETE("/:id", injectDB(StashDELETE))

@@ -18,6 +18,7 @@ import (
 var ErrStashNoSuchStash = errors.New("stashes: no such stash of given id")
 var ErrStashNoCardsByStash = errors.New("stashes: stash has no cards")
 var ErrStashHasNoCachedReviewCard = errors.New("stash: no cached review card for stash")
+var ErrStashNoStashes = errors.New("stash: no stashes")
 
 /* types */
 
@@ -95,6 +96,40 @@ func StashGET(db *sqlx.DB, ctx *gin.Context) {
     }
 
     ctx.JSON(http.StatusCreated, StashRowToResponse(fetchedStashRow))
+}
+
+func StashListGET(db *sqlx.DB, ctx *gin.Context) {
+
+    var err error
+
+    var stashes *([]StashRow)
+    stashes, err = StashList(db)
+    switch {
+    case err == ErrStashNoStashes:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": "no stashes",
+            "userMessage":      "no stashes",
+        })
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve stash list",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var response []gin.H = make([]gin.H, 0, len(*stashes))
+
+    for _, fetchedStashRow := range *stashes {
+        foo := StashRowToResponse(&fetchedStashRow)
+        response = append(response, foo)
+    }
+
+    ctx.JSON(http.StatusOK, response)
 }
 
 func StashPOST(db *sqlx.DB, ctx *gin.Context) {
@@ -627,10 +662,9 @@ func StashCardsGET(db *sqlx.DB, ctx *gin.Context) {
     case err == ErrStashNoCardsByStash:
         ctx.JSON(http.StatusNotFound, gin.H{
             "status":           http.StatusNotFound,
-            "developerMessage": err.Error(),
+            "developerMessage": "stash has no cards",
             "userMessage":      "stash has no cards",
         })
-        ctx.Error(err)
         return
     case err == ErrCardPageOutOfBounds:
         ctx.JSON(http.StatusBadRequest, gin.H{
@@ -1272,4 +1306,62 @@ func DeleteCachedReviewCardByStash(db *sqlx.DB, stashID uint) error {
     }
 
     return nil
+}
+
+func CountStashes(db *sqlx.DB) (uint, error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(COUNT_STASHES_QUERY)
+    if err != nil {
+        return 0, err
+    }
+
+    var count uint
+    err = db.QueryRowx(query, args...).Scan(&count)
+    if err != nil {
+        return 0, err
+    }
+
+    return count, nil
+}
+
+func StashList(db *sqlx.DB) (*([]StashRow), error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    var count uint
+    count, err = CountStashes(db)
+    if err != nil {
+        return nil, err
+    }
+
+    if count <= 0 {
+        return nil, ErrStashNoStashes
+    }
+
+    query, args, err = QueryApply(FETCH_STASHES_QUERY)
+    if err != nil {
+        return nil, err
+    }
+
+    var stashes []StashRow = make([]StashRow, 0, count)
+    err = db.Select(&stashes, query, args...)
+    if err != nil {
+        return nil, err
+    }
+
+    if len(stashes) <= 0 {
+        return nil, ErrStashNoStashes
+    }
+
+    return &stashes, nil
 }
