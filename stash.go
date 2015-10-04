@@ -438,7 +438,7 @@ func StashPATCH(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    ctx.JSON(http.StatusOk, StashRowToResponse(fetchedStashRow))
+    ctx.JSON(http.StatusOK, StashRowToResponse(fetchedStashRow))
 }
 
 func StashPUT(db *sqlx.DB, ctx *gin.Context) {
