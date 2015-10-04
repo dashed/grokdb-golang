@@ -3,6 +3,8 @@ package main
 import (
     "database/sql"
     "errors"
+    "fmt"
+    "math/rand"
     "net/http"
     "strconv"
     "strings"
@@ -15,6 +17,7 @@ import (
 /* variables */
 var ErrStashNoSuchStash = errors.New("stashes: no such stash of given id")
 var ErrStashNoCardsByStash = errors.New("stashes: stash has no cards")
+var ErrStashHasNoCachedReviewCard = errors.New("stash: no cached review card for stash")
 
 /* types */
 
@@ -39,6 +42,12 @@ type StashPOSTRequest struct {
 type StashPUTRequest struct {
     Action string `json:"action" binding:"required"`
     CardID uint   `json:"card_id" binding:"required"`
+}
+
+type CachedStashReviewCardRow struct {
+    Card      uint  `db:"card"`
+    Stash     uint  `db:"stash"`
+    CreatedAt int64 `db:"created_at"`
 }
 
 /* REST Handlers */
@@ -668,6 +677,114 @@ func StashCardsGET(db *sqlx.DB, ctx *gin.Context) {
     ctx.JSON(http.StatusOK, response)
 }
 
+func ReviewStashGET(db *sqlx.DB, ctx *gin.Context) {
+
+    var err error
+
+    // parse and validate id param
+    var stashIDString string = strings.ToLower(ctx.Param("id"))
+
+    _stashID, err := strconv.ParseUint(stashIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var stashID uint = uint(_stashID)
+
+    // ensure stash exists
+    _, err = GetStash(db, stashID)
+    switch {
+    case err == ErrStashNoSuchStash:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find stash by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // get count of cards available to fetch
+    var count uint
+    count, err = CountCardsByStash(db, stashID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve review card count",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    if count <= 0 {
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": "no review card available",
+            "userMessage":      "no review card available",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var purgatory_size int = GetPurgatorySize(int(count))
+
+    // fetch review card
+    var fetchedReviewCardRow *CardRow
+    fetchedReviewCardRow, err = GetNextReviewCardOfStash(db, stashID, purgatory_size)
+
+    switch {
+    case err == ErrCardNoSuchCard:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "no review card available",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // fetch card's score
+    var fetchedCardScore *CardScoreRow
+    fetchedCardScore, err = GetCardScoreRecord(db, fetchedReviewCardRow.ID)
+
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card score record",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var cardrow gin.H = CardRowToResponse(db, fetchedReviewCardRow)
+    var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
+
+    ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
+}
+
 /* helpers */
 
 func StashResponse(overrides *gin.H) gin.H {
@@ -974,4 +1091,185 @@ func CountCardsByStash(db *sqlx.DB, stashID uint) (uint, error) {
     }
 
     return count, nil
+}
+
+func GetNextReviewCardOfStash(db *sqlx.DB, stashID uint, _purgatory_size int) (*CardRow, error) {
+
+    var (
+        err     error
+        queryfn PipeInput = FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_NORM_SCORE
+        args    []interface{}
+    )
+
+    var fetchedRow *CachedStashReviewCardRow
+    fetchedRow, err = GetCachedReviewCardByStash(db, stashID)
+
+    switch {
+    case err == ErrStashHasNoCachedReviewCard:
+    case err != nil:
+        return nil, err
+    case fetchedRow != nil:
+        var fetchedReviewCard *CardRow
+        fetchedReviewCard, err = GetCard(db, fetchedRow.Card)
+        switch {
+        case err == ErrCardNoSuchCard:
+            // card may have been deleted
+            break
+        case err != nil:
+            return nil, err
+        default:
+            return fetchedReviewCard, nil
+        }
+    }
+
+    // no cached review card
+
+    if _purgatory_size <= 0 {
+        return nil, errors.New("invalid _purgatory_size")
+    }
+
+    var purgatory_size int = 10
+    var purgatory_index int = 0
+
+    var chosenmethod reviewmethod = ChooseMethod()
+
+    switch chosenmethod {
+    case OLDEST:
+
+        queryfn = FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_AGE
+        purgatory_size = 1
+        purgatory_index = 0
+
+        fmt.Println("age")
+
+    case HIGHEST_NORM_SCORE:
+
+        queryfn = FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_NORM_SCORE
+        purgatory_size = _purgatory_size
+        purgatory_index = 0
+
+        fmt.Println("highest norm")
+
+    case RANDOM_CARD:
+
+        queryfn = FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_AGE // more efficient
+        purgatory_size = 1
+        purgatory_index = rand.Intn(_purgatory_size) // returns int from [0, _purgatory_size)
+
+        fmt.Println("random")
+    }
+
+    var query string
+    query, args, err = QueryApply(queryfn, &StringMap{
+        "stash_id":        stashID,
+        "purgatory_size":  purgatory_size,
+        "purgatory_index": purgatory_index,
+    })
+
+    if err != nil {
+        return nil, err
+    }
+
+    var fetchedReviewCard *CardRow = &CardRow{}
+    err = db.QueryRowx(query, args...).StructScan(fetchedReviewCard)
+
+    switch {
+    case err == sql.ErrNoRows:
+        return nil, ErrCardNoSuchCard
+    case err != nil:
+        return nil, err
+    default:
+
+        // cache card
+        err = SetCachedReviewCardByStash(db, stashID, fetchedReviewCard.ID)
+        if err != nil {
+            return nil, err
+        }
+
+        return fetchedReviewCard, nil
+    }
+}
+
+func GetCachedReviewCardByStash(db *sqlx.DB, stashID uint) (*CachedStashReviewCardRow, error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(GET_CACHED_REVIEWCARD_BY_STASH_QUERY, &StringMap{
+        "stash_id": stashID,
+    })
+    if err != nil {
+        return nil, err
+    }
+
+    var fetchedRow *CachedStashReviewCardRow = &CachedStashReviewCardRow{}
+
+    // ErrNoRows
+
+    err = db.QueryRowx(query, args...).StructScan(fetchedRow)
+    switch {
+    case err == sql.ErrNoRows:
+        return nil, ErrStashHasNoCachedReviewCard
+    case err != nil:
+        return nil, err
+    default:
+        return fetchedRow, nil
+    }
+}
+
+func SetCachedReviewCardByStash(db *sqlx.DB, stashID uint, cardID uint) error {
+
+    var err error
+
+    err = DeleteCachedReviewCardByStash(db, stashID)
+    if err != nil {
+        return err
+    }
+
+    // insert record into db
+
+    var (
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(INSERT_CACHED_REVIEWCARD_BY_STASH_QUERY,
+        &StringMap{
+            "stash_id": stashID,
+            "card_id":  cardID,
+        })
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func DeleteCachedReviewCardByStash(db *sqlx.DB, stashID uint) error {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DELETE_CACHED_REVIEWCARD_BY_STASH_QUERY, &StringMap{"stash_id": stashID})
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }

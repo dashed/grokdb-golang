@@ -963,6 +963,17 @@ ON Stashes
 BEGIN
     UPDATE Stashes SET updated_at = strftime('%s', 'now') WHERE stash_id = NEW.stash_id;
 END;
+
+CREATE TABLE IF NOT EXISTS ReviewCardStashCache (
+    stash INTEGER NOT NULL,
+    card INTEGER NOT NULL,
+    created_at INT NOT NULL DEFAULT (strftime('%s', 'now')),
+
+    PRIMARY KEY(stash),
+
+    FOREIGN KEY (stash) REFERENCES Stashes(stash_id) ON DELETE CASCADE,
+    FOREIGN KEY (card) REFERENCES Cards(card_id) ON DELETE CASCADE
+);
 `
 
 var CREATE_NEW_STASH_QUERY = (func() PipeInput {
@@ -1374,6 +1385,48 @@ var DISCONNECT_STASH_FROM_CARD_QUERY = (func() PipeInput {
 
     return composePipes(
         MakeCtxMaker(__DISCONNECT_STASH_FROM_CARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var GET_CACHED_REVIEWCARD_BY_STASH_QUERY = (func() PipeInput {
+    const __GET_CACHED_REVIEWCARD_BY_STASH_QUERY string = `
+        SELECT stash, card, created_at FROM ReviewCardStashCache
+        WHERE stash = :stash_id;
+    `
+
+    var requiredInputCols []string = []string{"stash_id"}
+
+    return composePipes(
+        MakeCtxMaker(__GET_CACHED_REVIEWCARD_BY_STASH_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var DELETE_CACHED_REVIEWCARD_BY_STASH_QUERY = (func() PipeInput {
+    const __DELETE_CACHED_REVIEWCARD_BY_STASH_QUERY string = `
+    DELETE FROM ReviewCardStashCache WHERE stash = :stash_id;
+    `
+
+    var requiredInputCols []string = []string{"stash_id"}
+
+    return composePipes(
+        MakeCtxMaker(__DELETE_CACHED_REVIEWCARD_BY_STASH_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var INSERT_CACHED_REVIEWCARD_BY_STASH_QUERY = (func() PipeInput {
+    const __INSERT_CACHED_REVIEWCARD_BY_STASH_QUERY string = `
+    INSERT INTO ReviewCardStashCache(stash, card) VALUES (:stash_id, :card_id);
+    `
+    var requiredInputCols []string = []string{"stash_id", "card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__INSERT_CACHED_REVIEWCARD_BY_STASH_QUERY),
         EnsureInputColsPipe(requiredInputCols),
         BuildQueryPipe,
     )
