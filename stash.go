@@ -14,6 +14,7 @@ import (
 
 /* variables */
 var ErrStashNoSuchStash = errors.New("stashes: no such stash of given id")
+var ErrStashNoCardsByStash = errors.New("stashes: stash has no cards")
 
 /* types */
 
@@ -502,6 +503,171 @@ func StashPUT(db *sqlx.DB, ctx *gin.Context) {
     ctx.Writer.WriteHeader(http.StatusNoContent)
 }
 
+func StashCardsGET(db *sqlx.DB, ctx *gin.Context) {
+
+    var err error
+
+    // parse and validate id param
+    var stashIDString string = strings.ToLower(ctx.Param("id"))
+
+    _stashID, err := strconv.ParseUint(stashIDString, 10, 32)
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given id is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var stashID uint = uint(_stashID)
+
+    // parse page query
+    var pageQueryString string = ctx.DefaultQuery("page", "1")
+    _page, err := strconv.ParseUint(pageQueryString, 10, 32)
+    if err != nil || _page <= 0 {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given page query param is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var page uint = uint(_page)
+
+    // parse per_page query
+    var perpageQueryString string = ctx.DefaultQuery("per_page", "25")
+    _per_page, err := strconv.ParseUint(perpageQueryString, 10, 32)
+    if err != nil || _per_page <= 0 {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "given per_page query param is invalid",
+        })
+        ctx.Error(err)
+        return
+    }
+    var per_page uint = uint(_per_page)
+
+    // parse sort order
+    var orderQueryString string = strings.ToUpper(ctx.DefaultQuery("order", "DESC"))
+
+    switch {
+    case orderQueryString == "DESC":
+    case orderQueryString == "ASC":
+    default:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "invalid order query",
+            "userMessage":      "invalid order query",
+        })
+        return
+    }
+
+    // parse sort metric query
+    var sortQueryString string = ctx.DefaultQuery("sort", "reviewed_at")
+
+    var query PipeInput
+    switch {
+    case sortQueryString == "created_at":
+        query = FETCH_CARDS_BY_STASH_SORT_CREATED_QUERY(orderQueryString)
+    case sortQueryString == "updated_at":
+        query = FETCH_CARDS_BY_STASH_SORT_UPDATED_QUERY(orderQueryString)
+    case sortQueryString == "title":
+        query = FETCH_CARDS_BY_STASH_SORT_TITLE_QUERY(orderQueryString)
+    case sortQueryString == "reviewed_at":
+        query = FETCH_CARDS_BY_STASH_REVIEWED_DATE_QUERY(orderQueryString)
+    case sortQueryString == "times_reviewed":
+        query = FETCH_CARDS_BY_STASH_TIMES_REVIEWED_QUERY(orderQueryString)
+    default:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "invalid sort query",
+            "userMessage":      "invalid sort query",
+        })
+        return
+    }
+
+    // ensure stash exists
+    _, err = GetStash(db, stashID)
+    switch {
+    case err == ErrStashNoSuchStash:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "cannot find stash by id",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    // fetch cards
+    var cards *([]CardRow)
+    cards, err = CardsByStash(db, query, stashID, page, per_page)
+
+    switch {
+    case err == ErrStashNoCardsByStash:
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "status":           http.StatusNotFound,
+            "developerMessage": err.Error(),
+            "userMessage":      "stash has no cards",
+        })
+        ctx.Error(err)
+        return
+    case err == ErrCardPageOutOfBounds:
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "page is out of bound",
+        })
+        ctx.Error(err)
+        return
+    case err != nil:
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve cards for stash",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    var response []gin.H = make([]gin.H, 0, len(*cards))
+
+    for _, cr := range *cards {
+
+        // fetch card score
+        var fetchedCardScore *CardScoreRow
+        fetchedCardScore, err = GetCardScoreRecord(db, cr.ID)
+        if err != nil {
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to retrieve card score record",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        var cardrow gin.H = CardRowToResponse(db, &cr)
+        var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
+
+        foo := MergeResponse(&cardrow, &gin.H{"review": cardscore})
+        response = append(response, foo)
+    }
+
+    ctx.JSON(http.StatusOK, response)
+}
+
 /* helpers */
 
 func StashResponse(overrides *gin.H) gin.H {
@@ -736,4 +902,76 @@ func DisconnectCardFromStash(db *sqlx.DB, stashID uint, cardID uint) error {
     }
 
     return nil
+}
+
+func CardsByStash(db *sqlx.DB, queryTransform PipeInput, stashID uint, page uint, per_page uint) (*([]CardRow), error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    // invariant: page >= 1
+
+    var offset uint = (page - 1) * per_page
+
+    var count uint
+    count, err = CountCardsByStash(db, stashID)
+    if err != nil {
+        return nil, err
+    }
+
+    if count <= 0 {
+        return nil, ErrStashNoCardsByStash
+    }
+
+    if offset >= count {
+        return nil, ErrCardPageOutOfBounds
+    }
+
+    query, args, err = QueryApply(queryTransform, &StringMap{
+        "stash_id": stashID,
+        "per_page": per_page,
+        "offset":   offset,
+    })
+    if err != nil {
+        return nil, err
+    }
+
+    var cards []CardRow = make([]CardRow, 0, per_page)
+    err = db.Select(&cards, query, args...)
+    if err != nil {
+        return nil, err
+    }
+
+    if len(cards) <= 0 {
+        return nil, ErrStashNoCardsByStash
+    }
+
+    return &cards, nil
+}
+
+func CountCardsByStash(db *sqlx.DB, stashID uint) (uint, error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(COUNT_CARDS_BY_STASH_QUERY, &StringMap{
+        "stash_id": stashID,
+    })
+    if err != nil {
+        return 0, err
+    }
+
+    var count uint
+    err = db.QueryRowx(query, args...).Scan(&count)
+    if err != nil {
+        return 0, err
+    }
+
+    return count, nil
 }
