@@ -104,18 +104,8 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    /**
-     * These numbers were chosen arbitrarily. And may be adjusted.
-     */
-
     // determine purgatory_size
-    var purgatory_size int = 10
-
-    if count < 50 {
-        purgatory_size = int(math.Ceil(0.2 * float64(count)))
-    } else {
-        purgatory_size = 10
-    }
+    var purgatory_size int = GetPurgatorySize(count)
 
     // fetch review card
     var fetchedReviewCardRow *CardRow
@@ -725,4 +715,15 @@ func DeleteCachedReviewCardByDeck(db *sqlx.DB, deckID uint) error {
     }
 
     return nil
+}
+
+func GetPurgatorySize(cardsCount int) int {
+
+    // Purgatory size resolution grow with the number of cards in a selection.
+    // Do this to allow [learned] cards to stay in purgatory for [quite] a while;
+    // but still have a change of being selected.
+
+    purgatory_size = int(math.Ceil(0.2 * float64(cardsCount)))
+
+    return purgatory_size
 }
