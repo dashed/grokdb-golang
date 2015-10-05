@@ -23,8 +23,8 @@ const transforms = {
     applyPageArgs: co.wrap(function*(state, options = {}) {
 
         options.pageNum = yield parsePageNum(state.cursor(paths.dashboard.cards.page).deref(1));
-        options.sort = yield parseOrder(state.cursor(paths.dashboard.cards.sort).deref(1));
-        options.order = yield parseSort(state.cursor(paths.dashboard.cards.order).deref(1));
+        options.sort = yield parseSort(state.cursor(paths.dashboard.cards.sort).deref('reviewed_at'));
+        options.order = yield parseOrder(state.cursor(paths.dashboard.cards.order).deref('DESC'));
         options.numOfPages = yield parseNumOfPages(state.cursor(paths.dashboard.cards.numOfPages).deref(1));
 
         return options;

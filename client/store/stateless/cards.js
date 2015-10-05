@@ -132,7 +132,10 @@ const transforms = {
             superhot
                 .get(`/decks/${deckID}/cards/count`)
                 .end(function(err, res){
-                    resolve({cardsCount: res.body && res.body.total || 0});
+
+                    const count = filterInt(res.body && res.body.total || 0);
+
+                    resolve({cardsCount: count});
                 });
         });
     },
