@@ -19,9 +19,9 @@ const DEFAULTS = {
     // routes
     changeToCard: NOT_SET,
     afterCardsListSort: NOT_SET, // route to execute on cards list sort
-    afterCardsListPageChange: NOT_SET,
+    afterCardsListPageChange: NOT_SET, // unused
     afterCardsListDeckChange: NOT_SET,
-    afterCardsListSearch: NOT_SET // TODO: to be implemented
+    afterCardsListSearch: NOT_SET // TODO: to be implemented // unused
 };
 const overrides = Immutable.fromJS(DEFAULTS);
 

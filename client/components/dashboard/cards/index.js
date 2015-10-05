@@ -5,7 +5,7 @@ const either = require('react-either');
 const {flow} = require('store/utils');
 const {NOT_SET, paths} = require('store/constants');
 const {toDeckCards, toDeckCardsNew} = require('store/route');
-const {applyPageArgs} = require('store/cards');
+const {applyDeckCardsPageArgs} = require('store/cards');
 
 const CardsList = require('./cardslist');
 const CreatingCard = require('./new');
@@ -13,7 +13,7 @@ const CardsPagination = require('./pagination');
 const CardProfile = require('./profile');
 
 const toDeckCardsList = flow(
-    applyPageArgs,
+    applyDeckCardsPageArgs,
     toDeckCards
 );
 

@@ -6,6 +6,38 @@ const Immutable = require('immutable');
 const superhot = require('store/superhot');
 const {filterInt} = require('store/utils');
 
+const __parsePageNum = function(localstateKeyword) {
+    return co.wrap(function*(deckID = 0, pageNum = 1) {
+
+        pageNum = filterInt(pageNum);
+
+        if(_.isNaN(pageNum) || !_.isNumber(pageNum)) {
+            const obj = yield localforage.getItem(localstateKeyword);
+
+            if(!_.isPlainObject(obj)) {
+                pageNum = 1;
+            } else {
+                pageNum = obj.pageNum;
+                const __deckID = obj.deckID;
+
+                if(__deckID != deckID || deckID == 0) {
+                    pageNum = 1;
+                }
+            }
+        }
+
+        if(_.isNaN(pageNum) || !_.isNumber(pageNum)) {
+            pageNum = 1;
+        }
+
+        pageNum = pageNum <= 0 ? 1 : pageNum;
+
+        yield localforage.setItem(localstateKeyword, {pageNum, deckID});
+
+        return pageNum;
+    });
+};
+
 const transforms = {
 
     fetchCard(inputs) {
@@ -38,24 +70,8 @@ const transforms = {
         });
     },
 
-    parsePageNum: co.wrap(function*(pageNum = 1) {
-
-        pageNum = filterInt(pageNum);
-
-        if(_.isNaN(pageNum) || !_.isNumber(pageNum)) {
-            pageNum = yield localforage.getItem('page');
-        }
-
-        if(_.isNaN(pageNum) || !_.isNumber(pageNum)) {
-            pageNum = 1;
-        }
-
-        pageNum = pageNum <= 0 ? 1 : pageNum;
-
-        yield localforage.setItem('page', pageNum);
-
-        return pageNum;
-    }),
+    parseDeckCardsPageNum: __parsePageNum('deckcardspage'),
+    parseStashCardsPageNum: __parsePageNum('stashcardspage'),
 
     parseOrder: co.wrap(function*(pageOrder = 'DESC'){
 
@@ -82,7 +98,7 @@ const transforms = {
         return pageOrder;
     }),
 
-    parseSort: co.wrap(function*(pageSort = 'reviewed_at'){
+    parseSort: co.wrap(function*(pageSort){
 
         if(!_.isString(pageSort) || pageSort.length <= 0) {
             pageSort = yield localforage.getItem('sort');

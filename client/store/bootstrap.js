@@ -10,7 +10,7 @@ const {fetchRootDeck, fetchDeck, fetchChildren, fetchAncestors} = require('store
 const {setRootDeck, isCurrentDeck} = require('store/decks');
 const {setTransactions, commitTransaction} = require('store/meta');
 const {redirectToDeck, validDeckSlug} = require('store/route');
-const {parsePageNum, parseOrder, parseSort, fetchCardsCount, fetchCardsList, fetchCard} = require('store/stateless/cards');
+const {parseDeckCardsPageNum, parseStashCardsPageNum, parseOrder, parseSort, fetchCardsCount, fetchCardsList, fetchCard} = require('store/stateless/cards');
 const {isCurrentCard, applyCardArgs} = require('store/cards');
 const {fetchReviewCardByDeck} = require('store/stateless/review');
 const {fetchStashList, fetchStash} = require('store/stateless/stashes');
@@ -445,7 +445,28 @@ const ensureDeckRoute = co.wrap(function* (store, ctx, next) {
 const loadCardsList = flow(
 
     co.wrap(function*(state, options) {
-        options.pageNum = yield parsePageNum(options.pageNum);
+
+        const deckID = (function() {
+            let maybeDeck = state.cursor(paths.transaction).deref().get(paths.deck.self, NOT_SET);
+
+            if(maybeDeck === NOT_SET) {
+                maybeDeck = state.cursor(paths.deck.self).deref(NOT_SET);
+
+                if(maybeDeck === NOT_SET) {
+                    // TODO: error handling
+                    throw Error('bad');
+                }
+            }
+
+            if(!Immutable.Map.isMap(maybeDeck)) {
+                // TODO: error handling
+                throw Error('bad');
+            }
+
+            return maybeDeck.get('id', 0);
+        }());
+
+        options.pageNum = yield parseDeckCardsPageNum(deckID, options.pageNum);
         options.pageOrder = yield parseOrder(options.pageOrder);
         options.pageSort = yield parseSort(options.pageSort);
         return options;

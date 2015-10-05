@@ -7,12 +7,13 @@ const either = require('react-either');
 const once = require('react-prop-once');
 
 const {NOT_SET, paths} = require('store/constants');
-const GenericCardsList = require('./list');
 const {toDeckCards} = require('store/route');
-const {applyPageArgs} = require('store/cards');
+const {applyDeckCardsPageArgs} = require('store/cards');
 const {flow} = require('store/utils');
 const {setCard} = require('store/cards');
 const {toCardProfile} = require('store/route');
+
+const GenericCardsList = require('./list');
 
 const changeToCard = flow(
 
@@ -28,17 +29,55 @@ const CardsList = React.createClass({
     propTypes: {
         localstate: React.PropTypes.instanceOf(Probe).isRequired,
         list: React.PropTypes.instanceOf(Immutable.List).isRequired,
-        breadcrumb: React.PropTypes.instanceOf(Immutable.List).isRequired
+        breadcrumb: React.PropTypes.instanceOf(Immutable.List).isRequired,
+        currentPage: React.PropTypes.number.isRequired,
+        sort: React.PropTypes.string.isRequired,
+        order: React.PropTypes.string.isRequired
     },
 
     componentWillMount() {
         this.loadList(this.props, {});
         this.loadBreadcrumb(this.props, {});
+        this.loadPageProps(this.props, {});
     },
 
     componentWillReceiveProps(nextProps) {
         this.loadList(nextProps, this.props);
         this.loadBreadcrumb(nextProps, this.props);
+        this.loadPageProps(nextProps, this.props);
+    },
+
+    loadPageProps(nextProps, oldProps) {
+
+        const {
+            localstate,
+            currentPage: newCurrentPage,
+            sort: newSort,
+            order: newOrder
+        } = nextProps;
+        const {
+            currentPage: oldCurrentPage,
+            sort: oldSort,
+            order: oldOrder
+        } = oldProps;
+
+        if(newCurrentPage != oldCurrentPage) {
+            localstate.cursor('currentPage').update(function() {
+                return newCurrentPage;
+            });
+        }
+
+        if(newSort != oldSort) {
+            localstate.cursor('sort').update(function() {
+                return newSort;
+            });
+        }
+
+        if(newOrder != oldOrder) {
+            localstate.cursor('order').update(function() {
+                return newOrder;
+            });
+        }
     },
 
     loadBreadcrumb(nextProps, oldProps) {
@@ -127,7 +166,12 @@ const CardsListOnce = once(CardsListOcclusion, {
                     flowPath,
 
                     // route
-                    applyPageArgs,
+                    applyDeckCardsPageArgs,
+                    function(state, _options = {}) {
+                        // reset the page when changing decks
+                        _options.pageNum = 1;
+                        return _options;
+                    },
                     toDeckCards
                 );
 
@@ -157,7 +201,10 @@ module.exports = orwell(CardsListOnce, {
 
         return [
             state.cursor(paths.dashboard.cards.list),
-            state.cursor(paths.deck.breadcrumb)
+            state.cursor(paths.deck.breadcrumb),
+            state.cursor(paths.dashboard.cards.page),
+            state.cursor(paths.dashboard.cards.sort),
+            state.cursor(paths.dashboard.cards.order)
         ];
     },
     assignNewProps(props, context) {
@@ -168,7 +215,10 @@ module.exports = orwell(CardsListOnce, {
         return {
             store: context.store,
             list: state.cursor(paths.dashboard.cards.list).deref(Immutable.List()),
-            breadcrumb: state.cursor(paths.deck.breadcrumb).deref(Immutable.List())
+            breadcrumb: state.cursor(paths.deck.breadcrumb).deref(Immutable.List()),
+            currentPage: state.cursor(paths.dashboard.cards.page).deref(1),
+            sort: state.cursor(paths.dashboard.cards.sort).deref('reviewed_at'),
+            order: state.cursor(paths.dashboard.cards.order).deref('DESC')
         };
     }
 }).inject({

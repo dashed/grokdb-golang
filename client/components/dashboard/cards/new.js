@@ -6,7 +6,7 @@ const minitrue = require('minitrue');
 const _ = require('lodash');
 
 const {flow} = require('store/utils');
-const {createNewCard, applyPageArgs} = require('store/cards');
+const {createNewCard, applyDeckCardsPageArgs} = require('store/cards');
 const {toDeckCards} = require('store/route');
 const {applyDeckArgs} = require('store/decks');
 const {cards} = require('store/constants');
@@ -22,7 +22,7 @@ const saveNewCard = flow(
     createNewCard,
 
     // route
-    applyPageArgs,
+    applyDeckCardsPageArgs,
     toDeckCards
 );
 

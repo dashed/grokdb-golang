@@ -17,9 +17,7 @@ const navigateToParentDeck = flow(
     stateless(fetchChildren),
     setChildren
 
-    // route
-    // applyPageArgs,
-    // toDeckCards
+    // route needs to be applied
 );
 
 const navigateToChildDeck = flow(
@@ -29,9 +27,7 @@ const navigateToChildDeck = flow(
     stateless(fetchChildren),
     setChildren
 
-    // route
-    // applyPageArgs,
-    // toDeckCards
+    // route needs to be applied
 );
 
 const CardChild = React.createClass({

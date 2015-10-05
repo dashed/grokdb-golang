@@ -5,10 +5,10 @@ const classNames = require('classnames');
 const {flow} = require('store/utils');
 const {dashboard, paths} = require('store/constants');
 const {toDeckCards, toDeck, toReview, toStash} = require('store/route');
-const {applyPageArgs} = require('store/cards');
+const {applyDeckCardsPageArgs} = require('store/cards');
 
 const toDeckCardsList = flow(
-    applyPageArgs,
+    applyDeckCardsPageArgs,
     toDeckCards
 );
 
