@@ -2,13 +2,20 @@ const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
 
+const {flow} = require('store/utils');
 const {NOT_SET, paths} = require('store/constants');
 const {toDeckCards, toDeckCardsNew} = require('store/route');
+const {applyPageArgs} = require('store/cards');
 
-const CardsList = require('./list');
+const CardsList = require('./cardslist');
 const CreatingCard = require('./new');
 const CardsPagination = require('./pagination');
 const CardProfile = require('./profile');
+
+const toDeckCardsList = flow(
+    applyPageArgs,
+    toDeckCards
+);
 
 const CardsDashboard = React.createClass({
 
@@ -22,7 +29,7 @@ const CardsDashboard = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.store.invoke(toDeckCards);
+        this.props.store.invoke(toDeckCardsList);
     },
 
     onClickNewCard(event) {

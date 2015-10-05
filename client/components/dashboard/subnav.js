@@ -2,8 +2,15 @@ const React = require('react');
 const orwell = require('orwell');
 const classNames = require('classnames');
 
+const {flow} = require('store/utils');
 const {dashboard, paths} = require('store/constants');
 const {toDeckCards, toDeck, toReview, toStash} = require('store/route');
+const {applyPageArgs} = require('store/cards');
+
+const toDeckCardsList = flow(
+    applyPageArgs,
+    toDeckCards
+);
 
 const SubNav = React.createClass({
 
@@ -26,7 +33,7 @@ const SubNav = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.store.invoke(toDeckCards);
+        this.props.store.invoke(toDeckCardsList);
     },
 
     onClickReview(event) {

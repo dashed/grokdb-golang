@@ -49,7 +49,7 @@ const transforms = {
     toDeckCards(state, options = {}) {
 
         let {deck, deckID} = options;
-        const {page: _pageNum = 1, order: _order = 'DESC', sort: _sort = 'reviewed_at'} = options;
+        const {pageNum: _pageNum = 1, order: _order = 'DESC', sort: _sort = 'reviewed_at'} = options;
 
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 
@@ -63,7 +63,7 @@ const transforms = {
     redirectToDeckCards(state, options = {}) {
 
         let {deck, deckID} = options;
-        const {page: _pageNum = 1, order: _order = 'DESC', sort: _sort = 'reviewed_at'} = options;
+        const {pageNum: _pageNum = 1, order: _order = 'DESC', sort: _sort = 'reviewed_at'} = options;
 
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 

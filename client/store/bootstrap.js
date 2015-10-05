@@ -10,8 +10,8 @@ const {fetchRootDeck, fetchDeck, fetchChildren, fetchAncestors} = require('store
 const {setRootDeck, isCurrentDeck} = require('store/decks');
 const {setTransactions, commitTransaction} = require('store/meta');
 const {redirectToDeck, validDeckSlug} = require('store/route');
-const {fetchPageNum, fetchOrder, fetchSort, fetchCardsCount, fetchCardsList, fetchCard} = require('store/stateless/cards');
-const {setCardsList, isCurrentCard, applyCardArgs} = require('store/cards');
+const {parsePageNum, parseOrder, parseSort, fetchCardsCount, fetchCardsList, fetchCard} = require('store/stateless/cards');
+const {isCurrentCard, applyCardArgs} = require('store/cards');
 const {fetchReviewCardByDeck} = require('store/stateless/review');
 const {fetchStashList, fetchStash} = require('store/stateless/stashes');
 const {setStashList} = require('store/stashes');
@@ -445,9 +445,9 @@ const ensureDeckRoute = co.wrap(function* (store, ctx, next) {
 const loadCardsList = flow(
 
     co.wrap(function*(state, options) {
-        options.pageNum = yield fetchPageNum(options.pageNum);
-        options.pageOrder = yield fetchOrder(options.pageOrder);
-        options.pageSort = yield fetchSort(options.pageSort);
+        options.pageNum = yield parsePageNum(options.pageNum);
+        options.pageOrder = yield parseOrder(options.pageOrder);
+        options.pageSort = yield parseSort(options.pageSort);
         return options;
     }),
 
@@ -473,7 +473,7 @@ const loadCardsList = flow(
         return options;
     },
 
-    stateless(fetchCardsCount),
+    stateless(fetchCardsCount), // for numOfPages
 
     // meta
     setTransactions(function(state, options) {
@@ -503,7 +503,15 @@ const loadCardsList = flow(
     }),
 
     stateless(fetchCardsList),
-    setCardsList
+    setTransactions(function(_state, _options) {
+        const {cardsList} = _options;
+        return [
+            {
+                path: paths.dashboard.cards.list,
+                value: cardsList
+            }
+        ];
+    })
 );
 
 const ensureCardsRoute = co.wrap(function* (store, ctx, next) {

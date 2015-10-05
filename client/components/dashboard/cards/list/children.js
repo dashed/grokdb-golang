@@ -7,7 +7,6 @@ const once = require('react-prop-once');
 const co = require('co');
 const _ = require('lodash');
 
-const {paths} = require('store/constants');
 const {fetchDeck} = require('store/stateless/decks');
 
 const CardChild = require('./child');
@@ -17,6 +16,7 @@ const CardsChildren = React.createClass({
     propTypes: {
         list: React.PropTypes.instanceOf(Immutable.List).isRequired,
         localstate: React.PropTypes.instanceOf(Probe).isRequired,
+        sublocalstate: React.PropTypes.instanceOf(Probe).isRequired, // hacky localstate
         listCursor: React.PropTypes.instanceOf(Probe).isRequired,
         breadcrumbLength: React.PropTypes.number.isRequired
     },
@@ -38,15 +38,19 @@ const CardsChildren = React.createClass({
                 );
             }
 
-            const {listCursor, localstate, breadcrumbLength} = this.props;
+            const {listCursor, localstate, sublocalstate, breadcrumbLength} = this.props;
 
             // display list of cards
 
             const currentChildrenRendered = listCursor.reduce(function(accumulator, childCursor) {
+
+                const key = `${childCursor.deref().get('id')}-${accumulator.length}`;
+
                 accumulator.push(
                     <CardChild
-                        key={childCursor.deref().get('id')}
+                        key={key}
                         localstate={localstate}
+                        sublocalstate={sublocalstate}
                         breadcrumbLength={breadcrumbLength}
                         childCursor={childCursor}
                     />
@@ -71,30 +75,24 @@ const CardsChildren = React.createClass({
 });
 
 const OrwellWrappedCardsChildren = orwell(CardsChildren, {
-    watchCursors(props, manual, context) {
-        const state = context.store.state();
+    watchCursors(props) {
+
+        const {localstate} = props;
 
         return [
-            state.cursor(paths.dashboard.cards.list),
-            state.cursor(paths.deck.breadcrumb)
+            localstate.cursor('list'),
+            localstate.cursor('breadcrumb')
         ];
     },
-    assignNewProps(props, context) {
-
-        const store = context.store;
-        const state = store.state();
-
-        const breadcrumbLength = state.cursor(paths.deck.breadcrumb).deref().size || 1;
-
+    assignNewProps(props) {
+        const {localstate} = props;
+        const breadcrumbLength = localstate.cursor('breadcrumb').deref(Immutable.List).size || 1;
+        const listCursor = localstate.cursor('list');
         return {
-            store: store,
-            listCursor: state.cursor(paths.dashboard.cards.list),
+            listCursor: listCursor,
+            list: listCursor.deref(),
             breadcrumbLength: breadcrumbLength
         };
-    }
-}).inject({
-    contextTypes: {
-        store: React.PropTypes.object.isRequired
     }
 });
 
@@ -102,12 +100,9 @@ const NOT_SET = {};
 
 // local state
 module.exports = once(OrwellWrappedCardsChildren, {
-    contextTypes: {
-        store: React.PropTypes.object.isRequired
-    },
     assignPropsOnMount() {
 
-        const localstate = minitrue({
+        const sublocalstate = minitrue({
             cachedDecks: {}, // map deck id to deck obj
             deckPaths: {} // map card id to array of decks
         });
@@ -119,7 +114,7 @@ module.exports = once(OrwellWrappedCardsChildren, {
 
             let deckPathBuild = deckPathIterator.reduce(function(_deckPathBuild, deckID) {
 
-                let maybeDeck = localstate.cursor(['cachedDecks', deckID]).deref(NOT_SET);
+                let maybeDeck = sublocalstate.cursor(['cachedDecks', deckID]).deref(NOT_SET);
 
                 if(maybeDeck === NOT_SET) {
                     // mark as unfound
@@ -130,7 +125,7 @@ module.exports = once(OrwellWrappedCardsChildren, {
 
                         const result = yield fetchDeck({deckID});
 
-                        localstate.cursor(['cachedDecks', deckID]).update(function() {
+                        sublocalstate.cursor(['cachedDecks', deckID]).update(function() {
                             return result.deck;
                         });
 
@@ -156,24 +151,24 @@ module.exports = once(OrwellWrappedCardsChildren, {
                 deckPathBuild.deckPath[result.index] = result.deck;
             });
 
-            localstate.cursor(['deckPaths', cardID]).update(function() {
+            sublocalstate.cursor(['deckPaths', cardID]).update(function() {
                 return deckPathBuild.deckPath;
             });
         });
 
-        localstate.cursor('requestDeckPath').update(function() {
+        sublocalstate.cursor('requestDeckPath').update(function() {
             return requestDeckPath;
         });
 
         return {
-            localstate: localstate
+            sublocalstate: sublocalstate
         };
     },
 
     cleanOnUnmount(cachedProps) {
 
-        const {localstate} = cachedProps;
+        const {sublocalstate} = cachedProps;
 
-        localstate.removeListeners('any');
+        sublocalstate.removeListeners('any');
     }
 });

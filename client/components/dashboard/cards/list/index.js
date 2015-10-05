@@ -1,25 +1,51 @@
 const React = require('react');
-const orwell = require('orwell');
-const either = require('react-either');
 const Immutable = require('immutable');
+const {Probe} = require('minitrue');
 
-const {NOT_SET, paths} = require('store/constants');
+const {NOT_SET} = require('store/constants');
 
 const CardsChildren = require('./children');
 const SortDropdown = require('./dropdown');
 
+// structure of localstate
+const DEFAULTS = {
+    list: Immutable.List,
+    breadcrumb: Immutable.List,
+
+    currentPage: 1,
+    sort: 'reviewed_at',
+    order: 'DESC',
+
+    // routes
+    changeToCard: NOT_SET,
+    afterCardsListSort: NOT_SET, // route to execute on cards list sort
+    afterCardsListPageChange: NOT_SET,
+    afterCardsListDeckChange: NOT_SET,
+    afterCardsListSearch: NOT_SET // TODO: to be implemented
+};
+const overrides = Immutable.fromJS(DEFAULTS);
+
 const CardsList = React.createClass({
 
     propTypes: {
-        list: React.PropTypes.instanceOf(Immutable.List).isRequired
+        localstate: React.PropTypes.instanceOf(Probe).isRequired
+    },
+
+    componentWillMount() {
+
+        const {localstate} = this.props;
+
+        localstate.update(Immutable.Map(), function(map) {
+            return overrides.mergeDeep(map);
+        });
     },
 
     render() {
 
-        const {list} = this.props;
+        const {localstate} = this.props;
 
         return (
-            <div>
+            <div key="list">
                 <div className="row">
                     <div className="col-sm-12 m-y">
                         <div className="card m-y-0">
@@ -29,7 +55,9 @@ const CardsList = React.createClass({
                                         <input type="text" className="form-control form-control-sm" placeholder="Search" />
                                     </div>
                                     <div className="col-sm-8">
-                                        <SortDropdown />
+                                        <SortDropdown
+                                            localstate={localstate}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -38,7 +66,9 @@ const CardsList = React.createClass({
                 </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        <CardsChildren list={list} />
+                        <CardsChildren
+                            localstate={localstate}
+                        />
                     </div>
                 </div>
             </div>
@@ -46,36 +76,4 @@ const CardsList = React.createClass({
     }
 });
 
-// don't show until all data dependencies are satisfied
-const CardsListOcclusion = either(CardsList, null, function(props) {
-
-    if(NOT_SET === props.list) {
-        return false;
-    }
-
-    return true;
-});
-
-module.exports = orwell(CardsListOcclusion, {
-    watchCursors(props, manual, context) {
-        const state = context.store.state();
-
-        return [
-            state.cursor(paths.dashboard.cards.list)
-        ];
-    },
-    assignNewProps(props, context) {
-
-        const store = context.store;
-        const state = store.state();
-
-        return {
-            list: state.cursor(paths.dashboard.cards.list).deref()
-        };
-    }
-}).inject({
-    contextTypes: {
-        store: React.PropTypes.object.isRequired
-    }
-});
-
+module.exports = CardsList;

@@ -2,11 +2,7 @@ const React = require('react');
 const classNames = require('classnames');
 const orwell = require('orwell');
 const _ = require('lodash');
-
-const {toDeckCards} = require('store/route');
-const {paths} = require('store/constants');
-
-// notes: https://github.com/facebook/react/issues/579#issuecomment-60841923
+const {Probe} = require('minitrue');
 
 const SORT = [
     {
@@ -64,10 +60,11 @@ const SORT = [
 const SortDropdown = React.createClass({
 
     propTypes: {
-        store: React.PropTypes.object.isRequired,
         currentPage: React.PropTypes.number.isRequired,
         sort: React.PropTypes.string.isRequired,
-        order: React.PropTypes.string.isRequired
+        order: React.PropTypes.string.isRequired,
+
+        localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
 
     getInitialState() {
@@ -75,6 +72,8 @@ const SortDropdown = React.createClass({
             open: false
         };
     },
+
+    // notes: https://github.com/facebook/react/issues/579#issuecomment-60841923
 
     componentDidMount: function () {
         document.body.addEventListener('click', this.handleBodyClick);
@@ -85,7 +84,6 @@ const SortDropdown = React.createClass({
     },
 
     handleBodyClick: function (event) {
-
 
         if(!this.state.open || event.target == React.findDOMNode(this.refs.sortbutton)) {
             return;
@@ -113,12 +111,14 @@ const SortDropdown = React.createClass({
 
     onClickSort(sort, order) {
 
-        const {store, currentPage} = this.props;
+        const {localstate, currentPage} = this.props;
 
         return function(event) {
             event.preventDefault();
             event.stopPropagation();
-            store.invoke(toDeckCards, {page: currentPage, sort: sort, order: order});
+
+            const afterCardsListSort = localstate.cursor('afterCardsListSort').deref();
+            afterCardsListSort({pageNum: currentPage, sort: sort, order: order});
         }.bind(this);
     },
 
@@ -166,25 +166,22 @@ const SortDropdown = React.createClass({
 });
 
 module.exports = orwell(SortDropdown, {
-    watchCursors(props, manual, context) {
-        const state = context.store.state();
-        return state.cursor(paths.dashboard.cards.sort);
-    },
-    assignNewProps(props, context) {
+    watchCursors(props) {
 
-        const store = context.store;
-        const state = store.state();
+        const {localstate} = props;
+
+        return [
+            localstate.cursor('sort')
+        ];
+    },
+    assignNewProps(props) {
+
+        const {localstate} = props;
 
         return {
-            store: store,
-            currentPage: state.cursor(paths.dashboard.cards.page).deref(1),
-            sort: state.cursor(paths.dashboard.cards.sort).deref('reviewed_at'),
-            order: state.cursor(paths.dashboard.cards.order).deref('DESC')
+            currentPage: localstate.cursor('currentPage').deref(1),
+            sort: localstate.cursor('sort').deref('reviewed_at'),
+            order: localstate.cursor('order').deref('DESC')
         };
     }
-}).inject({
-    contextTypes: {
-        store: React.PropTypes.object.isRequired
-    }
 });
-

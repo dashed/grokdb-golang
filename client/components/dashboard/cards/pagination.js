@@ -32,7 +32,7 @@ const CardsPagination = React.createClass({
 
         const {store, currentPage, sort, order} = this.props;
         store.invoke(toDeckCards, {
-            page: currentPage - 1,
+            pageNum: currentPage - 1,
             sort,
             order
         });
@@ -50,7 +50,7 @@ const CardsPagination = React.createClass({
 
         const {store, currentPage, sort, order} = this.props;
         store.invoke(toDeckCards, {
-            page: currentPage + 1,
+            pageNum: currentPage + 1,
             sort,
             order
         });
@@ -58,12 +58,17 @@ const CardsPagination = React.createClass({
 
     onClickPage(requestedPage) {
 
+        const {store, sort, order} = this.props;
+
         return (event) => {
             event.preventDefault();
             event.stopPropagation();
 
-            const {store} = this.props;
-            store.invoke(toDeckCards, {page: requestedPage});
+            store.invoke(toDeckCards, {
+                pageNum: requestedPage,
+                sort,
+                order
+            });
         };
     },
 

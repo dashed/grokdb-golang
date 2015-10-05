@@ -38,7 +38,7 @@ const transforms = {
         });
     },
 
-    fetchPageNum: co.wrap(function*(pageNum = 1) {
+    parsePageNum: co.wrap(function*(pageNum = 1) {
 
         pageNum = filterInt(pageNum);
 
@@ -57,7 +57,7 @@ const transforms = {
         return pageNum;
     }),
 
-    fetchOrder: co.wrap(function*(pageOrder = 'DESC'){
+    parseOrder: co.wrap(function*(pageOrder = 'DESC'){
 
         if(!_.isString(pageOrder) || pageOrder.length <= 0) {
             pageOrder = yield localforage.getItem('order');
@@ -82,7 +82,7 @@ const transforms = {
         return pageOrder;
     }),
 
-    fetchSort: co.wrap(function*(pageSort = 'reviewed_at'){
+    parseSort: co.wrap(function*(pageSort = 'reviewed_at'){
 
         if(!_.isString(pageSort) || pageSort.length <= 0) {
             pageSort = yield localforage.getItem('sort');
@@ -110,15 +110,27 @@ const transforms = {
         return pageSort;
     }),
 
+    parseNumOfPages: co.wrap(function*(numOfPages = 1) {
+
+        numOfPages = filterInt(numOfPages);
+
+        if(_.isNaN(numOfPages) || !_.isNumber(numOfPages)) {
+            numOfPages = 1;
+        }
+
+        numOfPages = numOfPages <= 0 ? 1 : numOfPages;
+
+        return numOfPages;
+    }),
+
     fetchCardsCount(options) {
 
-        const {deckID, pageNum} = options;
+        const {deckID} = options;
 
         // get total count
         return new Promise(function(resolve) {
             superhot
                 .get(`/decks/${deckID}/cards/count`)
-                .query({ 'page': pageNum })
                 .end(function(err, res){
                     resolve({cardsCount: res.body && res.body.total || 0});
                 });

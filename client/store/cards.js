@@ -4,6 +4,7 @@ const Immutable = require('immutable');
 
 const superhot = require('store/superhot');
 const {paths, NOT_SET} = require('store/constants');
+const {parsePageNum, parseOrder, parseSort, parseNumOfPages} = require('store/stateless/cards');
 
 const transforms = {
 
@@ -17,6 +18,17 @@ const transforms = {
 
         return options;
     },
+
+    // this is for cards page for decks
+    applyPageArgs: co.wrap(function*(state, options = {}) {
+
+        options.pageNum = yield parsePageNum(state.cursor(paths.dashboard.cards.page).deref(1));
+        options.sort = yield parseOrder(state.cursor(paths.dashboard.cards.sort).deref(1));
+        options.order = yield parseSort(state.cursor(paths.dashboard.cards.order).deref(1));
+        options.numOfPages = yield parseNumOfPages(state.cursor(paths.dashboard.cards.numOfPages).deref(1));
+
+        return options;
+    }),
 
     // applySortArgs(state, options = {}) {
 
