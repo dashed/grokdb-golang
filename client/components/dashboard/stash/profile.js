@@ -15,23 +15,45 @@ const StashProfile = React.createClass({
         store: React.PropTypes.object.isRequired,
         isEditing: React.PropTypes.bool.isRequired,
         stash: React.PropTypes.instanceOf(Immutable.Map).isRequired,
+        stashCards: React.PropTypes.instanceOf(Immutable.List).isRequired,
         localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
 
     componentWillMount() {
-        this.loadStash(this.props);
+        this.loadStash(this.props, {});
+        this.loadStashCards(this.props, {});
         this.resolveEdit(this.props, {});
     },
 
     componentWillReceiveProps(nextProps) {
+        this.loadStash(nextProps, this.props);
+        this.loadStashCards(nextProps, this.props);
         this.resolveEdit(nextProps, this.props);
     },
 
-    loadStash(props) {
-        const {localstate, stash: newstash} = props;
+    loadStash(nextProps, oldProps) {
+        const {localstate, stash: newStash} = nextProps;
+        const {stash: oldStash} = oldProps;
+
+        if(newStash === oldStash) {
+            return;
+        }
 
         localstate.cursor('stash').update(Immutable.Map(), function(map) {
-            return map.mergeDeep(newstash);
+            return map.mergeDeep(newStash);
+        });
+    },
+
+    loadStashCards(nextProps, oldProps) {
+        const {localstate, stashCards: newStashCards} = nextProps;
+        const {stashCards: oldStashCards} = oldProps;
+
+        if(newStashCards === oldStashCards) {
+            return;
+        }
+
+        localstate.cursor('stashCards').update(function() {
+            return newStashCards;
         });
     },
 
@@ -73,7 +95,8 @@ const OrwellWrappedStashProfile = orwell(StashProfile, {
 
         return [
             state.cursor(paths.stash.editing),
-            state.cursor(paths.stash.self)
+            state.cursor(paths.stash.self),
+            state.cursor(paths.stash.cards)
         ];
     },
     assignNewProps(props, context) {
@@ -84,6 +107,7 @@ const OrwellWrappedStashProfile = orwell(StashProfile, {
         return {
             store: context.store,
             stash: state.cursor(paths.stash.self).deref(),
+            stashCards: state.cursor(paths.stash.cards).deref(Immutable.List()),
             isEditing: state.cursor(paths.stash.editing).deref(false)
         };
     }

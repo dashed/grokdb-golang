@@ -51,7 +51,8 @@ module.exports = {
 
         stash: {
             editing: ['stash', 'editing'],
-            self: ['stash', 'self']
+            self: ['stash', 'self'],
+            cards: ['stash', 'cards']
         },
 
         // ui flags
@@ -79,6 +80,13 @@ module.exports = {
             stashes: {
                 creatingNew: ['dashboard', 'stashes', 'creatingNew'],
                 viewingProfile: ['dashboard', 'stashes', 'viewingProfile'],
+
+                // list
+                page: ['dashboard', 'cards', 'page'], // current page
+                sort: ['dashboard', 'cards', 'sort'], // sort metric
+                order: ['dashboard', 'cards', 'order'], // ASC or DESC
+                total: ['dashboard', 'cards', 'total'],
+                numOfPages: ['dashboard', 'cards', 'numOfPages'],
                 list: ['dashboard', 'stashes', 'list']
             }
         }

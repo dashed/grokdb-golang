@@ -19,6 +19,16 @@ const transforms = {
         });
 
         return options;
+    },
+
+    setStashCards(state, options = {}) {
+        const {stashCards} = options;
+
+        state.cursor(paths.stash.cards).update(function() {
+            return stashCards;
+        });
+
+        return options;
     }
 };
 

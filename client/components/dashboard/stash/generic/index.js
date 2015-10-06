@@ -16,6 +16,8 @@ const DEFAULTS = {
         description: ''
     },
 
+    stashCards: Immutable.List(),
+
     hideMeta: false,
     showEditButton: true,
 

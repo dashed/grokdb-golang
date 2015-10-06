@@ -13,7 +13,7 @@ const {redirectToDeck, validDeckSlug, toDeckCards} = require('store/route');
 const {parseDeckCardsPageNum, parseStashCardsPageNum, parseOrder, parseSort, fetchCardsCount, fetchCardsList, fetchCard} = require('store/stateless/cards');
 const {isCurrentCard, applyCardArgs, applyDeckCardsPageArgs} = require('store/cards');
 const {fetchReviewCardByDeck} = require('store/stateless/review');
-const {fetchStashList, fetchStash} = require('store/stateless/stashes');
+const {fetchStashList, fetchStash, fetchStashCardsCount, fetchStashCards} = require('store/stateless/stashes');
 const {setStashList} = require('store/stashes');
 
 // route handler components
@@ -211,20 +211,20 @@ const bootRouter = co.wrap(function* (store) {
         return next();
     }, __commitStateTransaction);
 
-    // page('/stashes/:id/edit', __ensureStashesRoute, function(ctx, next) {
+    page('/stashes/:id/edit', __ensureStashesRoute, function(ctx, next) {
 
-    //     state.cursor(paths.transaction).update(function(map) {
-    //         return map.withMutations(function(__map) {
-    //             __map
-    //                 .set(paths.stash.editing, true)
-    //                 .set(paths.dashboard.stashes.viewingProfile, true)
-    //                 .set(paths.dashboard.view, dashboard.view.stash)
-    //                 .set(paths.route.handler, Dashboard);
-    //         });
-    //     });
+        state.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.stash.editing, true)
+                    .set(paths.dashboard.stashes.viewingProfile, true)
+                    .set(paths.dashboard.view, dashboard.view.stash)
+                    .set(paths.route.handler, Dashboard);
+            });
+        });
 
-    //     return next();
-    // }, __commitStateTransaction);
+        return next();
+    }, __commitStateTransaction);
 
     // page('/review/card/:id', function(ctx, next) {
 
@@ -758,7 +758,12 @@ const ensureStashesRoute = co.wrap(function*(store, ctx, next) {
 });
 
 const parseStashID = flow(
-    defaultDeck,
+
+    defaultDeck, // load deck if it's not in app state
+
+    // isCurrentStash,
+    // ensureLoadStash,
+    // ensureLoadStashCards,
     stateless(fetchStash),
     setTransactions(function(_state, _options) {
         const {stash} = _options;
@@ -766,6 +771,73 @@ const parseStashID = flow(
             {
                 path: paths.stash.self,
                 value: stash
+            }
+        ];
+    }),
+
+    // load cards list
+    co.wrap(function*(state, options) {
+
+        const deckID = (function() {
+            let maybeDeck = state.cursor(paths.transaction).deref().get(paths.deck.self, NOT_SET);
+
+            if(maybeDeck === NOT_SET) {
+                maybeDeck = state.cursor(paths.deck.self).deref(NOT_SET);
+
+                if(maybeDeck === NOT_SET) {
+                    // TODO: error handling
+                    throw Error('bad');
+                }
+            }
+
+            if(!Immutable.Map.isMap(maybeDeck)) {
+                // TODO: error handling
+                throw Error('bad');
+            }
+
+            return maybeDeck.get('id', 0);
+        }());
+
+        options.pageNum = yield parseStashCardsPageNum(deckID, options.pageNum);
+        options.pageOrder = yield parseOrder(options.pageOrder);
+        options.pageSort = yield parseSort(options.pageSort);
+        return options;
+    }),
+    stateless(fetchStashCardsCount),
+
+    setTransactions(function(state, options) {
+
+        // TODO: move this constant
+        const perPage = 25;
+
+        const {pageNum, cardsCount, pageSort, pageOrder} = options;
+        return [
+            {
+                path: paths.dashboard.stashes.page,
+                value: (pageNum-1)*perPage >= cardsCount ? 1 : pageNum
+            },
+            {
+                path: paths.dashboard.stashes.numOfPages,
+                value: Math.ceil(cardsCount / perPage)
+            },
+            {
+                path: paths.dashboard.stashes.sort,
+                value: pageSort
+            },
+            {
+                path: paths.dashboard.stashes.order,
+                value: pageOrder
+            }
+        ];
+    }),
+
+    stateless(fetchStashCards),
+    setTransactions(function(_state, _options) {
+        const {stashCards} = _options;
+        return [
+            {
+                path: paths.stash.cards,
+                value: stashCards
             }
         ];
     })
@@ -784,9 +856,17 @@ const ensureCurrentStashRoute = co.wrap(function*(store, ctx, next) {
         return;
     }
 
+    const queries = qs.parse(ctx.querystring);
+
     try {
         // parse and validate card id; and load it as necessary
-        yield parseStashID(state, {stashID: ctx.params.id});
+        yield parseStashID(state, {
+            stashID: ctx.params.id,
+            pageNum: queries.page,
+            pageOrder: queries.order,
+            pageSort: queries.sort
+        });
+
     } catch(err) {
         defaultRoute(state);
         return;

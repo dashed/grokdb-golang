@@ -4,7 +4,7 @@ const Immutable = require('immutable');
 
 const superhot = require('store/superhot');
 const {paths, NOT_SET} = require('store/constants');
-const {parseDeckCardsPageNum, parseOrder, parseSort, parseNumOfPages} = require('store/stateless/cards');
+const {parseDeckCardsPageNum, parseStashCardsPageNum, parseOrder, parseSort, parseNumOfPages} = require('store/stateless/cards');
 
 const transforms = {
 
@@ -31,6 +31,24 @@ const transforms = {
         }());
 
         options.pageNum = yield parseDeckCardsPageNum(deckID, state.cursor(paths.dashboard.cards.page).deref());
+        options.sort = yield parseSort(state.cursor(paths.dashboard.cards.sort).deref());
+        options.order = yield parseOrder(state.cursor(paths.dashboard.cards.order).deref());
+        options.numOfPages = yield parseNumOfPages(state.cursor(paths.dashboard.cards.numOfPages).deref());
+
+        return options;
+    }),
+
+    applyStashCardsPageArgs: co.wrap(function*(state, options = {}) {
+
+        const deckID = (function() {
+            const deck = state.cursor(paths.deck.self).deref();
+            if(!Immutable.Map.isMap(deck)) {
+                return 0;
+            }
+            return deck.get('id', 0);
+        }());
+
+        options.pageNum = yield parseStashCardsPageNum(deckID, state.cursor(paths.dashboard.cards.page).deref());
         options.sort = yield parseSort(state.cursor(paths.dashboard.cards.sort).deref());
         options.order = yield parseOrder(state.cursor(paths.dashboard.cards.order).deref());
         options.numOfPages = yield parseNumOfPages(state.cursor(paths.dashboard.cards.numOfPages).deref());

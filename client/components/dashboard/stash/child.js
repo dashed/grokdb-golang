@@ -5,6 +5,7 @@ const orwell = require('orwell');
 const {flow} = require('store/utils');
 const {toStashProfile} = require('store/route');
 const {setStash} = require('store/stashes');
+const {applyStashCardsPageArgs} = require('store/cards');
 
 const changeToStash = flow(
 
@@ -12,6 +13,7 @@ const changeToStash = flow(
     setStash,
 
     // route
+    applyStashCardsPageArgs,
     toStashProfile
 );
 

@@ -124,19 +124,25 @@ const transforms = {
     toStashProfile(state, options = {}) {
 
         let {stash, stashID} = options;
+        const {page: _pageNum = 1, order: _order, sort: _sort} = options;
 
         ({stash, stashID} = resolveStash(state, stash, stashID));
 
-        page(`/stashes/${stashID}`);
+        const params = qs.stringify({page: _pageNum, order: _order, sort: _sort});
+
+        page(`/stashes/${stashID}?${params}`);
     },
 
     toStashProfileEdit(state, options = {}) {
 
         let {stash, stashID} = options;
+        const {page: _pageNum = 1, order: _order, sort: _sort} = options;
 
         ({stash, stashID} = resolveStash(state, stash, stashID));
 
-        page(`/stashes/${stashID}/edit`);
+        const params = qs.stringify({page: _pageNum, order: _order, sort: _sort});
+
+        page(`/stashes/${stashID}/edit?${params}`);
     }
 };
 

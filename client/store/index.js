@@ -74,7 +74,8 @@ const SCHEMA = {
     stash: {
         // stash profile
         editing: false,
-        self: NOT_SET // currently viewed stash
+        self: NOT_SET, // currently viewed stash
+        cards: NOT_SET
     }
 };
 

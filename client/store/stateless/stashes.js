@@ -53,6 +53,50 @@ const transforms = {
                     }
                 });
         });
+    },
+
+    fetchStashCardsCount(options) {
+        const {stashID} = options;
+
+        // get total count
+        return new Promise(function(resolve) {
+            superhot
+                .get(`/stashes/${stashID}/cards/count`)
+                .end(function(err, res){
+                    resolve({cardsCount: res.body && res.body.total || 0});
+                });
+        });
+    },
+
+    fetchStashCards(options) {
+
+        // TODO: move this constant
+        const perPage = 25;
+
+        const {stashID, pageNum, pageSort, pageOrder} = options;
+
+        return new Promise(function(resolve, reject) {
+            superhot
+                .get(`/stashes/${stashID}/cards`)
+                .query({ 'page': pageNum })
+                .query({ 'per_page': perPage })
+                .query({ 'sort': pageSort })
+                .query({ 'order': pageOrder })
+                .end(function(err, res){
+
+                    switch(res.status) {
+                    case 404:
+                        resolve({stashCards: Immutable.List()});
+                        break;
+                    case 200:
+                        resolve({stashCards: Immutable.fromJS(res.body)});
+                        break;
+                    default:
+                        return reject(Error('http code not found'));
+                        // TODO: error handling
+                    }
+                });
+        });
     }
 };
 
