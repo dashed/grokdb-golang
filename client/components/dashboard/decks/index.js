@@ -99,6 +99,7 @@ const DecksDashboard = React.createClass({
         localstate.cursor('deck').update(Immutable.Map(), function(map) {
 
             const overrides = Immutable.fromJS({
+                id: deck.get('id'),
                 name: deck.get('name'),
                 description: deck.get('description')
             });
@@ -147,6 +148,7 @@ const DecksDashboard = React.createClass({
         localstate.cursor('deck').update(Immutable.Map(), function(map) {
 
             const overrides = Immutable.fromJS({
+                id: deck.get('id'),
                 name: deck.get('name'),
                 description: deck.get('description')
             });
