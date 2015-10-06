@@ -43,7 +43,11 @@ const StashChild = React.createClass({
 
         return (
             <div className="list-group-item carditem">
-                <h4 className="list-group-item-heading"><a href="#" onClick={this.onClickStash}>{name}</a></h4>
+                <h4 className="list-group-item-heading">
+                    <a href="#" onClick={this.onClickStash}>{name}</a>
+                    {" "}
+                    <small className="text-muted">{`#${stash.get('id')}`}</small>
+                </h4>
                 {this.generateSummary()}
             </div>
         );
