@@ -5,9 +5,22 @@ const minitrue = require('minitrue');
 const {Probe} = require('minitrue');
 const once = require('react-prop-once');
 
+const {flow} = require('store/utils');
 const {paths, stash} = require('store/constants');
+const {toStashProfileEdit, toStashProfile} = require('store/route');
+const {applyStashCardsPageArgs} = require('store/cards');
+const {applyStashArgs, saveStash} = require('store/stashes');
 
 const GenericStash = require('./generic');
+
+const saveStashState = flow(
+    applyStashCardsPageArgs,
+    applyStashArgs,
+    saveStash,
+
+    // route
+    toStashProfile
+);
 
 const StashProfile = React.createClass({
 
@@ -58,20 +71,55 @@ const StashProfile = React.createClass({
     },
 
     resolveEdit(props, prevProps = {}) {
+
         const {localstate, isEditing} = props;
         localstate.cursor('editMode').update(function() {
             return isEditing;
         });
 
-        localstate.cursor('defaultMode').update(function() {
-            return isEditing ? stash.display.source : stash.display.render;
-        });
+        // going into edit mode
+        if(isEditing && isEditing != prevProps.isEditing) {
 
-        const {isEditing: previsEditing = false} = prevProps;
+            // go to description tab by force
 
-        localstate.cursor(['display', 'mode']).update(Immutable.Map(), function(val) {
-            return previsEditing == isEditing ? val : Immutable.Map();
+            localstate.cursor(['display', 'mode', stash.view.description]).update(function() {
+                return stash.display.source;
+            });
+            localstate.cursor(['display', 'view']).update(function() {
+                return stash.view.description;
+            });
+        }
+
+        // going out of edit mode
+        if(!isEditing && isEditing != prevProps.isEditing) {
+            localstate.cursor(['display', 'mode', stash.view.description]).update(function() {
+                return stash.display.render;
+            });
+        }
+    },
+
+    onClickEdit() {
+        const {store} = this.props;
+        store.invoke(flow(applyStashArgs, applyStashCardsPageArgs, toStashProfileEdit));
+    },
+
+    onClickCancelEdit() {
+        const {store, stash: currentStash} = this.props;
+
+        store.invoke(flow(applyStashArgs, applyStashCardsPageArgs, toStashProfile), {
+            stash: currentStash,
+            stashID: currentStash.get('id')
         });
+    },
+
+    onClickSave(newStash) {
+        const {store} = this.props;
+
+        if(newStash.name.length <= 0) {
+            return;
+        }
+
+        store.invoke(saveStashState, {patchStash: newStash});
     },
 
     render() {
@@ -79,9 +127,9 @@ const StashProfile = React.createClass({
 
         return (
             <GenericStash
-                // onClickCancelEdit={this.onClickCancelEdit}
-                // onClickEdit={this.onClickEdit}
-                // onCommit={this.onClickSave}
+                onClickCancelEdit={this.onClickCancelEdit}
+                onClickEdit={this.onClickEdit}
+                onCommit={this.onClickSave}
                 // onClickDelete={this.onClickDelete}
                 localstate={localstate}
             />

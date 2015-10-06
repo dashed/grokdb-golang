@@ -211,7 +211,7 @@ const bootRouter = co.wrap(function* (store) {
         return next();
     }, __commitStateTransaction);
 
-    page('/stashes/:id/edit', __ensureStashesRoute, function(ctx, next) {
+    page('/stashes/:id/edit', __ensureCurrentStashRoute, function(ctx, next) {
 
         state.cursor(paths.transaction).update(function(map) {
             return map.withMutations(function(__map) {

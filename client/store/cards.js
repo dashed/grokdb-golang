@@ -168,8 +168,6 @@ const transforms = {
             // TODO: revert optimistic update
         }
 
-
-
         options.card = Immutable.fromJS(response.body);
 
         state.cursor(paths.card.self).update(function() {
