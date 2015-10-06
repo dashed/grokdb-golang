@@ -142,7 +142,7 @@ const bootRouter = co.wrap(function* (store) {
         return next();
     }, __commitStateTransaction);
 
-    page('/card/:id', __ensureCurrentCardRoute, function(ctx, next) {
+    page('/card/:id', __ensureCurrentCardRoute, __ensureStashesRoute, function(ctx, next) {
         state.cursor(paths.transaction).update(function(map) {
             return map.withMutations(function(__map) {
                 __map
@@ -156,7 +156,7 @@ const bootRouter = co.wrap(function* (store) {
         return next();
     }, __commitStateTransaction);
 
-    page('/card/:id/edit', __ensureCurrentCardRoute, function(ctx, next) {
+    page('/card/:id/edit', __ensureCurrentCardRoute, __ensureStashesRoute, function(ctx, next) {
         state.cursor(paths.transaction).update(function(map) {
             return map.withMutations(function(__map) {
                 __map

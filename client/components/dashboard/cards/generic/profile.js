@@ -16,6 +16,8 @@ const GenericCardProfile = React.createClass({
         onClickEdit: React.PropTypes.func.isRequired,
         onClickCancelEdit: React.PropTypes.func.isRequired,
         onClickDelete: React.PropTypes.func.isRequired,
+        onClickDeleteStash: React.PropTypes.func.isRequired,
+        onClickAddStash: React.PropTypes.func.isRequired,
 
         // localstate
         view: React.PropTypes.string.isRequired,

@@ -113,7 +113,7 @@ const GenericStashProfile = React.createClass({
 
         return (
             <div>
-                <div className="card">
+                <div className="card m-b-0">
                     <div className="card-block">
                         {(function() {
 

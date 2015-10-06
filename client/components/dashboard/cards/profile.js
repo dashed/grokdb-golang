@@ -41,23 +41,47 @@ const CardProfile = React.createClass({
         store: React.PropTypes.object.isRequired,
         isEditing: React.PropTypes.bool.isRequired,
         card: React.PropTypes.instanceOf(Immutable.Map).isRequired,
+        stashes: React.PropTypes.instanceOf(Immutable.List).isRequired,
         localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
 
     componentWillMount() {
-        this.loadCard(this.props);
+        this.loadCard(this.props, {});
+        this.loadStashes(this.props, {});
         this.resolveEdit(this.props, {});
     },
 
     componentWillReceiveProps(nextProps) {
+        this.loadCard(nextProps, this.props);
+        this.loadStashes(nextProps, this.props);
         this.resolveEdit(nextProps, this.props);
     },
 
-    loadCard(props) {
-        const {localstate, card} = props;
+    loadStashes(nextProps, oldProps) {
 
-        localstate.cursor('card').update(Immutable.Map(), function(map) {
-            return map.mergeDeep(card);
+        const {localstate, stashes: newStashes} = nextProps;
+        const {stashes: oldStashes} = oldProps;
+
+        if(newStashes === oldStashes) {
+            return;
+        }
+
+        localstate.cursor('stashes').update(function() {
+            return newStashes;
+        });
+    },
+
+    loadCard(nextProps, oldProps) {
+
+        const {localstate, card: newCard} = nextProps;
+        const {card: oldCard} = oldProps;
+
+        if(newCard === oldCard) {
+            return;
+        }
+
+        localstate.cursor('card').update(function() {
+            return newCard;
         });
     },
 
@@ -133,7 +157,8 @@ const OrwellWrappedCardProfile = orwell(CardProfile, {
 
         return [
             state.cursor(paths.card.editing),
-            state.cursor(paths.card.self)
+            state.cursor(paths.card.self),
+            state.cursor(paths.dashboard.stashes.list)
         ];
     },
     assignNewProps(props, context) {
@@ -143,7 +168,8 @@ const OrwellWrappedCardProfile = orwell(CardProfile, {
 
         return {
             store: context.store,
-            card: state.cursor(paths.card.self).deref(),
+            card: state.cursor(paths.card.self).deref(Immutable.Map()),
+            stashes: state.cursor(paths.dashboard.stashes.list).deref(Immutable.List()),
             isEditing: state.cursor(paths.card.editing).deref(false)
         };
     }

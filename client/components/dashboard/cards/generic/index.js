@@ -18,6 +18,8 @@ const DEFAULTS = {
         back: ''
     },
 
+    stashes: Immutable.List(),
+
     showEditButton: false,
     editMode: false,
     showDelete: false,
@@ -44,6 +46,8 @@ const GenericCard = React.createClass({
         onClickEdit: React.PropTypes.func,
         onClickCancelEdit: React.PropTypes.func,
         onClickDelete: React.PropTypes.func,
+        onClickDeleteStash: React.PropTypes.func,
+        onClickAddStash: React.PropTypes.func,
 
         localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
@@ -54,7 +58,9 @@ const GenericCard = React.createClass({
             onCommit: nilop,
             onClickEdit: nilop,
             onClickCancelEdit: nilop,
-            onClickDelete: nilop
+            onClickDelete: nilop,
+            onClickDeleteStash: nilop,
+            onClickAddStash: nilop
         };
     },
 
@@ -75,7 +81,9 @@ const GenericCard = React.createClass({
             onCommit,
             onClickEdit,
             onClickCancelEdit,
-            onClickDelete
+            onClickDelete,
+            onClickDeleteStash,
+            onClickAddStash
         } = this.props;
 
         return (
@@ -87,6 +95,8 @@ const GenericCard = React.createClass({
                         onCommit={onCommit}
                         onSwitchView={onSwitchView}
                         onClickDelete={onClickDelete}
+                        onClickDeleteStash={onClickDeleteStash}
+                        onClickAddStash={onClickAddStash}
                         localstate={localstate}
                     />
                 </div>
