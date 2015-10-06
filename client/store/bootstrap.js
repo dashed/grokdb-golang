@@ -582,6 +582,24 @@ const parseCardID = flow(
         }
     }),
 
+    // set default fromCardProfile
+    setTransactions(function(state) {
+
+        let fromCardProfile = state.cursor(paths.dashboard.cards.fromCardProfile).deref();
+
+        if(!_.isFunction(fromCardProfile)) {
+            fromCardProfile = function() {
+                toDeckCardsList.call(void 0, state, {});
+            };
+        }
+
+        return [
+            {
+                path: paths.dashboard.cards.fromCardProfile,
+                value: fromCardProfile
+            }
+        ];
+    }),
     function(state, options) {
 
         // check if current loaded deck is ancestor (or the same) to card's parent deck

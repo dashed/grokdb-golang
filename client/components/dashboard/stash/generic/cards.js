@@ -150,7 +150,31 @@ const StashCardsOnce = once(CardsListOcclusion, {
 
                 const {card, cardID} = options;
 
-                store.invoke(changeToCard, {card, cardID});
+                const switchToCard = flow(
+                    function(state, _options) {
+
+                        state.cursor(paths.dashboard.cards.fromCardProfile).update(function() {
+
+                            const stash = state.cursor(paths.stash.self).deref();
+                            const __options = {
+                                stash: stash,
+                                stashID: stash.get('id')
+                            };
+
+                            return function() {
+                                store.invoke(flow(
+                                    applyStashCardsPageArgs,
+                                    toStashProfile
+                                ), __options);
+                            };
+                        });
+
+                        return _options;
+                    },
+                    changeToCard
+                );
+
+                store.invoke(switchToCard, {card, cardID});
             },
 
             afterCardsListSort: function(options) {
