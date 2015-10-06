@@ -135,6 +135,14 @@ const CardProfile = React.createClass({
         this.props.store.invoke(invokeDeleteCard);
     },
 
+    onClickAddStash() {
+        console.log('add');
+    },
+
+    onClickDeleteStash() {
+        console.log('remove');
+    },
+
     render() {
 
         const {localstate} = this.props;
@@ -145,6 +153,8 @@ const CardProfile = React.createClass({
                 onClickEdit={this.onClickEdit}
                 onCommit={this.onClickSave}
                 onClickDelete={this.onClickDelete}
+                onClickAddStash={this.onClickAddStash}
+                onClickDeleteStash={this.onClickDeleteStash}
                 localstate={localstate}
             />
         );
