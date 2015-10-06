@@ -107,7 +107,8 @@ module.exports = {
             front: 'front',
             back: 'back',
             description: 'description',
-            meta: 'meta'
+            meta: 'meta',
+            stashes: 'stashes'
         },
 
         display: {

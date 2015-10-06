@@ -6,6 +6,7 @@ const {cards} = require('store/constants');
 const GenericCardViewButtons = require('./viewbuttons');
 const GenericCardInputDisplay = require('./inputdisplay');
 const GenericCardMeta = require('./meta');
+const GenericCardStashes = require('./stashes');
 
 const GenericCardProfile = React.createClass({
 
@@ -65,6 +66,21 @@ const GenericCardProfile = React.createClass({
                     <GenericCardMeta
                         key="meta"
                         onClickDelete={onClickDelete}
+                        localstate={localstate}
+                    />
+                );
+            }
+
+            if(view === cards.view.stashes) {
+
+                const {onClickDeleteStash} = this.props;
+                const {onClickAddStash} = this.props;
+
+                return (
+                    <GenericCardStashes
+                        key="stashes"
+                        onClickDeleteStash={onClickDeleteStash}
+                        onClickAddStash={onClickAddStash}
                         localstate={localstate}
                     />
                 );

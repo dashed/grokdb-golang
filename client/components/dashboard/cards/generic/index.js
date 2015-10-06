@@ -24,6 +24,7 @@ const DEFAULTS = {
 
     defaultMode: cards.display.render, // render or source
     hideMeta: false, // bool
+    hideStashes: false, // bool
     commitLabel: 'Save', // string
     display: {
         view: cards.view.front, // string

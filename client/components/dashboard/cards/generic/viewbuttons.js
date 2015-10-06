@@ -14,6 +14,7 @@ const GenericCardViewButtons = React.createClass({
         onSwitchView: React.PropTypes.func.isRequired,
         view: React.PropTypes.string.isRequired,
         hideMeta: React.PropTypes.bool.isRequired,
+        hideStashes: React.PropTypes.bool.isRequired,
         showEditButton: React.PropTypes.bool.isRequired,
         editMode: React.PropTypes.bool.isRequired,
         hideBack: React.PropTypes.bool.isRequired,
@@ -71,6 +72,28 @@ const GenericCardViewButtons = React.createClass({
                         })}
                         onClick={this.onSwitchView(cards.view.meta)}
                     >{"Meta"}</button>
+                </div>
+            );
+        }.call(this));
+
+        const StashesButton = (function() {
+
+            const {hideStashes} = this.props;
+
+            if(hideStashes) {
+                return null;
+            }
+
+            return (
+                <div className="btn-group btn-group-sm m-r" role="group" aria-label="Basic example">
+                    <button
+                        type="button"
+                        className={classNames('btn', {
+                            'btn-primary': view === cards.view.stashes,
+                            'btn-secondary': view != cards.view.stashes
+                        })}
+                        onClick={this.onSwitchView(cards.view.stashes)}
+                    >{"Stashes"}</button>
                 </div>
             );
         }.call(this));
@@ -149,6 +172,7 @@ const GenericCardViewButtons = React.createClass({
                     >{"Description"}</button>
                 </div>
                 {MetaButton}
+                {StashesButton}
                 {EditCancelButton}
             </div>
         );
@@ -162,6 +186,7 @@ module.exports = orwell(GenericCardViewButtons, {
         return [
             localstate.cursor(['display', 'view']),
             localstate.cursor('hideMeta'),
+            localstate.cursor('hideStashes'),
             localstate.cursor('showEditButton'),
             localstate.cursor('editMode'),
             localstate.cursor('hideBack')
@@ -175,6 +200,7 @@ module.exports = orwell(GenericCardViewButtons, {
             showEditButton: localstate.cursor('showEditButton').deref(false),
             view: localstate.cursor(['display', 'view']).deref(cards.view.front),
             hideMeta: localstate.cursor('hideMeta').deref(false),
+            hideStashes: localstate.cursor('hideStashes').deref(false),
             editMode: localstate.cursor('editMode').deref(false),
             hideBack: localstate.cursor('hideBack').deref(false)
         };
