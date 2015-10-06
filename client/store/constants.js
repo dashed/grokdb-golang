@@ -66,6 +66,7 @@ module.exports = {
                 finishEditing: ['dashboard', 'cards', 'finishEditing'],
                 creatingNew: ['dashboard', 'cards', 'creatingNew'],
                 viewingProfile: ['dashboard', 'cards', 'viewingProfile'],
+                fromCardProfile: ['dashboard', 'cards', 'fromCardProfile'],
 
                 // list
                 page: ['dashboard', 'cards', 'page'], // current page

@@ -2,34 +2,30 @@ const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
 
-const {flow} = require('store/utils');
 const {NOT_SET, paths} = require('store/constants');
-const {toDeckCards, toDeckCardsNew} = require('store/route');
-const {applyDeckCardsPageArgs} = require('store/cards');
+const {toDeckCardsNew} = require('store/route');
 
 const CardsList = require('./cardslist');
 const CreatingCard = require('./new');
 const CardsPagination = require('./pagination');
 const CardProfile = require('./profile');
 
-const toDeckCardsList = flow(
-    applyDeckCardsPageArgs,
-    toDeckCards
-);
-
 const CardsDashboard = React.createClass({
 
     propTypes: {
         viewingProfile: React.PropTypes.bool.isRequired,
         creatingNew: React.PropTypes.bool.isRequired,
-        store: React.PropTypes.object.isRequired,
+        fromCardProfile: React.PropTypes.func.isRequired,
+        store: React.PropTypes.object.isRequired
     },
 
     onClickBack(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.store.invoke(toDeckCardsList);
+        const {fromCardProfile} = this.props;
+
+        fromCardProfile();
     },
 
     onClickNewCard(event) {
@@ -137,7 +133,8 @@ module.exports = orwell(CardsDashboardOcclusion, {
             state.cursor(paths.deck.self),
             state.cursor(paths.dashboard.cards.creatingNew),
             state.cursor(paths.dashboard.cards.viewingProfile),
-            state.cursor(paths.card.self)
+            state.cursor(paths.card.self),
+            state.cursor(paths.dashboard.cards.fromCardProfile)
         ];
     },
     assignNewProps(props, context) {
@@ -148,7 +145,8 @@ module.exports = orwell(CardsDashboardOcclusion, {
             store: context.store,
             deck: state.cursor(paths.deck.self).deref(), // used for react-either
             creatingNew: state.cursor(paths.dashboard.cards.creatingNew).deref(),
-            viewingProfile: state.cursor(paths.dashboard.cards.viewingProfile).deref()
+            viewingProfile: state.cursor(paths.dashboard.cards.viewingProfile).deref(),
+            fromCardProfile: state.cursor(paths.dashboard.cards.fromCardProfile).deref()
         };
     }
 }).inject({

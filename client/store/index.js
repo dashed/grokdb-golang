@@ -37,6 +37,9 @@ const SCHEMA = {
             order: NOT_SET,
             list: NOT_SET,
 
+            // functions to execute after a ui event
+            fromCardProfile: NOT_SET, // route to execute on click 'back to list'
+
             creatingNew: false,
             viewingProfile: false
         },

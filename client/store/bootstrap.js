@@ -9,15 +9,20 @@ const {NOT_SET, paths, dashboard} = require('store/constants');
 const {fetchRootDeck, fetchDeck, fetchChildren, fetchAncestors} = require('store/stateless/decks');
 const {setRootDeck, isCurrentDeck} = require('store/decks');
 const {setTransactions, commitTransaction} = require('store/meta');
-const {redirectToDeck, validDeckSlug} = require('store/route');
+const {redirectToDeck, validDeckSlug, toDeckCards} = require('store/route');
 const {parseDeckCardsPageNum, parseStashCardsPageNum, parseOrder, parseSort, fetchCardsCount, fetchCardsList, fetchCard} = require('store/stateless/cards');
-const {isCurrentCard, applyCardArgs} = require('store/cards');
+const {isCurrentCard, applyCardArgs, applyDeckCardsPageArgs} = require('store/cards');
 const {fetchReviewCardByDeck} = require('store/stateless/review');
 const {fetchStashList, fetchStash} = require('store/stateless/stashes');
 const {setStashList} = require('store/stashes');
 
 // route handler components
 const Dashboard = require('components/dashboard');
+
+const toDeckCardsList = flow(
+    applyDeckCardsPageArgs,
+    toDeckCards
+);
 
 const bootRouter = co.wrap(function* (store) {
     const state = store.state();
@@ -39,6 +44,9 @@ const bootRouter = co.wrap(function* (store) {
                     .set(paths.dashboard.cards.page, 1)
                     .set(paths.dashboard.cards.viewingProfile, false)
                     .set(paths.review.self, NOT_SET)
+                    .set(paths.dashboard.cards.fromCardProfile, function() {
+                        store.invoke(toDeckCardsList);
+                    })
 
                     // stashes
                     .set(paths.dashboard.stashes.creatingNew, false)
