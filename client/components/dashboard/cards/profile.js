@@ -137,7 +137,7 @@ const CardProfile = React.createClass({
 
         const {store, card} = this.props;
 
-        this.loadCard(this.props);
+        this.loadCard(this.props, this.props);
         store.invoke(toCardProfile, {card, cardID: card.get('id')});
     },
 
