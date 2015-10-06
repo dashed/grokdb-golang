@@ -107,6 +107,111 @@ const transforms = {
         options.stash = state.cursor(paths.stash.self).deref();
 
         return options;
+    }),
+
+    removeCardFromStash: co.wrap(function*(state, options) {
+
+        const {card, stash} = options;
+
+        const stashID = stash.get('id');
+
+        let willChange = true;
+
+        // optimistic update
+        state.cursor(paths.card.self).update(function(_card) {
+
+            const oldCard = _card;
+
+            _card = _card.update('stashes', function(lst) {
+
+                const idx = lst.indexOf(stashID);
+
+                if(idx < 0) {
+                    return lst;
+                }
+
+                return lst.splice(idx, 1);
+            });
+
+            willChange = oldCard != _card;
+
+            return _card;
+        });
+
+        if(!willChange) {
+            return options;
+        }
+
+        // remove card from stash
+        const {response} = yield new Promise(function(resolve) {
+            superhot
+                .put(`/stashes/${stashID}`)
+                .send({
+                    action: 'remove',
+                    card_id: card.get('id')
+                })
+                .end(function(err_, res_){
+                    resolve({err: err_, response: res_});
+                });
+        });
+
+        // TODO: error handling here
+        if(response.status != 204) {
+            console.error('omg error');
+
+            // TODO: revert optimistic update
+        }
+
+        return options;
+    }),
+
+    addCardToStash: co.wrap(function*(state, options) {
+
+        const {card, stash} = options;
+
+        const stashID = stash.get('id');
+
+        let willChange = true;
+
+        // optimistic update
+        state.cursor(paths.card.self).update(function(_card) {
+
+            const oldCard = _card;
+
+            _card = _card.update('stashes', function(lst) {
+                return lst.push(stashID);
+            });
+
+            willChange = oldCard != _card;
+
+            return _card;
+        });
+
+        if(!willChange) {
+            return options;
+        }
+
+        // add card to stash
+        const {response} = yield new Promise(function(resolve) {
+            superhot
+                .put(`/stashes/${stashID}`)
+                .send({
+                    action: 'add',
+                    card_id: card.get('id')
+                })
+                .end(function(err_, res_){
+                    resolve({err: err_, response: res_});
+                });
+        });
+
+        // TODO: error handling here
+        if(response.status != 204) {
+            console.error('omg error');
+
+            // TODO: revert optimistic update
+        }
+
+        return options;
     })
 };
 

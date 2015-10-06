@@ -5,10 +5,12 @@ const once = require('react-prop-once');
 const minitrue = require('minitrue');
 const {Probe} = require('minitrue');
 
-const {flow} = require('store/utils');
+const {flow, stateless} = require('store/utils');
 const {paths, cards, NOT_SET} = require('store/constants');
 const {applyCardArgs, saveCard, deleteCard, setCard} = require('store/cards');
 const {toCardProfileEdit, toCardProfile, redirectToDeckCards} = require('store/route');
+const {addCardToStash, removeCardFromStash, setStashList} = require('store/stashes');
+const {fetchStashList} = require('store/stateless/stashes');
 
 const GenericCard = require('./generic');
 
@@ -34,6 +36,23 @@ const invokeDeleteCard = flow(
     // route
     redirectToDeckCards
 );
+
+const __addCardToStash = flow(
+
+    addCardToStash,
+
+    stateless(fetchStashList),
+    setStashList
+);
+
+const __removeCardFromStash = flow(
+
+    removeCardFromStash,
+
+    stateless(fetchStashList),
+    setStashList
+);
+
 
 const CardProfile = React.createClass({
 
@@ -135,12 +154,28 @@ const CardProfile = React.createClass({
         this.props.store.invoke(invokeDeleteCard);
     },
 
-    onClickAddStash() {
-        console.log('add');
+    onClickAddStash(stash) {
+
+        const {store, card} = this.props;
+
+        store.invoke(__addCardToStash, {
+            card,
+            cardID: card.get('id'),
+            stash,
+            stashID: stash.get('id')
+        });
     },
 
-    onClickDeleteStash() {
-        console.log('remove');
+    onClickDeleteStash(stash) {
+
+        const {store, card} = this.props;
+
+        store.invoke(__removeCardFromStash, {
+            card,
+            cardID: card.get('id'),
+            stash,
+            stashID: stash.get('id')
+        });
     },
 
     render() {
