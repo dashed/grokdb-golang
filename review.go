@@ -144,10 +144,26 @@ func ReviewDeckGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
+    var fetchedStashes []uint
+    fetchedStashes, err = StashesByCard(db, fetchedReviewCardRow.ID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card stashes",
+        })
+        ctx.Error(err)
+        return
+    }
+
     var cardrow gin.H = CardRowToResponse(db, fetchedReviewCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
-    ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
+    ctx.JSON(http.StatusOK, MergeResponses(
+        &cardrow,
+        &gin.H{"review": cardscore},
+        &gin.H{"stashes": fetchedStashes},
+    ))
 }
 
 // PATCH /cards/:id/review
@@ -374,10 +390,26 @@ func ReviewCardPATCH(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
+    var fetchedStashes []uint
+    fetchedStashes, err = StashesByCard(db, cardID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card stashes",
+        })
+        ctx.Error(err)
+        return
+    }
+
     var cardrow gin.H = CardRowToResponse(db, fetchedCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
-    ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
+    ctx.JSON(http.StatusOK, MergeResponses(
+        &cardrow,
+        &gin.H{"review": cardscore},
+        &gin.H{"stashes": fetchedStashes},
+    ))
 }
 
 /* helpers */

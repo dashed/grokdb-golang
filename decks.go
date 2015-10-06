@@ -530,10 +530,26 @@ func DeckCardsGET(db *sqlx.DB, ctx *gin.Context) {
             return
         }
 
+        var fetchedStashes []uint
+        fetchedStashes, err = StashesByCard(db, cr.ID)
+        if err != nil {
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to retrieve card stashes",
+            })
+            ctx.Error(err)
+            return
+        }
+
         var cardrow gin.H = CardRowToResponse(db, &cr)
         var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
-        foo := MergeResponse(&cardrow, &gin.H{"review": cardscore})
+        foo := MergeResponses(
+            &cardrow,
+            &gin.H{"review": cardscore},
+            &gin.H{"stashes": fetchedStashes},
+        )
         response = append(response, foo)
     }
 
