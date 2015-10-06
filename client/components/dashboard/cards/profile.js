@@ -99,6 +99,11 @@ const CardProfile = React.createClass({
     },
 
     onClickSave(newCardRecord) {
+
+        if(newCardRecord.title.length <= 0) {
+            return;
+        }
+
         this.props.store.invoke(saveCardState, {patchCard: newCardRecord});
     },
 

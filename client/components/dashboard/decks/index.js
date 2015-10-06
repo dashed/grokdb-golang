@@ -122,6 +122,9 @@ const DecksDashboard = React.createClass({
 
         // going into edit mode
         if(isEditing && isEditing != prevProps.isEditing) {
+
+            // go to description tab by force
+
             localstate.cursor(['display', 'mode', decks.view.description]).update(function() {
                 return decks.display.source;
             });
@@ -196,6 +199,11 @@ const DecksDashboard = React.createClass({
 
     onSaveDeck(newDeck) {
         const {store} = this.props;
+
+        if(newDeck.name.length <= 0) {
+            return;
+        }
+
         store.invoke(saveDeckState, {patchDeck: newDeck});
     },
 
