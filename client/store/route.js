@@ -117,7 +117,7 @@ const transforms = {
     },
 
     toStashNew(state, options = {}) {
-        page(`/stashes/new`);
+        page(`/newstash`);
         return options;
     },
 

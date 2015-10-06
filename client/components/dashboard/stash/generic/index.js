@@ -16,6 +16,7 @@ const DEFAULTS = {
         description: ''
     },
 
+    hideStashCards: false,
     stashCards: Immutable.List(),
 
     hideMeta: false,
@@ -61,6 +62,12 @@ const GenericStash = React.createClass({
         localstate.update(Immutable.Map(), function(map) {
             return overrides.mergeDeep(map);
         });
+
+        if(localstate.cursor('hideStashCards').deref(false)) {
+            localstate.cursor(['display', 'view']).update(function() {
+                return stash.view.description;
+            });
+        }
     },
 
     render() {

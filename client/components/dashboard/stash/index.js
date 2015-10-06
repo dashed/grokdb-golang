@@ -6,6 +6,7 @@ const {paths} = require('store/constants');
 
 const StashesList = require('./list');
 const StashProfile = require('./profile');
+const CreatingStash = require('./new');
 
 const StashDashboard = React.createClass({
 
@@ -33,7 +34,7 @@ const StashDashboard = React.createClass({
 
     render() {
 
-        const {/*creatingNew,*/ viewingProfile} = this.props;
+        const {creatingNew, viewingProfile} = this.props;
 
         if(viewingProfile) {
 
@@ -52,6 +53,26 @@ const StashDashboard = React.createClass({
                     <div className="row">
                         <div className="col-sm-12">
                             <StashProfile />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if(creatingNew) {
+            return (
+                <div key="creatingNew">
+                    <div className="row m-b">
+                        <div className="col-sm-12">
+                            <button
+                                type="button"
+                                className="btn btn-danger btn-sm"
+                                onClick={this.onClickBack}>{"Back to stashes"}</button>
+                        </div>
+                    </div>
+                    <div className="row">
+                        <div className="col-sm-12">
+                            <CreatingStash />
                         </div>
                     </div>
                 </div>

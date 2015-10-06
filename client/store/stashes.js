@@ -1,5 +1,6 @@
 const co = require('co');
 const _ = require('lodash');
+const Immutable = require('immutable');
 
 const superhot = require('store/superhot');
 const {paths} = require('store/constants');
@@ -46,6 +47,32 @@ const transforms = {
 
         return options;
     },
+
+    createNewStash: co.wrap(function*(state, options) {
+        const {newStash} = options;
+
+        return new Promise(function(resolve) {
+            superhot
+                .post(`/stashes`)
+                .type('json')
+                .send({
+                    name: newStash.name,
+                    description: newStash.description
+                })
+                .end(function(err, res) {
+
+                    // TODO: error handling
+                    if(res.status != 201) {
+                        throw Error('bad');
+                    }
+
+                    options.stash = Immutable.fromJS(res.body);
+                    options.stashID = res.body.id;
+
+                    return resolve(options);
+                });
+        });
+    }),
 
     saveStash: co.wrap(function*(state, options) {
 

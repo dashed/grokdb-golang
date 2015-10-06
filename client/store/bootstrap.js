@@ -196,6 +196,22 @@ const bootRouter = co.wrap(function* (store) {
         return next();
     }, __commitStateTransaction);
 
+    page('/newstash', __ensureStashesRoute, function(ctx, next) {
+
+        state.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.dashboard.stashes.creatingNew, true)
+                    .set(paths.stash.editing, false)
+                    .set(paths.dashboard.stashes.viewingProfile, false)
+                    .set(paths.dashboard.view, dashboard.view.stash)
+                    .set(paths.route.handler, Dashboard);
+            });
+        });
+
+        return next();
+    }, __commitStateTransaction);
+
     page('/stashes/:id', __ensureCurrentStashRoute, function(ctx, next) {
 
         state.cursor(paths.transaction).update(function(map) {

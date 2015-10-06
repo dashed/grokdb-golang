@@ -13,6 +13,7 @@ const GenericStashViewButtons = React.createClass({
         onClickCancelEdit: React.PropTypes.func.isRequired,
         onSwitchView: React.PropTypes.func.isRequired,
         view: React.PropTypes.string.isRequired,
+        hideStashCards: React.PropTypes.bool.isRequired,
         hideMeta: React.PropTypes.bool.isRequired,
         showEditButton: React.PropTypes.bool.isRequired,
         editMode: React.PropTypes.bool.isRequired,
@@ -96,10 +97,11 @@ const GenericStashViewButtons = React.createClass({
             );
         }.call(this));
 
+        const {hideStashCards} = this.props;
 
         const Sides = _.reduce([
             {
-                hide: false,
+                hide: hideStashCards,
                 view: stash.view.cards,
                 label: 'Cards'
             },
@@ -152,7 +154,8 @@ module.exports = orwell(GenericStashViewButtons, {
             localstate.cursor('hideMeta'),
             localstate.cursor('showEditButton'),
             localstate.cursor('editMode'),
-            localstate.cursor('hideBack')
+            localstate.cursor('hideBack'),
+            localstate.cursor('hideStashCards')
         ];
     },
     assignNewProps(props) {
@@ -163,6 +166,7 @@ module.exports = orwell(GenericStashViewButtons, {
             showEditButton: localstate.cursor('showEditButton').deref(false),
             view: localstate.cursor(['display', 'view']).deref(stash.view.cards),
             hideMeta: localstate.cursor('hideMeta').deref(false),
+            hideStashCards: localstate.cursor('hideStashCards').deref(false),
             editMode: localstate.cursor('editMode').deref(false),
             hideBack: localstate.cursor('hideBack').deref(false)
         };
