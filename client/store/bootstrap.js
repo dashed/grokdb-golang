@@ -583,8 +583,29 @@ const parseCardID = flow(
     }),
 
     function(state, options) {
+
+        // check if current loaded deck is ancestor (or the same) to card's parent deck
+        const deckID = (function() {
+            const maybeDeck = state.cursor(paths.deck.self).deref();
+
+            if(!Immutable.Map.isMap(maybeDeck)) {
+                return 0;
+            }
+
+            return maybeDeck.get('id', 0);
+        }());
+
         const {card} = options;
         options.deckID = card.get('deck');
+
+        if(deckID <= 0) {
+            return options;
+        }
+
+        if(card.get('deck_path', Immutable.List()).indexOf(deckID) >= 0) {
+            options.deckID = deckID;
+        }
+
         return options;
     },
     isCurrentDeck,
