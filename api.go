@@ -140,6 +140,17 @@ func MergeResponse(dest *gin.H, src *gin.H) gin.H {
     return *dest
 }
 
+func MergeResponses(sources ...*gin.H) gin.H {
+
+    var source gin.H = *sources[len(sources)-1]
+
+    for idx := (len(sources) - 2); idx >= 0; idx-- {
+        var src *gin.H = sources[idx]
+        source = MergeResponse(src, &source)
+    }
+    return source
+}
+
 // taken from https://github.com/gin-gonic/contrib/blob/14f66d54cdb96059bafca98665bcc6d9df4951f2/static/example/bindata/example.go
 
 type binaryFileSystem struct {

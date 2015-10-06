@@ -1458,6 +1458,22 @@ var INSERT_CACHED_REVIEWCARD_BY_STASH_QUERY = (func() PipeInput {
     )
 }())
 
+var GET_STASHES_BY_CARD_QUERY = (func() PipeInput {
+    const __GET_STASHES_BY_CARD_QUERY string = `
+        SELECT stash
+        FROM StashCards
+        WHERE card = :card_id;
+    `
+
+    var requiredInputCols []string = []string{"card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__GET_STASHES_BY_CARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 /* helpers */
 
 func JSON2Map(rawJSON []byte) (*StringMap, error) {

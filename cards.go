@@ -109,10 +109,26 @@ func CardGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
+    var fetchedStashes []uint
+    fetchedStashes, err = StashesByCard(db, cardID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card stashes",
+        })
+        ctx.Error(err)
+        return
+    }
+
     var cardrow gin.H = CardRowToResponse(db, fetchedCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
-    ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
+    ctx.JSON(http.StatusOK, MergeResponses(
+        &cardrow,
+        &gin.H{"review": cardscore},
+        &gin.H{"stashes": fetchedStashes},
+    ))
 }
 
 // DELETE /cards/:id
@@ -274,7 +290,11 @@ func CardPOST(db *sqlx.DB, ctx *gin.Context) {
     var cardrow gin.H = CardRowToResponse(db, newCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
-    ctx.JSON(http.StatusCreated, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
+    ctx.JSON(http.StatusCreated, MergeResponses(
+        &cardrow,
+        &gin.H{"review": cardscore},
+        &gin.H{"stashes": []uint{}},
+    ))
 }
 
 // PATCH /cards/:id
@@ -505,10 +525,26 @@ func CardPATCH(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
+    var fetchedStashes []uint
+    fetchedStashes, err = StashesByCard(db, cardID)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "status":           http.StatusInternalServerError,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to retrieve card stashes",
+        })
+        ctx.Error(err)
+        return
+    }
+
     var cardrow gin.H = CardRowToResponse(db, fetchedCardRow)
     var cardscore gin.H = CardScoreToResponse(fetchedCardScore)
 
-    ctx.JSON(http.StatusOK, MergeResponse(&cardrow, &gin.H{"review": cardscore}))
+    ctx.JSON(http.StatusOK, MergeResponses(
+        &cardrow,
+        &gin.H{"review": cardscore},
+        &gin.H{"stashes": fetchedStashes},
+    ))
 }
 
 /* helpers */
@@ -520,7 +556,7 @@ func CardResponse(overrides *gin.H) gin.H {
         "description": "",
         "front":       "",
         "back":        "",
-        "deck":        0, // required
+        "deck":        0,  // required
         "created_at":  0,
         "updated_at":  0,
         "deck_path":   []uint{},

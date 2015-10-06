@@ -1424,3 +1424,33 @@ func StashList(db *sqlx.DB) (*([]StashRow), error) {
 
     return &stashes, nil
 }
+
+func StashesByCard(db *sqlx.DB, cardID uint) ([]uint, error) {
+
+    var (
+        err   error
+        query string
+        rows  *sqlx.Rows
+        args  []interface{}
+        cards []uint = []uint{}
+    )
+
+    query, args, err = QueryApply(GET_STASHES_BY_CARD_QUERY, &StringMap{"card_id": cardID})
+    if err != nil {
+        return nil, err
+    }
+
+    rows, err = db.Queryx(query, args...)
+    for rows.Next() {
+
+        var stashID uint
+        err := rows.Scan(&stashID)
+        if err != nil {
+            return nil, err
+        }
+
+        cards = append(cards, stashID)
+    }
+
+    return cards, nil
+}
