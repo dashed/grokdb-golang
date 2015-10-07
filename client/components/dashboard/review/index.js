@@ -6,14 +6,30 @@ const minitrue = require('minitrue');
 const once = require('react-prop-once');
 const {Probe} = require('minitrue');
 
+const {flow} = require('store/utils');
 const {NOT_SET, paths, cards} = require('store/constants');
+const {applyDeckArgs} = require('store/decks');
+const {validateReviewInput, patchReview, nextReview, applyReviewArgs} = require('store/review');
 
 const GenericCard = require('components/dashboard/cards/generic');
 const ReviewControls = require('./controls');
 
+const finishReview = flow(
+
+    // decks
+    applyDeckArgs,
+
+    // review
+    applyReviewArgs,
+    validateReviewInput,
+    patchReview,
+    nextReview
+);
+
 const ReviewDashboard = React.createClass({
 
     propTypes: {
+        store: React.PropTypes.object.isRequired,
         reviewCard: React.PropTypes.instanceOf(Immutable.Map).isRequired,
         localstate: React.PropTypes.instanceOf(Probe).isRequired,
         revealCard: React.PropTypes.bool.isRequired
@@ -51,6 +67,21 @@ const ReviewDashboard = React.createClass({
         });
     },
 
+    onNextCard(selectedDifficulty) {
+        const {store} = this.props;
+        store.invoke(finishReview, {
+            skip: false,
+            difficulty: selectedDifficulty
+        });
+    },
+
+    onSkipCard() {
+        const {store} = this.props;
+        store.invoke(finishReview, {
+            skip: true
+        });
+    },
+
     render() {
 
         const {localstate} = this.props;
@@ -67,6 +98,9 @@ const ReviewDashboard = React.createClass({
                 <div className="row m-b">
                     <div className="col-sm-12">
                         <ReviewControls
+                            onCommit={this.onNextCard}
+                            onSkip={this.onSkipCard}
+
                             localstate={localstate}
                         />
                     </div>
@@ -94,7 +128,7 @@ const ReviewDashboardOcclusion = either(ReviewDashboard, NoReviewCard, function(
 
     const {reviewCard} = props;
 
-    if(reviewCard === NOT_SET || !Immutable.Map.isMap(reviewCard)) {
+    if(!Immutable.Map.isMap(reviewCard)) {
         return false;
     }
 
@@ -126,6 +160,7 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
         }
 
         return {
+            store: context.store,
             reviewCard,
             revealCard: localstate.cursor('revealCard').deref(false)
         };
@@ -151,13 +186,15 @@ module.exports = once(OrwellWrappedReviewDashboard, {
             hideMeta: false,
             hideBack: true,
 
-            // review
+            // shared localstate with review
             revealCard: false,
+            showSkip: true,
             difficulty: void 0
         };
 
         const localstate = minitrue(DEFAULTS);
 
+        // watch for change in review card
         const _unsub = store.state().cursor(paths.review.self).observe(function(newReview, oldReview) {
             if(!Immutable.Map.isMap(newReview) || !Immutable.Map.isMap(oldReview)) {
                 return;

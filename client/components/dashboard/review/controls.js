@@ -3,34 +3,35 @@ const {Probe} = require('minitrue');
 const orwell = require('orwell');
 const classNames = require('classnames');
 
-const {flow} = require('store/utils');
 const {difficulty} = require('store/constants');
-const {validateReviewInput, patchReview, nextReview, applyReviewArgs} = require('store/review');
-const {applyDeckArgs} = require('store/decks');
 
-const finishReview = flow(
-
-    // decks
-    applyDeckArgs,
-
-    // review
-    applyReviewArgs,
-    validateReviewInput,
-    patchReview,
-    nextReview
-);
+const nilop = () => void 0;
 
 const ReviewControls = React.createClass({
 
     propTypes: {
-        store: React.PropTypes.object.isRequired,
         revealCard: React.PropTypes.bool.isRequired,
-        localstate: React.PropTypes.instanceOf(Probe).isRequired,
+        showSkip: React.PropTypes.bool.isRequired, // show skip button
 
         // TODO: move this out into some utils module
         currentDifficulty: function(props, propName) {
+            // TODO: test one of difficulty
+
             return typeof props[propName] === 'symbol';
-        }
+        },
+
+        onCommit: React.PropTypes.func.isRequired,
+        onSkip: React.PropTypes.func.isRequired,
+
+        localstate: React.PropTypes.instanceOf(Probe).isRequired
+    },
+
+    getDefaultProps() {
+        return {
+            revealCard: false,
+            showSkip: true,
+            onSkip: nilop
+        };
     },
 
     onClickRevealCard(event) {
@@ -39,7 +40,7 @@ const ReviewControls = React.createClass({
 
         const {localstate} = this.props;
         localstate.update(function(map) {
-            return map.set('revealCard', true).set('showBackSide', true);
+            return map.set('revealCard', true);
         });
     },
 
@@ -47,31 +48,28 @@ const ReviewControls = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        const {store} = this.props;
+        const {onSkip} = this.props;
 
-        store.invoke(finishReview, {
-            skip: true
-        });
+        onSkip.call(void 0);
     },
 
     onClickNext(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        const {store, localstate} = this.props;
+        const {localstate} = this.props;
 
         const NOT_SET = {};
-        const diff = localstate.cursor('difficulty').deref(NOT_SET);
+        const selectedDifficulty = localstate.cursor('difficulty').deref(NOT_SET);
 
         // TODO: error handling
-        if(!diff || diff === NOT_SET) {
+        if(!selectedDifficulty || selectedDifficulty === NOT_SET) {
             return;
         }
 
-        store.invoke(finishReview, {
-            skip: false,
-            difficulty: diff
-        });
+        const {onCommit} = this.props;
+
+        onCommit.call(void 0, selectedDifficulty);
     },
 
     onClickDifficulty(_difficulty) {
@@ -204,22 +202,17 @@ module.exports = orwell(ReviewControls, {
 
         return [
             localstate.cursor('revealCard'),
+            localstate.cursor('showSkip'),
             localstate.cursor('difficulty')
         ];
     },
-    assignNewProps(props, context) {
+    assignNewProps(props) {
         const {localstate} = props;
 
-        const store = context.store;
-
         return {
-            store: store,
             revealCard: localstate.cursor('revealCard').deref(false),
+            showSkip: localstate.cursor('showSkip').deref(true),
             currentDifficulty: localstate.cursor('difficulty').deref()
         };
-    }
-}).inject({
-    contextTypes: {
-        store: React.PropTypes.object.isRequired
     }
 });
