@@ -777,6 +777,217 @@ var COUNT_REVIEW_CARDS_BY_DECK = (func() PipeInput {
     )
 }())
 
+var DECK_HAS_NEW_CARDS_QUERY = (func() PipeInput {
+    const __DECK_HAS_NEW_CARDS_QUERY string = `
+        SELECT
+        COUNT(1)
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+            dc.ancestor = :deck_id
+        AND
+            (c.created_at - cs.updated_at) = 0
+        LIMIT 1;
+    `
+
+    var requiredInputCols []string = []string{"deck_id"}
+
+    return composePipes(
+        MakeCtxMaker(__DECK_HAS_NEW_CARDS_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var DECK_COUNT_NEW_CARDS_QUERY = (func() PipeInput {
+    const __DECK_COUNT_NEW_CARDS_QUERY string = `
+        SELECT
+        COUNT(1)
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+            dc.ancestor = :deck_id
+        AND
+            (c.created_at - cs.updated_at) = 0;
+    `
+
+    var requiredInputCols []string = []string{"deck_id"}
+
+    return composePipes(
+        MakeCtxMaker(__DECK_COUNT_NEW_CARDS_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var DECK_SELECT_NEWEST_CARD_FOR_REVIEW_QUERY = (func() PipeInput {
+    const __DECK_SELECT_NEWEST_CARD_FOR_REVIEW_QUERY string = `
+        SELECT
+        c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+            dc.ancestor = :deck_id
+        AND
+            (c.created_at - cs.updated_at) = 0
+        LIMIT :purgatory_size
+        OFFSET :purgatory_index;
+    `
+
+    var requiredInputCols []string = []string{"deck_id", "purgatory_size", "purgatory_index"}
+
+    return composePipes(
+        MakeCtxMaker(__DECK_SELECT_NEWEST_CARD_FOR_REVIEW_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var DECK_HAS_CARD_OLD_ENOUGH_FOR_REVIEW_QUERY = (func() PipeInput {
+    const __DECK_HAS_CARD_OLD_ENOUGH_FOR_REVIEW_QUERY string = `
+        SELECT
+        COUNT(1)
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+            dc.ancestor = :deck_id
+        AND
+            (strftime('%s','now') - cs.updated_at) >= :age_of_consent
+        LIMIT 1;
+    `
+
+    // age_of_consent shall be integer in seconds
+
+    var requiredInputCols []string = []string{"deck_id", "age_of_consent"}
+
+    return composePipes(
+        MakeCtxMaker(__DECK_HAS_CARD_OLD_ENOUGH_FOR_REVIEW_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var DECK_COUNT_CARD_OLD_ENOUGH_FOR_REVIEW_QUERY = (func() PipeInput {
+    const __DECK_COUNT_CARD_OLD_ENOUGH_FOR_REVIEW_QUERY string = `
+        SELECT
+        COUNT(1)
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+            dc.ancestor = :deck_id
+        AND
+            (strftime('%s','now') - cs.updated_at) >= :age_of_consent;
+    `
+
+    // age_of_consent shall be integer in seconds
+
+    var requiredInputCols []string = []string{"deck_id", "age_of_consent"}
+
+    return composePipes(
+        MakeCtxMaker(__DECK_COUNT_CARD_OLD_ENOUGH_FOR_REVIEW_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var FETCH_NEXT_OLD_ENOUGH_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE = (func() PipeInput {
+    const __FETCH_NEXT_OLD_ENOUGH_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE string = `
+        SELECT
+
+        c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+            dc.ancestor = :deck_id
+        AND
+            (strftime('%s','now') - cs.updated_at) >= :age_of_consent
+        ORDER BY
+            norm_score(cs.success, cs.fail, strftime('%s','now') - cs.updated_at, cs.times_reviewed) DESC
+        LIMIT :purgatory_size
+        OFFSET :purgatory_index;
+    `
+
+    // age_of_consent shall be integer in seconds
+
+    var requiredInputCols []string = []string{"deck_id", "age_of_consent", "purgatory_size", "purgatory_index"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_NEXT_OLD_ENOUGH_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
+var FETCH_NEXT_OLD_ENOUGH_REVIEW_CARD_BY_DECK_ORDER_BY_NOTHING = (func() PipeInput {
+    const __FETCH_NEXT_OLD_ENOUGH_REVIEW_CARD_BY_DECK_ORDER_BY_NOTHING string = `
+        SELECT
+
+        c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at
+
+        FROM DecksClosure AS dc
+
+        INNER JOIN Cards AS c
+        ON c.deck = dc.descendent
+
+        INNER JOIN CardsScore AS cs
+        ON cs.card = c.card_id
+
+        WHERE
+            dc.ancestor = :deck_id
+        AND
+            (strftime('%s','now') - cs.updated_at) >= :age_of_consent
+        LIMIT :purgatory_size
+        OFFSET :purgatory_index;
+    `
+
+    // age_of_consent shall be integer in seconds
+
+    var requiredInputCols []string = []string{"deck_id", "age_of_consent", "purgatory_size", "purgatory_index"}
+
+    return composePipes(
+        MakeCtxMaker(__FETCH_NEXT_OLD_ENOUGH_REVIEW_CARD_BY_DECK_ORDER_BY_NOTHING),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 var FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE = (func() PipeInput {
     const __FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE string = `
         SELECT
@@ -1476,6 +1687,21 @@ var GET_STASHES_BY_CARD_QUERY = (func() PipeInput {
 
 /* helpers */
 
+type StringMap map[string]interface{}
+
+type QueryContext struct {
+    query    string
+    nameArgs *StringMap
+    args     []interface{}
+}
+
+func MergeStringMaps(dest *StringMap, src *StringMap) StringMap {
+    for k, v := range *src {
+        (*dest)[k] = v
+    }
+    return *dest
+}
+
 func JSON2Map(rawJSON []byte) (*StringMap, error) {
 
     var newMap StringMap
@@ -1486,14 +1712,6 @@ func JSON2Map(rawJSON []byte) (*StringMap, error) {
     }
 
     return &newMap, nil
-}
-
-type StringMap map[string]interface{}
-
-type QueryContext struct {
-    query    string
-    nameArgs *StringMap
-    args     []interface{}
 }
 
 func MakeCtxMaker(_baseQuery string) func() *QueryContext {

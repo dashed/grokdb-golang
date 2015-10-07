@@ -1224,7 +1224,7 @@ func GetNextReviewCardOfStash(db *sqlx.DB, stashID uint, _purgatory_size int) (*
     var purgatory_size int = 10
     var purgatory_index int = 0
 
-    var chosenmethod reviewmethod = ChooseMethod()
+    var chosenmethod reviewmethod = ChooseMethod(0.1, 0.25, 0.65)
 
     switch chosenmethod {
     case OLDEST:

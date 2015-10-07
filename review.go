@@ -470,6 +470,103 @@ func GetCardScoreRecord(db *sqlx.DB, cardID uint) (*CardScoreRow, error) {
     }
 }
 
+func DeckHasNewCard(db *sqlx.DB, deckID uint) (bool, error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DECK_HAS_NEW_CARDS_QUERY, &StringMap{"deck_id": deckID})
+    if err != nil {
+        return false, err
+    }
+
+    var count uint
+    err = db.QueryRowx(query, args...).Scan(&count)
+    if err != nil {
+        return false, err
+    }
+
+    return (count > 0), nil
+}
+
+func DeckHasOldEnoughCard(db *sqlx.DB, deckID uint, ageOfConsent uint) (bool, error) {
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DECK_HAS_CARD_OLD_ENOUGH_FOR_REVIEW_QUERY, &StringMap{
+        "deck_id":        deckID,
+        "age_of_consent": ageOfConsent, // in seconds
+    })
+    if err != nil {
+        return false, err
+    }
+
+    var count uint
+    err = db.QueryRowx(query, args...).Scan(&count)
+    if err != nil {
+        return false, err
+    }
+
+    return (count > 0), nil
+}
+
+func DeckCountNewCards(db *sqlx.DB, deckID uint) (uint, error) {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DECK_COUNT_NEW_CARDS_QUERY, &StringMap{"deck_id": deckID})
+    if err != nil {
+        return 0, err
+    }
+
+    var count uint
+    err = db.QueryRowx(query, args...).Scan(&count)
+    if err != nil {
+        return 0, err
+    }
+
+    return count, nil
+}
+
+func DeckCountOldEnoughCards(db *sqlx.DB, deckID uint, ageOfConsent uint) (uint, error) {
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DECK_COUNT_CARD_OLD_ENOUGH_FOR_REVIEW_QUERY, &StringMap{
+        "deck_id":        deckID,
+        "age_of_consent": ageOfConsent, // in seconds
+    })
+    if err != nil {
+        return 0, err
+    }
+
+    var count uint
+    err = db.QueryRowx(query, args...).Scan(&count)
+    if err != nil {
+        return 0, err
+    }
+
+    return count, nil
+}
+
+// group selection probabilities
+const __TOP_OLDEST_GROUP = 0.55
+const __NEWCARDS_GROUP = 0.15
+const __OLD_ENOUGH_GROUP = 0.30
+
 // randomly select method for choosing next card based on probability distribution given above.
 // available methods are as follows: oldest card, card with the highest norm score, and random
 // for each method, order the cards and select top N oldest reviewed cards; where is N is the purgatory size.
@@ -478,9 +575,10 @@ func GetCardScoreRecord(db *sqlx.DB, cardID uint) (*CardScoreRow, error) {
 func GetNextReviewCardOfDeck(db *sqlx.DB, deckID uint, _purgatory_size int) (*CardRow, error) {
 
     var (
-        err     error
-        queryfn PipeInput = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE
-        args    []interface{}
+        err       error
+        queryfn   PipeInput = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE
+        args      []interface{}
+        overrides StringMap = StringMap{}
     )
 
     var fetchedRow *CachedDeckReviewCardRow
@@ -522,37 +620,133 @@ func GetNextReviewCardOfDeck(db *sqlx.DB, deckID uint, _purgatory_size int) (*Ca
         return nil, errors.New("invalid _purgatory_size")
     }
 
+    var maxPin float64 = 1.0
+
+    // check if deck has at least one new card
+    var hasNewCard bool = true
+    hasNewCard, err = DeckHasNewCard(db, deckID)
+    if err != nil {
+        return nil, err
+    }
+    if !hasNewCard {
+        maxPin = maxPin - __NEWCARDS_GROUP
+    }
+
+    // check if deck has at least one card older than 3 hours
+    const ageOfConsent = 10800 // 3 hrs = 10800 seconds
+
+    var hasOldEnoughCard bool = true
+    hasOldEnoughCard, err = DeckHasOldEnoughCard(db, deckID, uint(ageOfConsent))
+    if err != nil {
+        return nil, err
+    }
+    if !hasOldEnoughCard {
+        maxPin = maxPin - __OLD_ENOUGH_GROUP
+    }
+
     var purgatory_size int = 10
     var purgatory_index int = 0
 
-    var chosenmethod reviewmethod = ChooseMethod()
+    // choose group selection
 
-    switch chosenmethod {
-    case OLDEST:
+    var pin float64 = randRange(0, maxPin)
+    fmt.Println("group pin ", pin)
+    switch {
+    case pin < __TOP_OLDEST_GROUP:
 
-        queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE
+        var chosenmethod reviewmethod = ChooseMethod(0.1, 0.25, 0.65)
+
+        switch chosenmethod {
+        case OLDEST:
+
+            queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE
+            purgatory_size = 1
+            purgatory_index = 0
+
+            fmt.Println("top oldest age")
+
+        case HIGHEST_NORM_SCORE:
+
+            queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE
+            purgatory_size = _purgatory_size
+            purgatory_index = 0
+
+            fmt.Println("top oldest highest norm")
+
+        case RANDOM_CARD:
+
+            queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE // more efficient
+            purgatory_size = 1
+            purgatory_index = rand.Intn(_purgatory_size) // returns int from [0, _purgatory_size)
+
+            fmt.Println("top oldest random")
+        }
+
+    case pin >= __TOP_OLDEST_GROUP && pin < (__TOP_OLDEST_GROUP+__NEWCARDS_GROUP):
+        // __NEWCARDS_GROUP
+
+        // fetch number of new cards
+        var numOfNewCards uint = 0
+        numOfNewCards, err = DeckCountNewCards(db, deckID)
+
+        if err != nil {
+            return nil, err
+        }
+
+        queryfn = DECK_SELECT_NEWEST_CARD_FOR_REVIEW_QUERY
         purgatory_size = 1
-        purgatory_index = 0
+        purgatory_index = rand.Intn(int(numOfNewCards)) // returns int from [0, numOfNewCards)
 
-    case HIGHEST_NORM_SCORE:
+        fmt.Println("random new card")
 
-        queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE
-        purgatory_size = _purgatory_size
-        purgatory_index = 0
+    default:
+        // __OLD_ENOUGH_GROUP
 
-    case RANDOM_CARD:
+        // fetch number of cards old enough to be reviewed
+        var numOfOldEnoughCards uint = 0
+        numOfOldEnoughCards, err = DeckCountOldEnoughCards(db, deckID, uint(ageOfConsent))
 
-        queryfn = FETCH_NEXT_REVIEW_CARD_BY_DECK_ORDER_BY_AGE // more efficient
-        purgatory_size = 1
-        purgatory_index = rand.Intn(_purgatory_size) // returns int from [0, _purgatory_size)
+        if err != nil {
+            return nil, err
+        }
+
+        var chosenmethod reviewmethod = ChooseMethod(0.0, 0.65, 0.35)
+
+        switch chosenmethod {
+        case OLDEST:
+            // should never be here
+            fallthrough
+        case HIGHEST_NORM_SCORE:
+
+            queryfn = FETCH_NEXT_OLD_ENOUGH_REVIEW_CARD_BY_DECK_ORDER_BY_NORM_SCORE
+            overrides["age_of_consent"] = numOfOldEnoughCards
+            // not used
+            purgatory_size = 1
+            purgatory_index = 0
+
+            fmt.Println("old enough highest norm")
+
+        case RANDOM_CARD:
+
+            queryfn = FETCH_NEXT_OLD_ENOUGH_REVIEW_CARD_BY_DECK_ORDER_BY_NOTHING
+            overrides["age_of_consent"] = numOfOldEnoughCards
+            purgatory_size = 1
+            purgatory_index = rand.Intn(int(numOfOldEnoughCards)) // returns int from [0, numOfOldEnoughCards)
+
+            fmt.Println("old enough random")
+        }
+
     }
 
+    // fetch next review card
+
     var query string
-    query, args, err = QueryApply(queryfn, &StringMap{
+    var mergedstringmap StringMap = MergeStringMaps(&StringMap{
         "deck_id":         deckID,
         "purgatory_size":  purgatory_size,
         "purgatory_index": purgatory_index,
-    })
+    }, &overrides)
+    query, args, err = QueryApply(queryfn, &mergedstringmap)
 
     if err != nil {
         return nil, err
@@ -762,23 +956,26 @@ const (
 // alias method:
 // - ref: http://stackoverflow.com/questions/5027757/data-structure-for-loaded-dice
 // - ref: http://www.keithschwarz.com/darts-dice-coins/
-const __OLDEST = 0.1
-const __HIGHEST_NORM_SCORE = 0.75
-const __RANDOM = 0.15
+// const __OLDEST = 0.1
+// const __HIGHEST_NORM_SCORE = 0.75
+// const __RANDOM = 0.15
 
-func ChooseMethod() reviewmethod {
+func ChooseMethod(__OLDEST float64, __RANDOM float64, __HIGHEST_NORM_SCORE float64) reviewmethod {
 
     var pin float64 = rand.Float64()
 
     // alias method
     switch {
-    case pin <= __OLDEST:
+    case pin < __OLDEST:
         return OLDEST
-    case pin > __OLDEST && pin <= (__OLDEST+__HIGHEST_NORM_SCORE):
-        return HIGHEST_NORM_SCORE
-    default:
-        // case pin > (__OLDEST + __HIGHEST_NORM_SCORE):
+    case pin >= __OLDEST && pin < (__OLDEST+__RANDOM):
         return RANDOM_CARD
+    default:
+        // case pin >= (__OLDEST+__RANDOM):
+        return HIGHEST_NORM_SCORE
     }
+}
 
+func randRange(min float64, max float64) float64 {
+    return rand.Float64()*(max-min) + min
 }
