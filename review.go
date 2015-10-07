@@ -632,7 +632,7 @@ func GetNextReviewCardOfDeck(db *sqlx.DB, deckID uint, _purgatory_size int) (*Ca
         maxPin = maxPin - __NEWCARDS_GROUP
     }
 
-    // check if deck has at least one card older than 3 hours
+    // check if deck has at least one card that has not been reviewed for at least 3 hours
     const ageOfConsent = 10800 // 3 hrs = 10800 seconds
 
     var hasOldEnoughCard bool = true
