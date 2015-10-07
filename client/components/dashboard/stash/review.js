@@ -1,32 +1,33 @@
 const React = require('react');
 const orwell = require('orwell');
-const Immutable = require('immutable');
-const either = require('react-either');
-const minitrue = require('minitrue');
 const once = require('react-prop-once');
+const either = require('react-either');
+const Immutable = require('immutable');
 const {Probe} = require('minitrue');
+const minitrue = require('minitrue');
 
-const {flow} = require('store/utils');
+const {flow, stateless} = require('store/utils');
 const {NOT_SET, paths, cards} = require('store/constants');
-const {applyDeckArgs} = require('store/decks');
-const {validateReviewInput, patchReview, nextReview, applyReviewArgs} = require('store/review');
+const {validateReviewInput, patchReview} = require('store/review');
+const {applyStashArgs, applyStashReviewArgs, setStashReviewCard} = require('store/stashes');
+const {fetchStashReviewCard} = require('store/stateless/stashes');
 
 const GenericCard = require('components/dashboard/cards/generic');
-const ReviewControls = require('./controls');
+const ReviewControls = require('components/dashboard/review/controls');
 
 const finishReview = flow(
 
-    // decks
-    applyDeckArgs,
-
+    applyStashArgs,
     // review
-    applyReviewArgs,
+    applyStashReviewArgs,
     validateReviewInput,
     patchReview,
-    nextReview
+    stateless(fetchStashReviewCard),
+    setStashReviewCard
 );
 
-const ReviewDashboard = React.createClass({
+
+const ReviewStashCard = React.createClass({
 
     propTypes: {
         store: React.PropTypes.object.isRequired,
@@ -83,8 +84,8 @@ const ReviewDashboard = React.createClass({
         });
     },
 
-    render() {
 
+    render() {
         const {localstate} = this.props;
 
         return (
@@ -117,7 +118,7 @@ const NoReviewCard = React.createClass({
             <div className="card">
                 <div className="card-block text-center">
                     <p className="card-text text-muted">
-                        {"No cards to review. To get started, you should create your first card for this deck."}
+                        {"No cards to review in this stash. To get started, add a card to this stash."}
                     </p>
                 </div>
             </div>
@@ -125,7 +126,7 @@ const NoReviewCard = React.createClass({
     }
 });
 
-const ReviewDashboardOcclusion = either(ReviewDashboard, NoReviewCard, function(props) {
+const ReviewStashCardOcclusion = either(ReviewStashCard, NoReviewCard, function(props) {
 
     const {reviewCard} = props;
 
@@ -136,14 +137,14 @@ const ReviewDashboardOcclusion = either(ReviewDashboard, NoReviewCard, function(
     return true;
 });
 
-const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
+const OrwellWrappedReviewStashCard = orwell(ReviewStashCardOcclusion, {
     watchCursors(props, manual, context) {
 
         const state = context.store.state();
         const {localstate} = props;
 
         return [
-            state.cursor(paths.review.self),
+            state.cursor(paths.stash.review),
             localstate.cursor('revealCard')
         ];
     },
@@ -152,7 +153,7 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
         const state = context.store.state();
         const {localstate} = props;
 
-        const reviewCard = state.cursor(paths.review.self).deref(NOT_SET);
+        const reviewCard = state.cursor(paths.stash.review).deref(NOT_SET);
 
         if(!Immutable.Map.isMap(reviewCard)) {
             return {
@@ -173,7 +174,7 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
 });
 
 // local state
-module.exports = once(OrwellWrappedReviewDashboard, {
+module.exports = once(OrwellWrappedReviewStashCard, {
     contextTypes: {
         store: React.PropTypes.object.isRequired
     },
@@ -197,7 +198,7 @@ module.exports = once(OrwellWrappedReviewDashboard, {
         const localstate = minitrue(DEFAULTS);
 
         // watch for change in review card
-        const _unsub = store.state().cursor(paths.review.self).observe(function(newReview, oldReview) {
+        const _unsub = store.state().cursor(paths.stash.review).observe(function(newReview, oldReview) {
             if(!Immutable.Map.isMap(newReview) || !Immutable.Map.isMap(oldReview)) {
                 return;
             }

@@ -88,20 +88,34 @@ const ReviewControls = React.createClass({
 
     render() {
 
+        const {showSkip} = this.props;
+
         if(!this.props.revealCard) {
 
             return (
                 <div key="showbackbutton" className="row">
-                    <div className="col-sm-6">
+                    <div className={classNames({'col-sm-6': showSkip, 'col-sm-12': !showSkip})}>
                         <button type="button" className="btn btn-primary btn-lg btn-block" onClick={this.onClickRevealCard}>
                             {"Show Back Side"}
                         </button>
                     </div>
-                    <div className="col-sm-6">
-                        <button type="button" className="btn btn-info btn-lg btn-block" onClick={this.onClickSkip}>
-                            {"Skip Card"}
-                        </button>
-                    </div>
+                    {
+                        (function() {
+
+                            if(!showSkip) {
+                                return null;
+                            }
+
+                            return (
+                                <div className="col-sm-6">
+                                    <button type="button" className="btn btn-info btn-lg btn-block" onClick={this.onClickSkip}>
+                                        {"Skip Card"}
+                                    </button>
+                                </div>
+                            );
+                        }.call(this))
+                    }
+
                 </div>
 
             );
@@ -184,10 +198,23 @@ const ReviewControls = React.createClass({
                         </button>
                     </div>
                 </div>
+
                 <div className="col-sm-4">
                     <div style={{width: '100%'}} className="btn-group btn-group-lg" role="group" aria-label="Basic example">
-                        <button style={{width: '70%'}} type="button" className="btn btn-info-outline" onClick={this.onClickNext}>{"Next"}</button>
-                        <button style={{width: '30%'}} type="button" className="btn btn-info-outline" onClick={this.onClickSkip}>{"Skip"}</button>
+                        <button style={{width: showSkip ? '70%' : '100%'}} type="button" className="btn btn-info-outline" onClick={this.onClickNext}>{"Next"}</button>
+                        {
+                            (function() {
+
+                                if(!showSkip) {
+                                    return null;
+                                }
+
+                                return (
+                                    <button style={{width: '30%'}} type="button" className="btn btn-info-outline" onClick={this.onClickSkip}>{"Skip"}</button>
+                                );
+
+                            }.call(this))
+                        }
                     </div>
                 </div>
             </div>

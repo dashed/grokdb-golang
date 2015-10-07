@@ -7,7 +7,7 @@ const once = require('react-prop-once');
 
 const {flow} = require('store/utils');
 const {paths, stash} = require('store/constants');
-const {toStashProfileEdit, toStashProfile} = require('store/route');
+const {toStashProfileEdit, toStashProfile, toStashProfileReview} = require('store/route');
 const {applyStashCardsPageArgs} = require('store/cards');
 const {applyStashArgs, saveStash} = require('store/stashes');
 
@@ -20,6 +20,13 @@ const saveStashState = flow(
 
     // route
     toStashProfile
+);
+
+const toReview = flow(
+    applyStashArgs,
+
+    // route
+    toStashProfileReview
 );
 
 const StashProfile = React.createClass({
@@ -122,6 +129,15 @@ const StashProfile = React.createClass({
         store.invoke(saveStashState, {patchStash: newStash});
     },
 
+    onClickReview() {
+        const {store, stash: currentStash} = this.props;
+
+        store.invoke(toReview, {
+            stash: currentStash,
+            stashID: currentStash.get('id')
+        });
+    },
+
     render() {
         const {localstate} = this.props;
 
@@ -130,6 +146,7 @@ const StashProfile = React.createClass({
                 onClickCancelEdit={this.onClickCancelEdit}
                 onClickEdit={this.onClickEdit}
                 onCommit={this.onClickSave}
+                onReview={this.onClickReview}
                 // onClickDelete={this.onClickDelete}
                 localstate={localstate}
             />

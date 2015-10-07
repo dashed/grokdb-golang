@@ -1,6 +1,7 @@
 const Immutable = require('immutable');
 
 const superhot = require('store/superhot');
+const {NOT_SET} = require('store/constants');
 
 const transforms = {
 
@@ -90,6 +91,31 @@ const transforms = {
                         break;
                     case 200:
                         resolve({stashCards: Immutable.fromJS(res.body)});
+                        break;
+                    default:
+                        return reject(Error('http code not found'));
+                        // TODO: error handling
+                    }
+                });
+        });
+    },
+
+    fetchStashReviewCard(options) {
+        const {stashID} = options;
+
+        return new Promise(function(resolve, reject) {
+            superhot
+                .get(`/stashes/${stashID}/review`)
+                .end(function(err, res){
+
+                    switch(res.status) {
+                    case 404:
+                        resolve({reviewStashCard: NOT_SET});
+                        break;
+                    case 200:
+                        resolve({
+                            reviewStashCard: Immutable.fromJS(res.body)
+                        });
                         break;
                     default:
                         return reject(Error('http code not found'));

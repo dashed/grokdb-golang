@@ -13,8 +13,7 @@ const {redirectToDeck, validDeckSlug, toDeckCards} = require('store/route');
 const {parseDeckCardsPageNum, parseStashCardsPageNum, parseOrder, parseSort, fetchCardsCount, fetchCardsList, fetchCard} = require('store/stateless/cards');
 const {isCurrentCard, applyCardArgs, applyDeckCardsPageArgs} = require('store/cards');
 const {fetchReviewCardByDeck} = require('store/stateless/review');
-const {fetchStashList, fetchStash, fetchStashCardsCount, fetchStashCards} = require('store/stateless/stashes');
-const {setStashList} = require('store/stashes');
+const {fetchStashList, fetchStash, fetchStashCardsCount, fetchStashCards, fetchStashReviewCard} = require('store/stateless/stashes');
 
 // route handler components
 const Dashboard = require('components/dashboard');
@@ -49,6 +48,7 @@ const bootRouter = co.wrap(function* (store) {
                     })
 
                     // stashes
+                    .set(paths.dashboard.stashes.reviewing, false)
                     .set(paths.dashboard.stashes.creatingNew, false)
                     .set(paths.dashboard.stashes.viewingProfile, false)
                     .set(paths.stash.self, NOT_SET);
@@ -70,6 +70,7 @@ const bootRouter = co.wrap(function* (store) {
     const __ensureDeckReviewRoute = _.bind(ensureDeckReviewRoute, void 0, store);
     const __ensureStashesRoute = _.bind(ensureStashesRoute, void 0, store);
     const __ensureCurrentStashRoute = _.bind(ensureCurrentStashRoute, void 0, store);
+    const __ensureStashReviewRoute = _.bind(ensureStashReviewRoute, void 0, store);
 
     page('/deck/:id', __ensureDeckRoute, function() {
 
@@ -234,6 +235,22 @@ const bootRouter = co.wrap(function* (store) {
                 __map
                     .set(paths.stash.editing, true)
                     .set(paths.dashboard.stashes.viewingProfile, true)
+                    .set(paths.dashboard.view, dashboard.view.stash)
+                    .set(paths.route.handler, Dashboard);
+            });
+        });
+
+        return next();
+    }, __commitStateTransaction);
+
+    page('/stashes/:id/review', __ensureCurrentStashRoute, __ensureStashReviewRoute, function(ctx, next) {
+
+        state.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.stash.editing, false)
+                    .set(paths.dashboard.stashes.reviewing, true)
+                    .set(paths.dashboard.stashes.viewingProfile, false)
                     .set(paths.dashboard.view, dashboard.view.stash)
                     .set(paths.route.handler, Dashboard);
             });
@@ -773,7 +790,16 @@ const defaultDeck = detour(function(state/*, options = {}*/) {
 const loadStashList = flow(
     defaultDeck,
     stateless(fetchStashList),
-    setStashList
+    setTransactions(function(_state, options) {
+        const {stashList} = options;
+
+        return [
+            {
+                path: paths.dashboard.stashes.list,
+                value: stashList
+            }
+        ];
+    })
 );
 
 const ensureStashesRoute = co.wrap(function*(store, ctx, next) {
@@ -905,6 +931,46 @@ const ensureCurrentStashRoute = co.wrap(function*(store, ctx, next) {
         defaultRoute(state);
         return;
     }
+    next();
+    return;
+});
+
+const loadStashReviewCard = flow(
+    defaultDeck, // load deck if it's not in app state
+    stateless(fetchStashReviewCard),
+    setTransactions(function(_state, _options) {
+        const {reviewStashCard} = _options;
+        return [
+            {
+                path: paths.stash.review,
+                value: reviewStashCard
+            }
+        ];
+    })
+);
+
+const ensureStashReviewRoute = co.wrap(function*(store, ctx, next) {
+
+    const state = store.state();
+
+    if(!_.has(ctx.params, 'id')) {
+        throw Error('ensureCurrentStashRoute used incorrectly');
+    }
+
+    if(notValidID(ctx.params.id)) {
+        defaultRoute(state);
+        return;
+    }
+
+    try {
+        yield loadStashReviewCard(state, {
+            stashID: ctx.params.id
+        });
+    } catch(err) {
+        defaultRoute(state);
+        return;
+    }
+
     next();
     return;
 });

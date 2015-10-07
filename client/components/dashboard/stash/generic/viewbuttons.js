@@ -17,6 +17,8 @@ const GenericStashViewButtons = React.createClass({
         hideMeta: React.PropTypes.bool.isRequired,
         showEditButton: React.PropTypes.bool.isRequired,
         editMode: React.PropTypes.bool.isRequired,
+        showReviewButton: React.PropTypes.bool.isRequired,
+        onReview: React.PropTypes.func.isRequired,
         localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
 
@@ -47,6 +49,15 @@ const GenericStashViewButtons = React.createClass({
         }
 
         onClickCancelEdit.call(void 0);
+    },
+
+    onClickReview(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const {onReview} = this.props;
+
+        onReview.call(void 0);
     },
 
     render() {
@@ -97,6 +108,27 @@ const GenericStashViewButtons = React.createClass({
             );
         }.call(this));
 
+
+        const ReviewButton = (function() {
+
+            const {showReviewButton} = this.props;
+
+            if(!showReviewButton) {
+                return null;
+            }
+
+            return (
+                <div className="btn-group btn-group-sm m-r" role="group" aria-label="Basic example">
+                    <button
+                        type="button"
+                        className="btn btn-success"
+                        onClick={this.onClickReview}
+                    >{"Review this stash"}</button>
+                </div>
+            );
+        }.call(this));
+
+
         const {hideStashCards} = this.props;
 
         const Sides = _.reduce([
@@ -139,6 +171,7 @@ const GenericStashViewButtons = React.createClass({
                     {Sides}
                 </div>
                 {MetaButton}
+                {ReviewButton}
                 {EditCancelButton}
             </div>
         );
@@ -155,7 +188,8 @@ module.exports = orwell(GenericStashViewButtons, {
             localstate.cursor('showEditButton'),
             localstate.cursor('editMode'),
             localstate.cursor('hideBack'),
-            localstate.cursor('hideStashCards')
+            localstate.cursor('hideStashCards'),
+            localstate.cursor('showReviewButton')
         ];
     },
     assignNewProps(props) {
@@ -168,7 +202,8 @@ module.exports = orwell(GenericStashViewButtons, {
             hideMeta: localstate.cursor('hideMeta').deref(false),
             hideStashCards: localstate.cursor('hideStashCards').deref(false),
             editMode: localstate.cursor('editMode').deref(false),
-            hideBack: localstate.cursor('hideBack').deref(false)
+            hideBack: localstate.cursor('hideBack').deref(false),
+            showReviewButton: localstate.cursor('showReviewButton').deref(false)
         };
     }
 });

@@ -143,6 +143,15 @@ const transforms = {
         const params = qs.stringify({page: _pageNum, order: _order, sort: _sort});
 
         page(`/stashes/${stashID}/edit?${params}`);
+    },
+
+    toStashProfileReview(state, options = {}) {
+
+        let {stash, stashID} = options;
+
+        ({stash, stashID} = resolveStash(state, stash, stashID));
+
+        page(`/stashes/${stashID}/review`);
     }
 };
 

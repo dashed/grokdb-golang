@@ -18,6 +18,17 @@ const transforms = {
         return options;
     },
 
+    applyStashReviewArgs(state, options = {}) {
+
+        const card = state.cursor(paths.stash.review).deref();
+        const cardID = card.get('id');
+
+        options.card = card;
+        options.cardID = cardID;
+
+        return options;
+    },
+
     setStashList(state, options = {}) {
         const {stashList} = options;
 
@@ -43,6 +54,17 @@ const transforms = {
 
         state.cursor(paths.stash.cards).update(function() {
             return stashCards;
+        });
+
+        return options;
+    },
+
+    setStashReviewCard(state, options = {}) {
+
+        const {reviewStashCard} = options;
+
+        state.cursor(paths.stash.review).update(function() {
+            return reviewStashCard;
         });
 
         return options;

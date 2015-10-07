@@ -52,6 +52,7 @@ module.exports = {
         stash: {
             editing: ['stash', 'editing'],
             self: ['stash', 'self'],
+            review: ['stash', 'review'], // the card being reviewed for a stash
             cards: ['stash', 'cards']
         },
 
@@ -79,6 +80,7 @@ module.exports = {
             },
             stashes: {
                 creatingNew: ['dashboard', 'stashes', 'creatingNew'],
+                reviewing: ['dashboard', 'stashes', 'reviewing'],
                 viewingProfile: ['dashboard', 'stashes', 'viewingProfile'],
 
                 // list
@@ -134,7 +136,8 @@ module.exports = {
         view: {
             cards: 'cards',
             description: 'description',
-            meta: 'meta'
+            meta: 'meta',
+            review: 'review'
         },
 
         display: {

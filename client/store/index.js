@@ -47,6 +47,7 @@ const SCHEMA = {
         stashes: {
             list: NOT_SET,
 
+            reviewing: false,
             creatingNew: false,
             viewingProfile: false
         }
@@ -75,7 +76,8 @@ const SCHEMA = {
         // stash profile
         editing: false,
         self: NOT_SET, // currently viewed stash
-        cards: NOT_SET
+        cards: NOT_SET,
+        review: NOT_SET // the card being reviewed for a stash
     }
 };
 

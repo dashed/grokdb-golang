@@ -16,6 +16,7 @@ const GenericStashProfile = React.createClass({
         onClickEdit: React.PropTypes.func.isRequired,
         onClickCancelEdit: React.PropTypes.func.isRequired,
         onClickDelete: React.PropTypes.func.isRequired,
+        onReview: React.PropTypes.func.isRequired,
 
         // localstate
         view: React.PropTypes.string.isRequired,
@@ -52,7 +53,7 @@ const GenericStashProfile = React.createClass({
 
     render() {
 
-        const {editMode, localstate, onSwitchView, view, onClickEdit, onClickCancelEdit} = this.props;
+        const {editMode, localstate, onSwitchView, view, onClickEdit, onClickCancelEdit, onReview} = this.props;
 
         const ViewComponent = (function() {
 
@@ -149,6 +150,7 @@ const GenericStashProfile = React.createClass({
                         onClickCancelEdit={onClickCancelEdit}
                         onClickEdit={onClickEdit}
                         onSwitchView={onSwitchView}
+                        onReview={onReview}
                         localstate={localstate}
                     />
                     {ViewComponent}

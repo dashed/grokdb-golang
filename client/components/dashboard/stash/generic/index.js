@@ -21,6 +21,7 @@ const DEFAULTS = {
 
     hideMeta: false,
     showEditButton: true,
+    showReviewButton: true,
 
     defaultMode: stash.display.render, // render or source
     commitLabel: 'Save Stash', // string
@@ -41,6 +42,7 @@ const GenericStash = React.createClass({
         onClickEdit: React.PropTypes.func,
         onClickCancelEdit: React.PropTypes.func,
         onClickDelete: React.PropTypes.func,
+        onReview: React.PropTypes.func,
 
         localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
@@ -51,7 +53,8 @@ const GenericStash = React.createClass({
             onCommit: nilop,
             onClickEdit: nilop,
             onClickCancelEdit: nilop,
-            onClickDelete: nilop
+            onClickDelete: nilop,
+            onReview: nilop
         };
     },
 
@@ -78,7 +81,8 @@ const GenericStash = React.createClass({
             onCommit,
             onClickEdit,
             onClickCancelEdit,
-            onClickDelete
+            onClickDelete,
+            onReview
         } = this.props;
 
         return (
@@ -90,6 +94,7 @@ const GenericStash = React.createClass({
                         onCommit={onCommit}
                         onSwitchView={onSwitchView}
                         onClickDelete={onClickDelete}
+                        onReview={onReview}
                         localstate={localstate}
                     />
                 </div>
