@@ -16,10 +16,6 @@ const {NOT_SET, paths, decks} = require('store/constants');
 
 // components
 const GenericDeck = require('./generic');
-// const DeckChildren = require('./children');
-// const DecksListControls = require('./listcontrols');
-// const DeckSettings = require('./settings');
-// const DeckInfo = require('./deckinfo');
 
 const navigateToChild = flow(
 
@@ -76,7 +72,6 @@ const DecksDashboard = React.createClass({
         isEditing: React.PropTypes.bool.isRequired,
         store: React.PropTypes.object.isRequired,
         deck: React.PropTypes.instanceOf(Immutable.Map).isRequired,
-        editingDeck: React.PropTypes.bool.isRequired,
         children: React.PropTypes.instanceOf(Immutable.List).isRequired,
         localstate: React.PropTypes.instanceOf(Probe).isRequired
     },
@@ -211,7 +206,7 @@ const DecksDashboard = React.createClass({
 
     render() {
 
-        const {editingDeck, localstate} = this.props;
+        const {localstate} = this.props;
 
         return (
             <GenericDeck
@@ -259,7 +254,6 @@ const OrwellWrappedDeckProfile = orwell(DecksDashboardOcclusion, {
             store: context.store,
             deck: state.cursor(paths.deck.self).deref(),
             children: state.cursor(paths.deck.children).deref(Immutable.List()),
-            editingDeck: state.cursor(paths.dashboard.decks.editing).deref(),
             isEditing: state.cursor(paths.dashboard.decks.editing).deref(false)
         };
     }

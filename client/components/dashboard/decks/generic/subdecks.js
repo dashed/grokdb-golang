@@ -30,8 +30,7 @@ const GenericDeckSubDecks = React.createClass({
         const ChildrenRendered = children.reduce(function(accumulator, deck, index) {
 
             const key = deck.get('id');
-            const cKey = `${key}-${index}-parent`;
-            const cKey2 = `${key}-${index}-deck`;
+            const cKey = `${key}-${index}-item`;
 
             accumulator.push(
                 <li className="list-group-item" key={cKey}>
