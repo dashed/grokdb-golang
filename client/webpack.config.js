@@ -59,7 +59,7 @@ module.exports = {
         path: path.join(appRoot, "../assets"),
         filename: "app.js"
     },
-    devtool: "#source-map",
+    // devtool: "#source-map",
     resolve: {
         root: path.join(appRoot, "/"),
         modulesDirectories: ["node_modules"]

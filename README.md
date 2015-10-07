@@ -1,4 +1,4 @@
-butterstotch
+wunderfoo
 ============
 
 > Flashcard app. **WORK IN PROGRESS.**
@@ -11,7 +11,7 @@ Usage
 Run from your terminal:
 
 ```sh
-$ butterstotch
+$ wunderfoo
 ```
 
 Access the client from your favourite browser: [http://localhost:3030/](http://localhost:3030/)
@@ -20,13 +20,18 @@ Development
 ===========
 
 ```sh
+cd client/
 webpack -p
+cd ..
 ./buildassets.sh
 go build
 ```
 
 Note that there are external dependencies used outside of npm:
 - localforage
+- jquery
+- d3
+- metricgraphics
 
 License
 =======

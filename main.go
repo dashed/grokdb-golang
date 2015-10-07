@@ -21,7 +21,7 @@ func main() {
 
     var cmd *cli.App = cli.NewApp()
 
-    cmd.Name = "butterfoo"
+    cmd.Name = "wunderfoo"
     cmd.Version = "0.0.1"
     cmd.Usage = "flashcard app"
 
