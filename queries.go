@@ -1546,7 +1546,7 @@ var FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_NORM_SCORE = (func() PipeInput {
             SELECT
 
             c.card_id, c.title, c.description, c.front, c.back, c.deck, c.created_at, c.updated_at,
-            cs.success, cs.fail, cs.updated_at AS cs_updated_at
+            cs.times_reviewed, cs.success, cs.fail, cs.updated_at AS cs_updated_at
 
             FROM StashCards AS sc
 
@@ -1564,7 +1564,7 @@ var FETCH_NEXT_REVIEW_CARD_BY_STASH_ORDER_BY_NORM_SCORE = (func() PipeInput {
         )
         AS sub
         ORDER BY
-            norm_score(sub.success, sub.fail, strftime('%s','now') - sub.cs_updated_at) DESC
+            norm_score(sub.success, sub.fail, strftime('%s','now') - sub.cs_updated_at, sub.times_reviewed) DESC
         LIMIT 1
         OFFSET :purgatory_index;
     `
