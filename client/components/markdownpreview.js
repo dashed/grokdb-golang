@@ -10,15 +10,8 @@ const {markdown} = require('store/constants');
 const MarkdownPreview = React.createClass({
 
     propTypes: {
-        text: React.PropTypes.string.isRequired,
-        // onGenerateMarkdown: React.PropTypes.func
+        text: React.PropTypes.string.isRequired
     },
-
-    // getDefaultProps() {
-    //     return {
-    //         onGenerateMarkdown: () => void 0
-    //     };
-    // },
 
     generateMarkdown(input) {
         return {
@@ -57,7 +50,7 @@ const MarkdownPreview = React.createClass({
 
     render() {
         return (
-            <div ref="output" dangerouslySetInnerHTML={this.generateMarkdown(this.props.text)} />
+            <div key="markdownpreview" ref="output" dangerouslySetInnerHTML={this.generateMarkdown(this.props.text)} />
         );
     }
 });
