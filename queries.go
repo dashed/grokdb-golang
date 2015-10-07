@@ -1656,6 +1656,20 @@ var DELETE_CACHED_REVIEWCARD_BY_STASH_QUERY = (func() PipeInput {
     )
 }())
 
+var DELETE_CACHED_STASH_REVIEWCARD_BY_CARD_QUERY = (func() PipeInput {
+    const __DELETE_CACHED_STASH_REVIEWCARD_BY_CARD_QUERY string = `
+    DELETE FROM ReviewCardStashCache WHERE card = :card_id;
+    `
+
+    var requiredInputCols []string = []string{"card_id"}
+
+    return composePipes(
+        MakeCtxMaker(__DELETE_CACHED_STASH_REVIEWCARD_BY_CARD_QUERY),
+        EnsureInputColsPipe(requiredInputCols),
+        BuildQueryPipe,
+    )
+}())
+
 var INSERT_CACHED_REVIEWCARD_BY_STASH_QUERY = (func() PipeInput {
     const __INSERT_CACHED_REVIEWCARD_BY_STASH_QUERY string = `
     INSERT INTO ReviewCardStashCache(stash, card) VALUES (:stash_id, :card_id);

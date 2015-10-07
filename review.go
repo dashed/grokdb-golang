@@ -895,6 +895,25 @@ func SetCachedReviewCardByDeck(db *sqlx.DB, deckID uint, cardID uint) error {
 func DeleteCachedReviewCard(db *sqlx.DB, cardID uint) error {
 
     var (
+        err error
+    )
+
+    err = DeleteCachedDeckReviewCard(db, cardID)
+    if err != nil {
+        return err
+    }
+
+    err = DeleteCachedStashReviewCardByCard(db, cardID)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func DeleteCachedDeckReviewCard(db *sqlx.DB, cardID uint) error {
+
+    var (
         err   error
         query string
         args  []interface{}

@@ -1399,6 +1399,27 @@ func DeleteCachedReviewCardByStash(db *sqlx.DB, stashID uint) error {
     return nil
 }
 
+func DeleteCachedStashReviewCardByCard(db *sqlx.DB, cardID uint) error {
+
+    var (
+        err   error
+        query string
+        args  []interface{}
+    )
+
+    query, args, err = QueryApply(DELETE_CACHED_STASH_REVIEWCARD_BY_CARD_QUERY, &StringMap{"card_id": cardID})
+    if err != nil {
+        return err
+    }
+
+    _, err = db.Exec(query, args...)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
 func CountStashes(db *sqlx.DB) (uint, error) {
 
     var (
