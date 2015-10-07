@@ -102,19 +102,21 @@ func app(profileName string, portNum int, appPath string, mathJax string) {
 func norm_score(success int64, fail int64, age int64, times_reviewed int64) float64 {
 
     var total int64 = success + fail
+    var __total float64 = float64(total + 1)
+    var __fail float64 = float64(fail)
 
     // this is Jeffrey-Perks law where h = 0.5
     // References:
     // - http://www.dcs.bbk.ac.uk/~dell/publications/dellzhang_ictir2011.pdf
     // - http://bl.ocks.org/ajschumacher/b9645724d9d842810613
-    var lidstone float64 = (float64(fail) + 0.5) / float64(total+1)
+    var lidstone float64 = (__fail + 0.5) / __total
 
     // - favour cards that are seen less frequently
     // - favour less successful cards
     // - penalize more successful cards
-    var bias_factor float64 = float64(1+fail) / float64(1+success+total+times_reviewed)
+    var bias_factor float64 = (1.0 + __fail) / (__total + float64(success) + float64(times_reviewed)/3.0)
 
-    var base float64 = lidstone + 1
+    var base float64 = lidstone + 1.0
     var normalized float64 = lidstone * math.Log(float64(age)*bias_factor+base) / math.Log(base)
 
     return normalized
