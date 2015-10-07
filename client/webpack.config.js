@@ -26,6 +26,7 @@ module.exports = {
     entry: {
         app: "./entry.js",
         vendor: [
+            'babel/polyfill',
             'babel-runtime/regenerator',
             'babel-runtime/core-js',
             'react',
