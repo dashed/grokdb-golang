@@ -14,6 +14,7 @@ const GenericCardStashes = React.createClass({
     propTypes: {
         onClickDeleteStash: React.PropTypes.func.isRequired,
         onClickAddStash: React.PropTypes.func.isRequired,
+        onClickToStash: React.PropTypes.func.isRequired,
 
         currentStashes: React.PropTypes.instanceOf(Immutable.List).isRequired, // stashes current card is in
         stashes: React.PropTypes.instanceOf(Immutable.List).isRequired,
@@ -25,7 +26,7 @@ const GenericCardStashes = React.createClass({
         return (currentStashes.indexOf(stash.get('id', 0)) >= 0);
     },
 
-    onClickStash(stash) {
+    onClickStashToggle(stash) {
 
         const {onClickDeleteStash, onClickAddStash} = this.props;
 
@@ -39,6 +40,11 @@ const GenericCardStashes = React.createClass({
         onClickAddStash(stash);
     },
 
+    onClickStash(stash) {
+        const {onClickToStash} = this.props;
+        onClickToStash(stash);
+    },
+
     render() {
 
         const {stashes} = this.props;
@@ -49,7 +55,10 @@ const GenericCardStashes = React.createClass({
                     <ListFilter
                         list={stashes}
                         labelForItem={labelForItem}
-                        onClickItem={this.onClickStash}
+                        onClickItemToggle={this.onClickStashToggle}
+                        onClickItemLabel={this.onClickStash}
+                        activeLabel={'Remove'}
+                        notActiveLabel={'Add'}
                         isItemActive={this.isItemActive}
                     />
                 </div>

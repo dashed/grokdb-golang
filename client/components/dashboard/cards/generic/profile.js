@@ -18,6 +18,7 @@ const GenericCardProfile = React.createClass({
         onClickDelete: React.PropTypes.func.isRequired,
         onClickDeleteStash: React.PropTypes.func.isRequired,
         onClickAddStash: React.PropTypes.func.isRequired,
+        onClickToStash: React.PropTypes.func.isRequired,
 
         // localstate
         view: React.PropTypes.string.isRequired,
@@ -75,14 +76,14 @@ const GenericCardProfile = React.createClass({
 
             if(view === cards.view.stashes) {
 
-                const {onClickDeleteStash} = this.props;
-                const {onClickAddStash} = this.props;
+                const {onClickDeleteStash, onClickAddStash, onClickToStash} = this.props;
 
                 return (
                     <GenericCardStashes
                         key="stashes"
                         onClickDeleteStash={onClickDeleteStash}
                         onClickAddStash={onClickAddStash}
+                        onClickToStash={onClickToStash}
                         localstate={localstate}
                     />
                 );
