@@ -74,7 +74,7 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
         // }
 
         // create backup filename
-        backupName := fmt.Sprintf("%s.%s", db.name, time.Now().Format("2006-01-02T15.04.05.999999999ZZ07.00")) // filename compat RFC3339
+        backupName := fmt.Sprintf("%s.%s", db.name, time.Now().Format("2006-01-02T15.04.05.999999999Z07.00")) // filename compat RFC3339
 
         // create backup db
         var dbDest *Database
