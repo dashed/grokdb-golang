@@ -30,7 +30,7 @@ module.exports = {
             'babel-runtime/regenerator',
             'babel-runtime/core-js',
             'react',
-            // 'react/addons',
+            'react-dom',
             'immutable',
             'page',
             'bluebird',

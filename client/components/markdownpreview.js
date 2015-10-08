@@ -2,6 +2,7 @@
 /*eslint new-cap: [2, {"capIsNewExceptions": ["MathJax.Hub.Queue", "Remove"]}]*/
 
 const React = require('react');
+const ReactDOM = require('react-dom');
 const _ = require('lodash');
 
 const {markdown} = require('store/constants');
@@ -25,7 +26,7 @@ const MarkdownPreview = React.createClass({
             return;
         }
 
-        MathJax.Hub.Queue(['Typeset', MathJax.Hub, React.findDOMNode(this.refs.output)]);
+        MathJax.Hub.Queue(['Typeset', MathJax.Hub, ReactDOM.findDOMNode(this.refs.output)]);
     },
 
     componentDidMount() {
@@ -34,7 +35,7 @@ const MarkdownPreview = React.createClass({
             return;
         }
 
-        MathJax.Hub.Queue(['Typeset', MathJax.Hub, React.findDOMNode(this.refs.output)]);
+        MathJax.Hub.Queue(['Typeset', MathJax.Hub, ReactDOM.findDOMNode(this.refs.output)]);
     },
 
     componentWillUnmount() {
@@ -43,7 +44,7 @@ const MarkdownPreview = React.createClass({
             return;
         }
 
-        _.each(MathJax.Hub.getAllJax(React.findDOMNode(this.refs.output)), function(jax) {
+        _.each(MathJax.Hub.getAllJax(ReactDOM.findDOMNode(this.refs.output)), function(jax) {
             jax.Remove();
         });
     },

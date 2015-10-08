@@ -1,4 +1,5 @@
 const React = require('react');
+const ReactDOM = require('react-dom');
 const classNames = require('classnames');
 const orwell = require('orwell');
 const _ = require('lodash');
@@ -85,7 +86,7 @@ const SortDropdown = React.createClass({
 
     handleBodyClick: function (event) {
 
-        if(!this.state.open || event.target == React.findDOMNode(this.refs.sortbutton)) {
+        if(!this.state.open || event.target == ReactDOM.findDOMNode(this.refs.sortbutton)) {
             return;
         }
 

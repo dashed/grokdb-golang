@@ -1,4 +1,5 @@
 const React = require('react');
+const ReactDOM = require('react-dom');
 const {Probe} = require('minitrue');
 
 const store = require('store');
@@ -31,4 +32,4 @@ const WithContext = React.createClass({
     }
 });
 
-React.render(<WithContext rootCursor={store.state()} />, document.body);
+ReactDOM.render(<WithContext rootCursor={store.state()} />, document.body);
