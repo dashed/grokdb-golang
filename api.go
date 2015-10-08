@@ -4,12 +4,14 @@ import (
     "fmt"
     "net/http"
     "strings"
+    "time"
 
     // 3rd-party
     assetfs "github.com/elazarl/go-bindata-assetfs"
     "github.com/gin-gonic/contrib/static"
     "github.com/gin-gonic/gin"
     "github.com/jmoiron/sqlx"
+    sqlite "github.com/mattn/go-sqlite3"
 )
 
 func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
@@ -32,6 +34,9 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
         api.Use(static.Serve("/", BinaryFileSystem("assets")))
     }
 
+    // if we're given a mathjax path; use it to serve mathjax assets instead of the
+    // cdn in the internal app
+
     var local_mathjax bool = len(mathjaxPath) > 0
 
     if local_mathjax {
@@ -42,6 +47,96 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
         ctx.JSON(http.StatusOK, gin.H{
             "local_mathjax": local_mathjax,
         })
+    })
+
+    api.POST("/backup", func(ctx *gin.Context) {
+
+        var (
+            err           error
+            backupRequest *StringMap         = &StringMap{}
+            sqliteConnSrc *sqlite.SQLiteConn = db.sqliteConn // source of backup
+        )
+
+        err = ctx.BindJSON(backupRequest)
+        if err != nil {
+
+            ctx.JSON(http.StatusBadRequest, gin.H{
+                "status":           http.StatusBadRequest,
+                "developerMessage": err.Error(),
+                "userMessage":      "bad JSON input",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        // set and validate backup db file name
+        // if _, hasDeckKey := (*patch)["deck"]; hasDeckKey == true {
+        // }
+
+        // create backup filename
+        backupName := fmt.Sprintf("%s.%s", db.name, time.Now().Format("2006-01-02T15.04.05.999999999ZZ07.00")) // filename compat RFC3339
+
+        // create backup db
+        var dbDest *Database
+        dbDest, err = FetchDatabase(backupName)
+        defer dbDest.CleanUp()
+
+        if err != nil {
+
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to create backup db",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        // begin backing up
+        // ref: https://www.sqlite.org/c3ref/backup_finish.html#sqlite3backupinit
+        var backupDest *sqlite.SQLiteBackup
+        backupDest, err = dbDest.sqliteConn.Backup("main", sqliteConnSrc, "main")
+
+        if err != nil {
+
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to backup db",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        _, err = backupDest.Step(-1)
+
+        if err != nil {
+
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to backup db",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        err = backupDest.Finish()
+
+        if err != nil {
+
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to backup db",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        // success
+        ctx.Writer.WriteHeader(http.StatusOK)
+        return
     })
 
     // decks group

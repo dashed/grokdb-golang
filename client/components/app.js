@@ -4,8 +4,9 @@ const either = require('react-either');
 // TODO: remove/replace
 // const Spinner = require('./spinner');
 
-const constants = require('store/constants');
-const {NOT_SET, paths} = constants;
+const {NOT_SET, paths} = require('store/constants');
+const {stateless} = require('store/utils');
+const {backupDB} = require('store/stateless/settings');
 
 const App = React.createClass({
 
@@ -88,13 +89,36 @@ const OrwellWrapped = orwell(AppOcclusion, {
 
 // container for everything
 const AppContainer = React.createClass({
+
+    contextTypes: {
+        store: React.PropTypes.object.isRequired
+    },
+
+    onClickBackup(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const store = this.context.store;
+        store.invoke(stateless(backupDB));
+    },
+
     render() {
         return (
             <div className="container">
                 <OrwellWrapped {...this.props} />
                 <hr className="m-t-lg"/>
-                <footer className="m-b">
-                    <a href="https://github.com/dashed/wunderfoo/issues" target="_blank">{'Bugs? Issues? Ideas?'}</a>
+                <footer className="m-b row">
+                    <div className="col-sm-6">
+                        <a href="https://github.com/dashed/wunderfoo/issues" target="_blank">{'Bugs? Issues? Ideas?'}</a>
+                    </div>
+                    <div className="col-sm-6">
+                        <div className="btn-group p-b pull-right" role="group" aria-label="Basic example">
+                            <button
+                                type="button"
+                                className="btn btn-warning"
+                                onClick={this.onClickBackup}>{"Backup database"}</button>
+                        </div>
+                    </div>
                 </footer>
             </div>
         );

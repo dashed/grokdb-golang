@@ -58,26 +58,26 @@ const SubNav = React.createClass({
             <div className="row">
                 <div className="col-sm-6">
                     <div className="btn-group p-b pull-left" role="group" aria-label="Basic example">
-                      <button
-                        type="button"
-                        className={classNames('btn', {'btn-primary': isDeck, 'btn-secondary': !isDeck})}
-                        onClick={this.onClickDecks}>{"Decks"}</button>
-                      <button
-                        type="button"
-                        className={classNames('btn', {'btn-primary': isCard, 'btn-secondary': !isCard})}
-                        onClick={this.onClickCards}>{"Cards"}</button>
-                      <button
-                        type="button"
-                        className={classNames('btn', {'btn-primary': isReview, 'btn-secondary': !isReview})}
-                        onClick={this.onClickReview}>{"Review"}</button>
+                        <button
+                            type="button"
+                            className={classNames('btn', {'btn-primary': isDeck, 'btn-secondary': !isDeck})}
+                            onClick={this.onClickDecks}>{"Decks"}</button>
+                        <button
+                            type="button"
+                            className={classNames('btn', {'btn-primary': isCard, 'btn-secondary': !isCard})}
+                            onClick={this.onClickCards}>{"Cards"}</button>
+                        <button
+                            type="button"
+                            className={classNames('btn', {'btn-primary': isReview, 'btn-secondary': !isReview})}
+                            onClick={this.onClickReview}>{"Review"}</button>
                     </div>
                 </div>
                 <div className="col-sm-6">
                     <div className="btn-group p-b pull-right" role="group" aria-label="Basic example">
-                      <button
-                        type="button"
-                        className={classNames('btn', {'btn-primary': isStash, 'btn-secondary': !isStash})}
-                        onClick={this.onClickStashes}>{"Stashes"}</button>
+                        <button
+                            type="button"
+                            className={classNames('btn', {'btn-primary': isStash, 'btn-secondary': !isStash})}
+                            onClick={this.onClickStashes}>{"Stashes"}</button>
                     </div>
                 </div>
             </div>

@@ -4,13 +4,50 @@ import (
     // _ "encoding/binary"
     // _ "errors"
     // _ "os"
+    "database/sql"
+    "math"
+    "sync"
 
     // 3rd-party
     "github.com/jmoiron/sqlx" // replacement for "database/sql"
-    _ "github.com/mattn/go-sqlite3"
+    sqlite "github.com/mattn/go-sqlite3"
 )
 
+type Database struct {
+    name       string
+    filename   string
+    instance   *sqlx.DB
+    sqliteConn *sqlite.SQLiteConn
+    // dbFilePointer *os.File // used for data syncing. (wip)
+}
+
+var once sync.Once
+var mutex = &sync.Mutex{}
+var sqlite3Conn *sqlite.SQLiteConn
+
 func FetchDatabase(name string) (*Database, error) {
+
+    mutex.Lock()
+
+    once.Do(func() {
+        // adapted from: https://github.com/mattn/go-sqlite3/blob/master/_example/custom_func/main.go
+        sql.Register("sqlite3_custom", &sqlite.SQLiteDriver{
+            ConnectHook: func(conn *sqlite.SQLiteConn) error {
+
+                // register custom user defined function.
+                // this calculates the normalized score of a card with respect to its
+                // metadata attributes.
+                if err := conn.RegisterFunc("norm_score", norm_score, true); err != nil {
+                    return err
+                }
+
+                // source: https://github.com/mattn/go-sqlite3/issues/104#issuecomment-33213801
+                sqlite3Conn = conn
+
+                return nil
+            },
+        })
+    })
 
     var db *Database = &Database{name: name}
 
@@ -20,14 +57,12 @@ func FetchDatabase(name string) (*Database, error) {
         return nil, err
     }
 
-    return db, nil
-}
+    db.sqliteConn = sqlite3Conn
+    sqlite3Conn = nil
 
-type Database struct {
-    name     string
-    filename string
-    // dbFilePointer *os.File
-    instance *sqlx.DB
+    mutex.Unlock()
+
+    return db, nil
 }
 
 func (db *Database) Init() error {
@@ -83,6 +118,29 @@ func (db *Database) NormalizeFileName() {
 func (db *Database) CleanUp() {
     // db.dbFilePointer.Close()
     db.instance.Close()
+}
+
+func norm_score(success int64, fail int64, age int64, times_reviewed int64) float64 {
+
+    var total int64 = success + fail
+    var __total float64 = float64(total + 1)
+    var __fail float64 = float64(fail)
+
+    // this is Jeffrey-Perks law where h = 0.5
+    // References:
+    // - http://www.dcs.bbk.ac.uk/~dell/publications/dellzhang_ictir2011.pdf
+    // - http://bl.ocks.org/ajschumacher/b9645724d9d842810613
+    var lidstone float64 = (__fail + 0.5) / __total
+
+    // - favour cards that are seen less frequently
+    // - favour less successful cards
+    // - penalize more successful cards
+    var bias_factor float64 = (1.0 + __fail) / (__total + float64(success) + float64(times_reviewed)/3.0)
+
+    var base float64 = lidstone + 1.0
+    var normalized float64 = lidstone * math.Log(float64(age)*bias_factor+base) / math.Log(base)
+
+    return normalized
 }
 
 // func (db *Database) Counter() (uint32, error) {
