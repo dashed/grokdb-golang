@@ -49,6 +49,10 @@ module.exports = {
             'moment',
             'react-prop-once',
             'scriptjs',
+            'markdown-it-abbr',
+            'markdown-it-footnote',
+            'markdown-it-sub',
+            'markdown-it-sup'
             // 'intl',
             // 'between2',
             // 'pouchdb',

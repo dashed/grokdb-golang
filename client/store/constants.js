@@ -1,4 +1,9 @@
-const markdown = require('markdown-it')();
+const markdown = require('markdown-it')()
+    // load with plugins (officially supported by markdown-it)
+    .use(require('markdown-it-abbr'))
+    .use(require('markdown-it-footnote'))
+    .use(require('markdown-it-sub'))
+    .use(require('markdown-it-sup'));
 
 module.exports = {
 
