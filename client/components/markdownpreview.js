@@ -51,7 +51,7 @@ const MarkdownPreview = React.createClass({
 
     render() {
         return (
-            <div key="markdownpreview" ref="output" dangerouslySetInnerHTML={this.generateMarkdown(this.props.text)} />
+            <div key="markdownpreview" className="markdownrender" ref="output" dangerouslySetInnerHTML={this.generateMarkdown(this.props.text)} />
         );
     }
 });
