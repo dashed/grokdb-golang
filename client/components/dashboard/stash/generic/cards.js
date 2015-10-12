@@ -29,6 +29,7 @@ const GenericStashCards = React.createClass({
         sublocalstate: React.PropTypes.instanceOf(Probe).isRequired,
         list: React.PropTypes.instanceOf(Immutable.List).isRequired,
         breadcrumb: React.PropTypes.instanceOf(Immutable.List).isRequired,
+        currentDeck: React.PropTypes.instanceOf(Immutable.Map).isRequired,
         currentPage: React.PropTypes.number.isRequired,
         sort: React.PropTypes.string.isRequired,
         order: React.PropTypes.string.isRequired
@@ -36,14 +37,36 @@ const GenericStashCards = React.createClass({
 
     componentWillMount() {
         this.loadList(this.props, {});
+        this.loadCurrentDeck(this.props, {});
         this.loadBreadcrumb(this.props, {});
         this.loadPageProps(this.props, {});
     },
 
     componentWillReceiveProps(nextProps) {
         this.loadList(nextProps, this.props);
+        this.loadCurrentDeck(nextProps, this.props);
         this.loadBreadcrumb(nextProps, this.props);
         this.loadPageProps(nextProps, this.props);
+    },
+
+    loadCurrentDeck(nextProps, oldProps) {
+
+        const {
+            sublocalstate,
+            currentDeck: newCurrentDeck
+        } = nextProps;
+
+        const {
+            currentDeck: oldCurrentDeck
+        } = oldProps;
+
+        if(newCurrentDeck == oldCurrentDeck) {
+            return;
+        }
+
+        sublocalstate.cursor('currentDeck').update(function() {
+            return newCurrentDeck;
+        });
     },
 
     loadPageProps(nextProps, oldProps) {
@@ -229,7 +252,8 @@ module.exports = orwell(StashCardsOnce, {
             state.cursor(paths.deck.breadcrumb),
             state.cursor(paths.dashboard.stashes.page),
             state.cursor(paths.dashboard.stashes.sort),
-            state.cursor(paths.dashboard.stashes.order)
+            state.cursor(paths.dashboard.stashes.order),
+            state.cursor(paths.deck.self)
         ];
     },
     assignNewProps(props, context) {
@@ -244,7 +268,8 @@ module.exports = orwell(StashCardsOnce, {
             breadcrumb: state.cursor(paths.deck.breadcrumb).deref(Immutable.List()),
             currentPage: state.cursor(paths.dashboard.stashes.page).deref(1),
             sort: state.cursor(paths.dashboard.stashes.sort).deref('reviewed_at'),
-            order: state.cursor(paths.dashboard.stashes.order).deref('DESC')
+            order: state.cursor(paths.dashboard.stashes.order).deref('DESC'),
+            currentDeck: state.cursor(paths.deck.self).deref()
         };
     }
 }).inject({

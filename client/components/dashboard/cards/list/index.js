@@ -14,6 +14,7 @@ const DEFAULTS = {
 
     list: Immutable.List,
     breadcrumb: Immutable.List,
+    currentDeck: NOT_SET,
 
     currentPage: 1,
     sort: 'reviewed_at',

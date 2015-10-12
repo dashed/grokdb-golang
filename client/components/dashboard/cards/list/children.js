@@ -19,6 +19,7 @@ const CardsChildren = React.createClass({
         sublocalstate: React.PropTypes.instanceOf(Probe).isRequired, // hacky localstate
         listCursor: React.PropTypes.instanceOf(Probe).isRequired,
         breadcrumbLength: React.PropTypes.number.isRequired,
+        currentDeck: React.PropTypes.instanceOf(Immutable.Map).isRequired,
         noCardsString: React.PropTypes.string.isRequired
     },
 
@@ -42,7 +43,7 @@ const CardsChildren = React.createClass({
                 );
             }
 
-            const {listCursor, localstate, sublocalstate, breadcrumbLength} = this.props;
+            const {listCursor, localstate, sublocalstate, breadcrumbLength, currentDeck} = this.props;
 
             // display list of cards
 
@@ -56,6 +57,7 @@ const CardsChildren = React.createClass({
                         localstate={localstate}
                         sublocalstate={sublocalstate}
                         breadcrumbLength={breadcrumbLength}
+                        currentDeck={currentDeck}
                         childCursor={childCursor}
                     />
                 );
@@ -86,7 +88,8 @@ const OrwellWrappedCardsChildren = orwell(CardsChildren, {
         return [
             localstate.cursor('list'),
             localstate.cursor('breadcrumb'),
-            localstate.cursor('noCardsString')
+            localstate.cursor('noCardsString'),
+            localstate.cursor('currentDeck')
         ];
     },
     assignNewProps(props) {
@@ -97,7 +100,8 @@ const OrwellWrappedCardsChildren = orwell(CardsChildren, {
             listCursor: listCursor,
             list: listCursor.deref(),
             breadcrumbLength: breadcrumbLength,
-            noCardsString: localstate.cursor('noCardsString').deref()
+            noCardsString: localstate.cursor('noCardsString').deref(),
+            currentDeck: localstate.cursor('currentDeck').deref()
         };
     }
 });

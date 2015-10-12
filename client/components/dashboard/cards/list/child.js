@@ -6,23 +6,13 @@ const moment = require('moment');
 const {Probe} = require('minitrue');
 const _ = require('lodash');
 
-const {flow, stateless} = require('store/utils');
-const {setDeck, popFromBreadcrumb, pushManyOntoBreadcrumb, setChildren} = require('store/decks');
+const {flow, stateless, filterInt} = require('store/utils');
+const {setDeck, setNewBreadcrumb, setChildren} = require('store/decks');
 const {fetchChildren} = require('store/stateless/decks');
 
-const navigateToParentDeck = flow(
+const navigateToDeck = flow(
     // decks
-    popFromBreadcrumb,
-    setDeck,
-    stateless(fetchChildren),
-    setChildren
-
-    // route needs to be applied
-);
-
-const navigateToChildDeck = flow(
-    // decks
-    pushManyOntoBreadcrumb,
+    setNewBreadcrumb,
     setDeck,
     stateless(fetchChildren),
     setChildren
@@ -37,31 +27,28 @@ const CardChild = React.createClass({
         localstate: React.PropTypes.instanceOf(Probe).isRequired,
         sublocalstate: React.PropTypes.instanceOf(Probe).isRequired,
         deckPath: React.PropTypes.array.isRequired,
-        breadcrumbLength: React.PropTypes.number.isRequired
+        currentDeckID: React.PropTypes.number.isRequired,
+        // breadcrumbLength: React.PropTypes.number.isRequired
     },
 
     onClickDeck(deckPath, idx) {
 
-        const {localstate, breadcrumbLength} = this.props;
-        const currentDeckIdx = breadcrumbLength - 1;
+        const {localstate} = this.props;
 
-        const flowPath = idx < currentDeckIdx ? navigateToParentDeck : navigateToChildDeck;
-
-        return function(event) {
+        return (event) => {
             event.preventDefault();
             event.stopPropagation();
 
             const deck = deckPath[idx];
-
-            const sliced = idx < currentDeckIdx ? [] : _.slice(deckPath, currentDeckIdx + 1, idx + 1);
+            const deckID = deck.get('id');
 
             const afterCardsListDeckChange = localstate.cursor('afterCardsListDeckChange').deref();
 
             afterCardsListDeckChange({
-                flowPath: flowPath,
+                flowPath: navigateToDeck,
                 deck: deck,
-                deckID: deck.get('id'),
-                decks: sliced // for pushManyOntoBreadcrumb
+                deckID: deckID,
+                decks: deckPath // for pushManyOntoBreadcrumb
             });
         };
     },
@@ -78,18 +65,17 @@ const CardChild = React.createClass({
 
     deckPathVisual() {
 
-        const {deckPath = [], breadcrumbLength} = this.props;
-
-        const currentDeckIdx = breadcrumbLength - 1;
+        const {deckPath = [], currentDeckID} = this.props;
 
         // deck path
         const list = _.reduce(deckPath, function(lst, deck) {
             const name = deck.get('name');
+            const deckID = deck.get('id');
             lst.push(' / ');
 
             const currIdx = ((lst.length-1)/2);
 
-            if(currIdx == currentDeckIdx) {
+            if(currentDeckID == deckID) {
                 lst.push(
                     `${name}`
                 );
@@ -189,7 +175,7 @@ module.exports = orwell(CardChildOcclusion, {
     },
     assignNewProps(props) {
 
-        const {sublocalstate, childCursor} = props;
+        const {sublocalstate, childCursor, currentDeck} = props;
 
         const card = childCursor.deref();
 
@@ -207,7 +193,8 @@ module.exports = orwell(CardChildOcclusion, {
 
         return {
             card: card,
-            deckPath: deckPath
+            deckPath: deckPath,
+            currentDeckID: filterInt(currentDeck.get('id', 0))
         };
     }
 });

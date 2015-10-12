@@ -1,5 +1,6 @@
 const co = require('co');
 const _ = require('lodash');
+const Immutable = require('immutable');
 
 const {paths, NOT_SET} = require('store/constants');
 const superhot = require('store/superhot');
@@ -47,6 +48,17 @@ const transforms = {
 
         state.cursor(paths.deck.children).update(function() {
             return children;
+        });
+
+        return options;
+    },
+
+    setNewBreadcrumb(state, options) {
+
+        const {decks} = options;
+
+        state.cursor(paths.deck.breadcrumb).update(function() {
+            return Immutable.List().concat(decks);
         });
 
         return options;
