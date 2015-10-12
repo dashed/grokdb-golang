@@ -1087,6 +1087,26 @@ func ProcessCardWithStash(db *sqlx.DB, stashID uint, action string, cardID uint)
         if err != nil {
             return err
         }
+
+        // case: if this was being reviewed
+        var fetchedRow *CachedStashReviewCardRow
+        fetchedRow, err = GetCachedReviewCardByStash(db, stashID)
+
+        switch {
+        case err == ErrStashHasNoCachedReviewCard:
+            // noop
+        case err != nil:
+            return err
+        case fetchedRow != nil:
+            if fetchedRow.Card == cardID {
+                err = DeleteCachedReviewCardByStash(db, stashID)
+
+                if err != nil {
+                    return err
+                }
+            }
+        }
+
     }
 
     return nil
@@ -1245,6 +1265,7 @@ func GetNextReviewCardOfStash(db *sqlx.DB, stashID uint, _purgatory_size int) (*
 
     switch {
     case err == ErrStashHasNoCachedReviewCard:
+        // noop
     case err != nil:
         return nil, err
     case fetchedRow != nil:
