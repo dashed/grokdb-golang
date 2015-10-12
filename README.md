@@ -5,6 +5,8 @@ grokdb
 
 *This app is currently in heavy development; and all commits will be squashed for the initial public consumption.*
 
+![](https://raw.githubusercontent.com/grokdb/artwork/master/screenshot.png)
+
 Usage
 =====
 
