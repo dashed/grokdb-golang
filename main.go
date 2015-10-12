@@ -18,9 +18,9 @@ func main() {
 
     var cmd *cli.App = cli.NewApp()
 
-    cmd.Name = "wunderfoo"
+    cmd.Name = "grokdb"
     cmd.Version = "0.0.1"
-    cmd.Usage = "flashcard app"
+    cmd.Usage = "grok better with this flashcard app"
 
     cmd.Flags = []cli.Flag{
         cli.IntFlag{

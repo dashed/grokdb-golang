@@ -32,4 +32,4 @@ const WithContext = React.createClass({
     }
 });
 
-ReactDOM.render(<WithContext rootCursor={store.state()} />, document.getElementById('wunderfoo-container'));
+ReactDOM.render(<WithContext rootCursor={store.state()} />, document.getElementById('grokdb-container'));
