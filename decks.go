@@ -5,6 +5,7 @@ import (
     "errors"
     "fmt"
     "net/http"
+    "regexp"
     "strconv"
     "strings"
 
@@ -151,6 +152,130 @@ func DeckGET(db *sqlx.DB, ctx *gin.Context) {
         "parent":      parentID,
         "hasParent":   hasParent,
     }))
+}
+
+func DeckGETMany(db *sqlx.DB, ctx *gin.Context) {
+
+    var decksRawString string = ctx.Query("decks")
+
+    if len(decksRawString) <= 0 {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "no decks list given",
+            "userMessage":      "no decks list given",
+        })
+        return
+    }
+
+    queryMatcher, err := regexp.Compile("^[1-9]\\d*(,[1-9]\\d*)*$")
+
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": err.Error(),
+            "userMessage":      "unable to parse decks list",
+        })
+        ctx.Error(err)
+        return
+    }
+
+    if !queryMatcher.MatchString(decksRawString) {
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "status":           http.StatusBadRequest,
+            "developerMessage": "invalid decks list",
+            "userMessage":      "invalid decks list",
+        })
+        return
+    }
+
+    var decks []string = strings.Split(decksRawString, ",")
+
+    var resolvedDecks []gin.H = make([]gin.H, 0, len(decks))
+
+    for _, deckIDString := range decks {
+
+        __deckID, err := strconv.ParseUint(deckIDString, 10, 32)
+        var deckID uint = uint(__deckID)
+
+        if err != nil {
+            ctx.JSON(http.StatusBadRequest, gin.H{
+                "status":           http.StatusBadRequest,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to parse decks list",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        var fetchedDeckRow *DeckRow
+        fetchedDeckRow, err = GetDeck(db, deckID)
+
+        switch {
+        case err == ErrDeckNoSuchDeck:
+            ctx.JSON(http.StatusNotFound, gin.H{
+                "status":           http.StatusNotFound,
+                "developerMessage": err.Error(),
+                "userMessage":      "cannot find deck by id",
+            })
+            ctx.Error(err)
+            return
+        case err != nil:
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to retrieve deck",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        // fetch children
+        var children []uint
+        children, err = GetDeckChildren(db, deckID)
+        switch {
+        case err == ErrDeckNoChildren:
+            children = []uint{}
+        case err != nil:
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to retrieve deck children",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        // fetch parent
+        var parentID uint
+        var hasParent bool = true
+        parentID, err = GetDeckParent(db, deckID)
+        switch {
+        case err == ErrDeckHasNoParent:
+            parentID = 0
+            hasParent = false
+        case err != nil:
+            ctx.JSON(http.StatusInternalServerError, gin.H{
+                "status":           http.StatusInternalServerError,
+                "developerMessage": err.Error(),
+                "userMessage":      "unable to retrieve parent deck",
+            })
+            ctx.Error(err)
+            return
+        }
+
+        var dr gin.H = DeckResponse(&gin.H{
+            "id":          fetchedDeckRow.ID,
+            "name":        fetchedDeckRow.Name,
+            "description": fetchedDeckRow.Description,
+            "children":    children,
+            "parent":      parentID,
+            "hasParent":   hasParent,
+        })
+
+        resolvedDecks = append(resolvedDecks, dr)
+    }
+
+    ctx.JSON(http.StatusOK, resolvedDecks)
 }
 
 // GET /decks/:id/children

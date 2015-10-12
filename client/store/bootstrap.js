@@ -4,6 +4,7 @@ const _ = require('lodash');
 const Immutable = require('immutable');
 const qs = require('qs');
 
+const {deckLoader, deckChildrenLoader} = require('store/loader');
 const {flow, detour, stateless, filterInt} = require('store/utils');
 const {NOT_SET, paths, dashboard} = require('store/constants');
 const {fetchRootDeck, fetchDeck, fetchChildren, fetchAncestors} = require('store/stateless/decks');
@@ -30,6 +31,10 @@ const bootRouter = co.wrap(function* (store) {
 
         // begin state change transaction
         state.cursor(paths.transaction).update(function() {
+
+            // TODO: need proper invalidation
+            deckLoader.clearAll();
+            deckChildrenLoader.clearAll();
 
             return Immutable.Map().withMutations(function(map) {
                 map

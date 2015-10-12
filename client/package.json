@@ -17,6 +17,7 @@
     "bluebird": "^2.10.2",
     "classnames": "^2.1.5",
     "co": "^4.6.0",
+    "dataloader": "^1.0.0",
     "eslint": "^1.6.0",
     "eslint-loader": "^1.0.0",
     "eslint-plugin-react": "^3.5.1",

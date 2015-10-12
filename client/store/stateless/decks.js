@@ -1,36 +1,25 @@
 const Immutable = require('immutable');
+const co = require('co');
 const superhot = require('store/superhot');
+
+const {deckLoader, deckChildrenLoader} = require('store/loader');
 
 const transforms = {
 
     /* requests from REST */
 
-    fetchDeck(inputs) {
+    fetchDeck: co.wrap(function*(inputs) {
 
         // TODO: ensure
         const {deckID} = inputs;
 
-        return new Promise(function(resolve, reject) {
-            superhot
-                .get(`/decks/${deckID}`)
-                .end(function(err, res){
-                    switch(res.status) {
-                    case 404:
-                        return reject(err);
-                        break;
-                    case 200:
-                        return resolve({
-                            deck: Immutable.fromJS(res.body),
-                            deckID: res.body.id
-                        });
-                        break;
-                    default:
-                        return reject(Error('http code not found'));
-                        // TODO: error handling
-                    }
-                });
-        });
-    },
+        const deck = yield deckLoader.load(deckID);
+
+        return {
+            deck: Immutable.fromJS(deck),
+            deckID: deck.id
+        };
+    }),
 
     fetchRootDeck() {
 
@@ -56,24 +45,7 @@ const transforms = {
         // TODO: ensure
         const {deckID} = inputs;
 
-        return new Promise(function(resolve, reject) {
-            superhot
-                .get(`/decks/${deckID}/children`)
-                .end(function(err, res){
-
-                    // no children
-                    if (res.status === 404) {
-                        return resolve({children: Immutable.List()});
-                    }
-
-                    if (res.status === 200) {
-                        resolve({children: Immutable.fromJS(res.body)});
-                    }
-
-                    // TODO: error handling
-                    reject(err);
-                });
-        });
+        return deckChildrenLoader.load(deckID);
     },
 
     fetchAncestors(inputs) {

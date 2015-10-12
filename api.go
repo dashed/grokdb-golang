@@ -144,8 +144,7 @@ func bootAPI(db *Database, portNum int, appPath string, mathjaxPath string) {
     {
         decksAPI.POST("/", injectDB(DeckPOST))
 
-        // TODO: implement
-        // decksAPI.GET("/", injectDB(DeckGETMany))
+        decksAPI.GET("/", injectDB(DeckGETMany))
 
         decksAPI.GET("/:id", injectDB(DeckGET))
 
