@@ -95,7 +95,7 @@ func StashGET(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    ctx.JSON(http.StatusOK, StashRowToResponse(fetchedStashRow))
+    ctx.JSON(http.StatusOK, StashRowToResponse(db, fetchedStashRow))
 }
 
 func StashListGET(db *sqlx.DB, ctx *gin.Context) {
@@ -125,7 +125,7 @@ func StashListGET(db *sqlx.DB, ctx *gin.Context) {
     var response []gin.H = make([]gin.H, 0, len(*stashes))
 
     for _, fetchedStashRow := range *stashes {
-        foo := StashRowToResponse(&fetchedStashRow)
+        foo := StashRowToResponse(db, &fetchedStashRow)
         response = append(response, foo)
     }
 
@@ -169,7 +169,7 @@ func StashPOST(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    ctx.JSON(http.StatusCreated, StashRowToResponse(newStashRow))
+    ctx.JSON(http.StatusCreated, StashRowToResponse(db, newStashRow))
 }
 
 func StashDELETE(db *sqlx.DB, ctx *gin.Context) {
@@ -438,7 +438,7 @@ func StashPATCH(db *sqlx.DB, ctx *gin.Context) {
         return
     }
 
-    ctx.JSON(http.StatusOK, StashRowToResponse(fetchedStashRow))
+    ctx.JSON(http.StatusOK, StashRowToResponse(db, fetchedStashRow))
 }
 
 func StashPUT(db *sqlx.DB, ctx *gin.Context) {
@@ -924,13 +924,27 @@ func StashResponse(overrides *gin.H) gin.H {
     return MergeResponse(defaultResponse, overrides)
 }
 
-func StashRowToResponse(stashRow *StashRow) gin.H {
-    return StashResponse(&gin.H{
+func StashRowToResponse(db *sqlx.DB, stashRow *StashRow) gin.H {
+    var sr gin.H = StashResponse(&gin.H{
         "id":          stashRow.ID,
         "name":        stashRow.Name,
         "description": stashRow.Description,
         "created_at":  stashRow.CreatedAt,
         "updated_at":  stashRow.UpdatedAt,
+    })
+
+    var cardsCount uint = 0
+    var err error
+
+    // TODO: error absorbed
+    cardsCount, err = CountCardsByStash(db, stashRow.ID)
+
+    if err != nil {
+        cardsCount = 0
+    }
+
+    return MergeResponse(&sr, &gin.H{
+        "cardsCount": cardsCount,
     })
 }
 
