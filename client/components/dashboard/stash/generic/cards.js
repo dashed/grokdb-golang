@@ -144,8 +144,10 @@ const StashCardsOnce = once(CardsListOcclusion, {
         const {store} = props;
 
         const sublocalstate = minitrue({
-            // routes
 
+            noCardsString: 'No cards to display. Add some to this stash.',
+
+            // routes
             changeToCard: function(options) {
 
                 const {card, cardID} = options;

@@ -18,7 +18,8 @@ const CardsChildren = React.createClass({
         localstate: React.PropTypes.instanceOf(Probe).isRequired,
         sublocalstate: React.PropTypes.instanceOf(Probe).isRequired, // hacky localstate
         listCursor: React.PropTypes.instanceOf(Probe).isRequired,
-        breadcrumbLength: React.PropTypes.number.isRequired
+        breadcrumbLength: React.PropTypes.number.isRequired,
+        noCardsString: React.PropTypes.string.isRequired
     },
 
     render() {
@@ -27,11 +28,14 @@ const CardsChildren = React.createClass({
         const display = (function() {
 
             if(list.size <= 0) {
+
+                const {noCardsString} = this.props;
+
                 return (
                     <div className="card">
                         <div className="card-block text-center">
                             <p className="card-text text-muted">
-                                {"No cards to display. To get started, you should create your first card for this deck."}
+                                {noCardsString}
                             </p>
                         </div>
                     </div>
@@ -81,7 +85,8 @@ const OrwellWrappedCardsChildren = orwell(CardsChildren, {
 
         return [
             localstate.cursor('list'),
-            localstate.cursor('breadcrumb')
+            localstate.cursor('breadcrumb'),
+            localstate.cursor('noCardsString')
         ];
     },
     assignNewProps(props) {
@@ -91,7 +96,8 @@ const OrwellWrappedCardsChildren = orwell(CardsChildren, {
         return {
             listCursor: listCursor,
             list: listCursor.deref(),
-            breadcrumbLength: breadcrumbLength
+            breadcrumbLength: breadcrumbLength,
+            noCardsString: localstate.cursor('noCardsString').deref()
         };
     }
 });

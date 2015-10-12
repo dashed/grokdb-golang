@@ -33,7 +33,12 @@ const StashChild = React.createClass({
     },
 
     generateSummary() {
-        return 'summary TBA';
+
+        const {stash} = this.props;
+
+        const cardsCount = stash.get('cardsCount', 0);
+
+        return `Cards: ${cardsCount}`;
     },
 
     render() {

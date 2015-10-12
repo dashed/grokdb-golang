@@ -9,6 +9,9 @@ const SortDropdown = require('./dropdown');
 
 // structure of localstate
 const DEFAULTS = {
+
+    noCardsString: 'No cards to display. To get started, you should create your first card for this deck.',
+
     list: Immutable.List,
     breadcrumb: Immutable.List,
 
