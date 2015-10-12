@@ -153,9 +153,10 @@ const CardChildOcclusion = either(CardChild, null, function(props) {
         return false;
     }
 
-    if(!_.isArray(deckPath)) {
-        return false;
-    }
+    // TODO: commented out b/c list loads weirdly
+    // if(!_.isArray(deckPath)) {
+    //     return false;
+    // }
 
     return true;
 });
