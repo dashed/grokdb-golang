@@ -31,6 +31,7 @@ module.exports = {
             'babel-runtime/core-js',
             'react',
             'react-dom',
+            'dataloader',
             'immutable',
             'page',
             'bluebird',
