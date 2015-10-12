@@ -1,9 +1,9 @@
 const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
+const co = require('co');
 
 const {NOT_SET, paths} = require('store/constants');
-const {stateless} = require('store/utils');
 const {backupDB} = require('store/stateless/settings');
 
 const App = React.createClass({
@@ -88,16 +88,39 @@ const OrwellWrapped = orwell(AppOcclusion, {
 // container for everything
 const AppContainer = React.createClass({
 
-    contextTypes: {
-        store: React.PropTypes.object.isRequired
+    getInitialState() {
+        this.mounted = true;
+
+        return {
+            enableBackupButton: true
+        };
+    },
+
+    componentWillMount() {
+        this.mounted = true;
+    },
+
+    componentWillUnmount() {
+        this.mounted = false;
     },
 
     onClickBackup(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        const store = this.context.store;
-        store.invoke(stateless(backupDB));
+        const _this = this;
+
+        co(function*() {
+            _this.setState({
+                enableBackupButton: false
+            });
+
+            yield backupDB();
+
+            _this.setState({
+                enableBackupButton: true
+            });
+        });
     },
 
     render() {
@@ -114,7 +137,11 @@ const AppContainer = React.createClass({
                             <button
                                 type="button"
                                 className="btn btn-warning"
-                                onClick={this.onClickBackup}>{"Backup database"}</button>
+                                onClick={this.onClickBackup}
+                                disabled={!this.state.enableBackupButton}
+                            >
+                                {"Backup database"}
+                            </button>
                         </div>
                     </div>
                 </footer>
