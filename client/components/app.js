@@ -1,8 +1,6 @@
 const React = require('react');
 const orwell = require('orwell');
 const either = require('react-either');
-// TODO: remove/replace
-// const Spinner = require('./spinner');
 
 const {NOT_SET, paths} = require('store/constants');
 const {stateless} = require('store/utils');
@@ -19,7 +17,7 @@ const App = React.createClass({
         const {RouteHandler} = this.props;
 
         return (
-            <div>
+            <div key="app">
                 <div className="row">
                     <div className="col-sm-12">
                         <header>
@@ -40,7 +38,7 @@ const App = React.createClass({
 const AppLoading = React.createClass({
     render() {
         return (
-            <div>
+            <div key="apploading">
                 <div className="row">
                     <div className="col-sm-12">
                         <header>
@@ -50,7 +48,7 @@ const AppLoading = React.createClass({
                 </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        <p>Loading app.js</p>
+                        <p>Loading...</p>
                     </div>
                 </div>
             </div>
