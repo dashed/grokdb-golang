@@ -9,8 +9,9 @@ const {flow, stateless} = require('store/utils');
 const {paths, cards, NOT_SET} = require('store/constants');
 const {applyCardArgs, saveCard, deleteCard, setCard, applyStashCardsPageArgs} = require('store/cards');
 const {toCardProfileEdit, toCardProfile, redirectToDeckCards, toStashProfile} = require('store/route');
-const {addCardToStash, removeCardFromStash, setStashList, setStash} = require('store/stashes');
-const {fetchStashList} = require('store/stateless/stashes');
+const {setStashList, setStash} = require('store/stashes');
+const {fetchStashList, addCardToStash, removeCardFromStash} = require('store/stateless/stashes');
+const {fetchCard} = require('store/stateless/cards');
 
 const GenericCard = require('./generic');
 
@@ -39,7 +40,9 @@ const invokeDeleteCard = flow(
 
 const __addCardToStash = flow(
 
-    addCardToStash,
+    stateless(addCardToStash),
+    stateless(fetchCard),
+    setCard,
 
     stateless(fetchStashList),
     setStashList
@@ -47,7 +50,9 @@ const __addCardToStash = flow(
 
 const __removeCardFromStash = flow(
 
-    removeCardFromStash,
+    stateless(removeCardFromStash),
+    stateless(fetchCard),
+    setCard,
 
     stateless(fetchStashList),
     setStashList
@@ -189,9 +194,7 @@ const CardProfile = React.createClass({
     },
 
     onClickToStash(stash) {
-
         const {store} = this.props;
-
         store.invoke(changeToStash, {stash, stashID: stash.get('id')});
     },
 

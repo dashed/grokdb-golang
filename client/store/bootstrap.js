@@ -44,6 +44,7 @@ const bootRouter = co.wrap(function* (store) {
                     .set(paths.deck.children, Immutable.List())
 
                     // cards
+                    .set(paths.card.editing, false)
                     .set(paths.dashboard.cards.creatingNew, false)
                     .set(paths.dashboard.cards.page, 1)
                     .set(paths.dashboard.cards.viewingProfile, false)
@@ -176,10 +177,11 @@ const bootRouter = co.wrap(function* (store) {
         return next();
     }, __commitStateTransaction);
 
-    page('/review/deck/:id', __ensureDeckReviewRoute, function(ctx, next) {
+    page('/review/deck/:id', __ensureDeckReviewRoute, __ensureStashesRoute, function(ctx, next) {
         state.cursor(paths.transaction).update(function(map) {
             return map.withMutations(function(__map) {
                 __map
+                    .set(paths.card.editing, false)
                     .set(paths.dashboard.view, dashboard.view.review)
                     .set(paths.route.handler, Dashboard);
             });
@@ -187,6 +189,20 @@ const bootRouter = co.wrap(function* (store) {
 
         return next();
     }, __commitStateTransaction);
+
+    page('/review/deck/:id/edit', __ensureDeckReviewRoute, __ensureStashesRoute, function(ctx, next) {
+        state.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.card.editing, true)
+                    .set(paths.dashboard.view, dashboard.view.review)
+                    .set(paths.route.handler, Dashboard);
+            });
+        });
+
+        return next();
+    }, __commitStateTransaction);
+
 
     page('/stashes', __ensureStashesRoute, function(ctx, next) {
 
@@ -248,11 +264,29 @@ const bootRouter = co.wrap(function* (store) {
         return next();
     }, __commitStateTransaction);
 
-    page('/stashes/:id/review', __ensureCurrentStashRoute, __ensureStashReviewRoute, function(ctx, next) {
+    page('/stashes/:id/review', __ensureCurrentStashRoute, __ensureStashReviewRoute, __ensureStashesRoute, function(ctx, next) {
 
         state.cursor(paths.transaction).update(function(map) {
             return map.withMutations(function(__map) {
                 __map
+                    .set(paths.card.editing, false)
+                    .set(paths.stash.editing, false)
+                    .set(paths.dashboard.stashes.reviewing, true)
+                    .set(paths.dashboard.stashes.viewingProfile, false)
+                    .set(paths.dashboard.view, dashboard.view.stash)
+                    .set(paths.route.handler, Dashboard);
+            });
+        });
+
+        return next();
+    }, __commitStateTransaction);
+
+    page('/stashes/:id/review/edit', __ensureCurrentStashRoute, __ensureStashReviewRoute, __ensureStashesRoute, function(ctx, next) {
+
+        state.cursor(paths.transaction).update(function(map) {
+            return map.withMutations(function(__map) {
+                __map
+                    .set(paths.card.editing, true)
                     .set(paths.stash.editing, false)
                     .set(paths.dashboard.stashes.reviewing, true)
                     .set(paths.dashboard.stashes.viewingProfile, false)

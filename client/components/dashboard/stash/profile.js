@@ -22,7 +22,7 @@ const saveStashState = flow(
     toStashProfile
 );
 
-const toReview = flow(
+const toStashReview = flow(
     applyStashArgs,
 
     // route
@@ -132,7 +132,7 @@ const StashProfile = React.createClass({
     onClickReview() {
         const {store, stash: currentStash} = this.props;
 
-        store.invoke(toReview, {
+        store.invoke(toStashReview, {
             stash: currentStash,
             stashID: currentStash.get('id')
         });

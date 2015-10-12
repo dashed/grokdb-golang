@@ -4,7 +4,7 @@ const classNames = require('classnames');
 
 const {flow} = require('store/utils');
 const {dashboard, paths} = require('store/constants');
-const {toDeckCards, toDeck, toReview, toStash} = require('store/route');
+const {toDeckCards, toDeck, toDeckReview, toStash} = require('store/route');
 const {applyDeckCardsPageArgs} = require('store/cards');
 
 const toDeckCardsList = flow(
@@ -40,7 +40,7 @@ const SubNav = React.createClass({
         event.preventDefault();
         event.stopPropagation();
 
-        this.props.store.invoke(toReview);
+        this.props.store.invoke(toDeckReview);
     },
 
     onClickStashes(event) {

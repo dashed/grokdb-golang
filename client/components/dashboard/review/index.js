@@ -6,13 +6,27 @@ const minitrue = require('minitrue');
 const once = require('react-prop-once');
 const {Probe} = require('minitrue');
 
-const {flow} = require('store/utils');
+const {flow, stateless} = require('store/utils');
 const {NOT_SET, paths, cards} = require('store/constants');
 const {applyDeckArgs} = require('store/decks');
-const {validateReviewInput, patchReview, nextReview, applyReviewArgs} = require('store/review');
+const {validateReviewInput, patchReview, nextReview, applyReviewArgs, setReviewCard} = require('store/review');
+const {saveCard} = require('store/stateless/cards');
+const {toDeckReview, toDeckReviewEdit, toStashProfile} = require('store/route');
+const {setStashList, setStash} = require('store/stashes');
+const {fetchStashList, addCardToStash, removeCardFromStash} = require('store/stateless/stashes');
+const {applyStashCardsPageArgs} = require('store/cards');
+const {fetchCard} = require('store/stateless/cards');
 
 const GenericCard = require('components/dashboard/cards/generic');
 const ReviewControls = require('./controls');
+
+const saveCardState = flow(
+    // cards
+    stateless(saveCard),
+
+    // route
+    toDeckReview
+);
 
 const finishReview = flow(
 
@@ -23,20 +37,88 @@ const finishReview = flow(
     applyReviewArgs,
     validateReviewInput,
     patchReview,
-    nextReview
+    nextReview,
+
+    // route
+    toDeckReview
+);
+
+const toReviewEdit = flow(
+
+    // decks
+    applyDeckArgs,
+
+    // route
+    toDeckReviewEdit
+);
+
+const toReview = flow(
+
+    // decks
+    applyDeckArgs,
+
+    // route
+    toDeckReview
+);
+
+const __addCardToStash = flow(
+
+    stateless(addCardToStash),
+    stateless(fetchCard),
+    function(state, options) {
+
+        options.reviewCard = options.card;
+
+        return options;
+    },
+    setReviewCard,
+
+    stateless(fetchStashList),
+    setStashList
+);
+
+const __removeCardFromStash = flow(
+
+    stateless(removeCardFromStash),
+    stateless(fetchCard),
+    function(state, options) {
+
+        options.reviewCard = options.card;
+
+        return options;
+    },
+    setReviewCard,
+
+    stateless(fetchStashList),
+    setStashList
+);
+
+const changeToStash = flow(
+
+    // stashes
+    setStash,
+
+    // route
+    applyStashCardsPageArgs,
+    toStashProfile
 );
 
 const ReviewDashboard = React.createClass({
 
     propTypes: {
         store: React.PropTypes.object.isRequired,
+        isEditing: React.PropTypes.bool.isRequired,
+        showControls: React.PropTypes.bool.isRequired,
         reviewCard: React.PropTypes.instanceOf(Immutable.Map).isRequired,
+        stashes: React.PropTypes.instanceOf(Immutable.List).isRequired,
+        revealCard: React.PropTypes.bool.isRequired,
         localstate: React.PropTypes.instanceOf(Probe).isRequired,
-        revealCard: React.PropTypes.bool.isRequired
     },
 
     componentWillMount() {
-        this.loadCard(this.props);
+        this.loadCard(this.props, {});
+        this.loadStashes(this.props, {});
+        this.resolveEdit(this.props, {});
     },
 
     componentWillReceiveProps(nextProps) {
@@ -52,19 +134,52 @@ const ReviewDashboard = React.createClass({
             });
         }
 
-        const oldreviewCard = this.props.reviewCard;
-        const newreviewCard = nextProps.reviewCard;
-
-        if(isNewReviewCard(oldreviewCard, newreviewCard)) {
-            this.loadCard(nextProps);
-        }
+        this.loadCard(nextProps, this.props);
+        this.loadStashes(nextProps, this.props);
+        this.resolveEdit(nextProps, this.props);
     },
 
-    loadCard(props) {
-        const {localstate, reviewCard: card} = props;
+    loadStashes(nextProps, oldProps) {
 
-        localstate.cursor('card').update(Immutable.Map(), function(map) {
-            return map.mergeDeep(card);
+        const {localstate, stashes: newStashes} = nextProps;
+        const {stashes: oldStashes} = oldProps;
+
+        if(newStashes === oldStashes) {
+            return;
+        }
+
+        localstate.cursor('stashes').update(function() {
+            return newStashes;
+        });
+    },
+
+    resolveEdit(props, prevProps = {}) {
+        const {localstate, isEditing} = props;
+        localstate.cursor('editMode').update(function() {
+            return isEditing;
+        });
+
+        localstate.cursor('defaultMode').update(function() {
+            return isEditing ? cards.display.source : cards.display.render;
+        });
+
+        const {isEditing: previsEditing = false} = prevProps;
+
+        localstate.cursor(['display', 'mode']).update(Immutable.Map(), function(val) {
+            return previsEditing == isEditing ? val : Immutable.Map();
+        });
+    },
+
+    loadCard(props, prevProps = {}) {
+        const {localstate, reviewCard: newCard} = props;
+        const {reviewCard: oldCard} = prevProps;
+
+        if(oldCard == newCard) {
+            return;
+        }
+
+        localstate.cursor('card').update(function() {
+            return newCard;
         });
     },
 
@@ -83,29 +198,110 @@ const ReviewDashboard = React.createClass({
         });
     },
 
+    onClickEdit() {
+
+        const {isEditing, store} = this.props;
+
+        if(isEditing) {
+            store.invoke(toReview);
+            return;
+        }
+
+        store.invoke(toReviewEdit);
+    },
+
+    onClickCancelEdit() {
+
+        const {store} = this.props;
+
+        this.loadCard(this.props, this.props);
+        store.invoke(toReview);
+    },
+
+    onClickSave(newCardRecord) {
+
+        if(newCardRecord.title.length <= 0) {
+            return;
+        }
+
+        const {store, reviewCard: card} = this.props;
+
+        store.invoke(saveCardState, {
+            patchCard: newCardRecord,
+            card: card,
+            cardID: card.get('id')
+        });
+    },
+
+    onClickAddStash(stash) {
+
+        const {store, reviewCard: card} = this.props;
+
+        store.invoke(__addCardToStash, {
+            card,
+            cardID: card.get('id'),
+            stash,
+            stashID: stash.get('id')
+        });
+    },
+
+    onClickDeleteStash(stash) {
+
+        const {store, reviewCard: card} = this.props;
+
+        store.invoke(__removeCardFromStash, {
+            card,
+            cardID: card.get('id'),
+            stash,
+            stashID: stash.get('id')
+        });
+    },
+
+    onClickToStash(stash) {
+        const {store} = this.props;
+        store.invoke(changeToStash, {stash, stashID: stash.get('id')});
+    },
+
     render() {
 
-        const {localstate} = this.props;
+        const {localstate, showControls} = this.props;
 
         return (
             <div>
-                <div className="row">
+                <div key="card" className="row">
                     <div className="col-sm-12">
                         <GenericCard
+                            onClickCancelEdit={this.onClickCancelEdit}
+                            onClickEdit={this.onClickEdit}
+                            onCommit={this.onClickSave}
+                            onClickAddStash={this.onClickAddStash}
+                            onClickDeleteStash={this.onClickDeleteStash}
+                            onClickToStash={this.onClickToStash}
                             localstate={localstate}
                         />
                     </div>
                 </div>
-                <div className="row m-b">
-                    <div className="col-sm-12">
-                        <ReviewControls
-                            onCommit={this.onNextCard}
-                            onSkip={this.onSkipCard}
+                {
+                    (function() {
 
-                            localstate={localstate}
-                        />
-                    </div>
-                </div>
+                        if(!showControls) {
+                            return null;
+                        }
+
+                        return (
+                            <div key="controls" className="row m-b">
+                                <div className="col-sm-12">
+                                    <ReviewControls
+                                        onCommit={this.onNextCard}
+                                        onSkip={this.onSkipCard}
+
+                                        localstate={localstate}
+                                    />
+                                </div>
+                            </div>
+                        );
+                    }.call(this))
+                }
             </div>
         );
     }
@@ -144,7 +340,9 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
 
         return [
             state.cursor(paths.review.self),
-            localstate.cursor('revealCard')
+            localstate.cursor('revealCard'),
+            state.cursor(paths.card.editing),
+            state.cursor(paths.dashboard.stashes.list)
         ];
     },
     assignNewProps(props, context) {
@@ -160,10 +358,15 @@ const OrwellWrappedReviewDashboard = orwell(ReviewDashboardOcclusion, {
             };
         }
 
+        const isEditing = !!state.cursor(paths.card.editing).deref(false);
+
         return {
             store: context.store,
             reviewCard,
-            revealCard: localstate.cursor('revealCard').deref(false)
+            revealCard: localstate.cursor('revealCard').deref(false),
+            stashes: state.cursor(paths.dashboard.stashes.list).deref(Immutable.List()),
+            isEditing: isEditing,
+            showControls: !isEditing
         };
     }
 }).inject({
@@ -183,7 +386,7 @@ module.exports = once(OrwellWrappedReviewDashboard, {
 
         const DEFAULTS = {
             // props for card
-            showEditButton: false,
+            showEditButton: true,
             editMode: false,
             hideMeta: false,
             hideBack: true,

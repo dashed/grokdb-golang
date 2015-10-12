@@ -70,6 +70,38 @@ const transforms = {
         });
     },
 
+    saveCard(inputs) {
+        const {patchCard, cardID} = inputs;
+
+
+        // save card
+        return new Promise(function(resolve, reject) {
+            superhot
+                .patch(`/cards/${cardID}`)
+                .send(patchCard)
+                .end(function(err, res){
+
+                    switch(res.status) {
+                    case 404:
+                        return reject(err);
+                        break;
+                    case 200:
+                        return resolve({
+                            card: Immutable.fromJS(res.body),
+                            cardID: res.body.id
+                        });
+                        break;
+                    default:
+                        return reject(Error('http code not found'));
+                        // TODO: error handling
+                    }
+
+                    // TODO: error handling
+                    resolve({err: err, response: res});
+                });
+        });
+    },
+
     parseDeckCardsPageNum: __parsePageNum('deckcardspage'),
     parseStashCardsPageNum: __parsePageNum('stashcardspage'),
 

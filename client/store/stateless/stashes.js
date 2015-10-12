@@ -123,7 +123,71 @@ const transforms = {
                     }
                 });
         });
-    }
+    },
+
+    addCardToStash(options) {
+
+        const {stashID, card} = options;
+
+        return new Promise(function(resolve, reject) {
+            superhot
+                .put(`/stashes/${stashID}`)
+                .send({
+                    action: 'add',
+                    card_id: card.get('id')
+                })
+                .end(function(err, res){
+
+                    switch(res.status) {
+                    case 204:
+                        resolve({});
+                        break;
+                    default:
+                        return reject(Error('http code not found'));
+                        // TODO: error handling
+                    }
+                });
+        });
+    },
+
+    removeCardFromStash(options) {
+
+        const {stashID, card} = options;
+
+        // remove card from stash
+        return new Promise(function(resolve, reject) {
+            superhot
+                .put(`/stashes/${stashID}`)
+                .send({
+                    action: 'remove',
+                    card_id: card.get('id')
+                })
+                .end(function(err, res){
+
+                    switch(res.status) {
+                    case 204:
+                        resolve({});
+                        break;
+                    default:
+                        return reject(Error('http code not found'));
+                        // TODO: error handling
+                    }
+                });
+        });
+    },
+
+    // deleteStash: co.wrap(function*(state, options) {
+
+    //     const {stashID} = options;
+
+    //     return new Promise(function(resolve) {
+    //         superhot
+    //             .del(`/stashes/${stashID}`)
+    //             .end(function() {
+    //                 resolve(options);
+    //             });
+    //     });
+    // })
 };
 
 module.exports = transforms;

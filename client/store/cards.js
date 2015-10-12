@@ -151,7 +151,8 @@ const transforms = {
 
         const {cardID} = options;
 
-        // save deck
+        // TODO: refactor to use stateless
+        // save card
         const {response} = yield new Promise(function(resolve) {
             superhot
                 .patch(`/cards/${cardID}`)

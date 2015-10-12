@@ -102,13 +102,22 @@ const transforms = {
         page(`/card/${cardID}/edit`);
     },
 
-    toReview(state, options = {}) {
+    toDeckReview(state, options = {}) {
 
         let {deck, deckID} = options;
 
         ({deck, deckID} = resolveDeck(state, deck, deckID));
 
         page(`/review/deck/${deckID}`);
+    },
+
+    toDeckReviewEdit(state, options = {}) {
+
+        let {deck, deckID} = options;
+
+        ({deck, deckID} = resolveDeck(state, deck, deckID));
+
+        page(`/review/deck/${deckID}/edit`);
     },
 
     toStash(state, options = {}) {
@@ -152,6 +161,15 @@ const transforms = {
         ({stash, stashID} = resolveStash(state, stash, stashID));
 
         page(`/stashes/${stashID}/review`);
+    },
+
+    toStashProfileReviewEdit(state, options = {}) {
+
+        let {stash, stashID} = options;
+
+        ({stash, stashID} = resolveStash(state, stash, stashID));
+
+        page(`/stashes/${stashID}/review/edit`);
     }
 };
 

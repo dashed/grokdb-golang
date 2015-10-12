@@ -88,7 +88,18 @@ const transforms = {
         });
 
         return options;
-    })
+    }),
+
+    setReviewCard(state, options) {
+
+        const {reviewCard} = options;
+
+        state.cursor(paths.review.self).update(function() {
+            return reviewCard;
+        });
+
+        return options;
+    }
 };
 
 module.exports = transforms;
